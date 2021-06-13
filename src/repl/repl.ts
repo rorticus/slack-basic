@@ -1,6 +1,8 @@
 import * as readline from "readline";
 import Lexer from "../language/lexer";
 import {TokenType} from "../language/tokens";
+import {Parser} from "../language/parser";
+import {Program} from "../language/ast";
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -26,14 +28,10 @@ async function repl() {
             break;
         } else {
             const lexer = new Lexer(line);
-            while (1) {
-                const tok = lexer.nextToken();
-                if(tok.type === TokenType.EOF) {
-                    break;
-                }
+            const parser = new Parser(lexer);
+            const program = parser.parseProgram();
 
-                console.log(tok.type);
-            }
+            console.log(program.toString());
         }
     }
 }

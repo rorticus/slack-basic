@@ -128,9 +128,31 @@ export class InfixExpression implements Expression {
     }
 
     toString(): string {
-        return `(${this.left.toString()} ${this.operator} + ${
+        return `(${this.left.toString()} ${this.operator} ${
             this.right ? this.right.toString() : ""
         })`;
+    }
+}
+
+export class BooleanExpression implements Expression {
+    token: Token;
+    value: boolean;
+
+    constructor(token: Token, value: boolean) {
+        this.token = token;
+        this.value = value;
+    }
+
+    toString(): string {
+        return `${this.value}`;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    expressionNode(): Expression {
+        return this;
     }
 }
 
@@ -236,4 +258,8 @@ export function isPrefixExpression(n: Node): n is PrefixExpression {
 
 export function isInfixExpression(n: Node): n is InfixExpression {
     return n instanceof InfixExpression;
+}
+
+export function isBooleanExpression(n: Node): n is BooleanExpression {
+    return n instanceof BooleanExpression;
 }

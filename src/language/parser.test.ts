@@ -1,10 +1,11 @@
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import {
+    BooleanExpression,
     Expression,
     ExpressionStatement,
     Identifier, InfixExpression,
-    IntegerLiteral,
+    IntegerLiteral, isBooleanExpression,
     isExpressionStatement,
     isIdentifier, isInfixExpression,
     isIntegerLiteral,
@@ -198,6 +199,30 @@ describe("Parser tests", () => {
                 expect(expr.operator).toEqual(tests[i][2]);
                 testIntegerLiteral(expr.right, tests[i][3]);
             }
+        });
+
+        it("parses booleand", () => {
+            const { program } = parse("true;\nfalse;\n");
+
+            expect(program.statements).toHaveLength(2);
+
+            const statement1 = program.statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(statement1)).toBeTruthy();
+
+            const bool1 = statement1.expression as BooleanExpression;
+
+            expect(isBooleanExpression(bool1)).toBeTruthy();
+            expect(bool1.value).toEqual(true);
+            expect(bool1.tokenLiteral()).toEqual("true");
+
+            const statement2 = program.statements[1] as ExpressionStatement;
+            expect(isExpressionStatement(statement2)).toBeTruthy();
+
+            const bool2 = statement2.expression as BooleanExpression;
+
+            expect(isBooleanExpression(bool2)).toBeTruthy();
+            expect(bool2.value).toEqual(false);
+            expect(bool2.tokenLiteral()).toEqual("false");
         });
     });
 });
