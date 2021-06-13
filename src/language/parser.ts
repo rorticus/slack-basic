@@ -1,0 +1,297 @@
+import Lexer from "./lexer";
+import { Token, TokenType } from "./tokens";
+import {
+    Expression,
+    ExpressionStatement,
+    Identifier,
+    InfixExpression,
+    IntegerLiteral,
+    LetStatement,
+    PrefixExpression,
+    Program,
+    ReturnStatement,
+    Statement,
+} from "./ast";
+
+export type PrefixParser = () => Expression | null;
+export type InfixParser = (expression: Expression | null) => Expression | null;
+
+export enum Precedence {
+    LOWEST = 0,
+    EQUALS,
+    LESSGREATER,
+    SUM,
+    PRODUCT,
+    PREFIX,
+    CALL,
+}
+
+const precedences: Record<string, Precedence> = {
+    [TokenType.EQ]: Precedence.EQUALS,
+    [TokenType.NOT_EQ]: Precedence.EQUALS,
+    [TokenType.LT]: Precedence.LESSGREATER,
+    [TokenType.GT]: Precedence.LESSGREATER,
+    [TokenType.PLUS]: Precedence.SUM,
+    [TokenType.MINUS]: Precedence.SUM,
+    [TokenType.ASTERISK]: Precedence.PRODUCT,
+    [TokenType.SLASH]: Precedence.PRODUCT,
+};
+
+export class Parser {
+    lexer: Lexer;
+    errors: string[];
+
+    private curToken!: Token;
+    private peekToken!: Token;
+
+    private prefixParsers: Record<string, PrefixParser>;
+    private infixParsers: Record<string, InfixParser>;
+
+    constructor(lexer: Lexer) {
+        this.lexer = lexer;
+        this.errors = [];
+        this.prefixParsers = {};
+        this.infixParsers = {};
+
+        this.registerPrefix(TokenType.IDENT, this.parseIdentifier.bind(this));
+        this.registerPrefix(TokenType.INT, this.parseIntegerLiteral.bind(this));
+        this.registerPrefix(
+            TokenType.BANG,
+            this.parsePrefixExpression.bind(this)
+        );
+        this.registerPrefix(
+            TokenType.MINUS,
+            this.parsePrefixExpression.bind(this)
+        );
+
+        this.registerInfix(
+            TokenType.PLUS,
+            this.parseInfixExpression.bind(this)
+        );
+        this.registerInfix(
+            TokenType.MINUS,
+            this.parseInfixExpression.bind(this)
+        );
+        this.registerInfix(
+            TokenType.SLASH,
+            this.parseInfixExpression.bind(this)
+        );
+        this.registerInfix(
+            TokenType.ASTERISK,
+            this.parseInfixExpression.bind(this)
+        );
+        this.registerInfix(TokenType.EQ, this.parseInfixExpression.bind(this));
+        this.registerInfix(
+            TokenType.NOT_EQ,
+            this.parseInfixExpression.bind(this)
+        );
+        this.registerInfix(TokenType.LT, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
+
+        // read the two tokens to fill our buffer
+        this.nextToken();
+        this.nextToken();
+    }
+
+    registerPrefix(tokenType: TokenType, parser: PrefixParser) {
+        this.prefixParsers[tokenType] = parser;
+    }
+
+    registerInfix(tokenType: TokenType, parser: InfixParser) {
+        this.infixParsers[tokenType] = parser;
+    }
+
+    nextToken() {
+        this.curToken = this.peekToken;
+        this.peekToken = this.lexer.nextToken();
+    }
+
+    peekTokenIs(type: TokenType) {
+        return this.peekToken.type === type;
+    }
+
+    curTokenIs(type: TokenType) {
+        return this.curToken.type === type;
+    }
+
+    peekError(t: TokenType) {
+        this.errors.push(
+            `expected next token to be ${t}, got ${this.peekToken.type} instead`
+        );
+    }
+
+    noPrefixParseFnError(tokenType: TokenType) {
+        this.errors.push(`no prefix parse function available for ${tokenType}`);
+    }
+
+    expectPeek(type: TokenType) {
+        if (this.peekTokenIs(type)) {
+            this.nextToken();
+            return true;
+        }
+
+        this.peekError(type);
+
+        return false;
+    }
+
+    peekPrecedence(): number {
+        const p = precedences[this.peekToken.type];
+        if (p !== undefined) {
+            return p;
+        }
+
+        return Precedence.LOWEST;
+    }
+
+    curPrecedence(): number {
+        const p = precedences[this.curToken.type];
+        if (p !== undefined) {
+            return p;
+        }
+
+        return Precedence.LOWEST;
+    }
+
+    parseProgram(): Program {
+        const program = new Program();
+
+        while (!this.curTokenIs(TokenType.EOF)) {
+            const statement = this.parseStatement();
+            if (statement !== null) {
+                program.statements.push(statement);
+            }
+            this.nextToken();
+        }
+
+        return program;
+    }
+
+    parseStatement(): Statement | null {
+        switch (this.curToken.type) {
+            case TokenType.LET:
+                return this.parseLetStatement();
+            case TokenType.RETURN:
+                return this.parseReturnStatement();
+            default:
+                return this.parseExpressionStatement();
+        }
+
+        return null;
+    }
+
+    parseExpressionStatement(): ExpressionStatement {
+        const statement = new ExpressionStatement(
+            this.curToken,
+            this.parseExpression(Precedence.LOWEST)
+        );
+
+        if (this.peekTokenIs(TokenType.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return statement;
+    }
+
+    parseLetStatement(): LetStatement | null {
+        const letToken = this.curToken;
+
+        if (!this.expectPeek(TokenType.IDENT)) {
+            return null;
+        }
+
+        const name = new Identifier(this.curToken);
+
+        if (!this.expectPeek(TokenType.ASSIGN)) {
+            return null;
+        }
+
+        while (!this.curTokenIs(TokenType.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return new LetStatement(letToken, name, null);
+    }
+
+    parseReturnStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        while (!this.curTokenIs(TokenType.SEMICOLON)) {
+            this.nextToken();
+        }
+
+        return new ReturnStatement(token, null);
+    }
+
+    parseExpression(precedence: Precedence): Expression | null {
+        const prefix = this.prefixParsers[this.curToken.type];
+
+        if (!prefix) {
+            this.noPrefixParseFnError(this.curToken.type);
+            return null;
+        }
+
+        let leftExp = prefix();
+
+        while (
+            !this.peekTokenIs(TokenType.SEMICOLON) &&
+            precedence < this.peekPrecedence()
+        ) {
+            const infix = this.infixParsers[this.peekToken.type];
+            if (!infix) {
+                return leftExp;
+            }
+
+            this.nextToken();
+
+            leftExp = infix(leftExp);
+        }
+
+        return leftExp;
+    }
+
+    parseIdentifier(): Expression {
+        return new Identifier(this.curToken);
+    }
+
+    parseIntegerLiteral(): Expression | null {
+        const value = parseInt(this.curToken.literal, 10);
+
+        if (isNaN(value)) {
+            this.errors.push(
+                `could not parse "${this.curToken.literal}" as integer`
+            );
+            return null;
+        }
+
+        return new IntegerLiteral(this.curToken, value);
+    }
+
+    parsePrefixExpression(): Expression | null {
+        const token = this.curToken;
+        this.nextToken();
+        const right = this.parseExpression(Precedence.PREFIX);
+
+        return new PrefixExpression(token, token.literal, right);
+    }
+
+    parseInfixExpression(left: Expression | null): Expression | null {
+        const token = this.curToken;
+        const precedence = this.curPrecedence();
+
+        if (!left) {
+            return null;
+        }
+
+        this.nextToken();
+
+        return new InfixExpression(
+            token,
+            left,
+            token.literal,
+            this.parseExpression(precedence)
+        );
+    }
+}
