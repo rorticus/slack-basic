@@ -156,6 +156,75 @@ export class BooleanExpression implements Expression {
     }
 }
 
+export class IfExpression implements Expression {
+    token: Token;
+    condition: Expression | null;
+    consequence: BlockStatement;
+    alternative: BlockStatement | null;
+
+    constructor(
+        token: Token,
+        condition: Expression | null,
+        consequence: BlockStatement,
+        alternative: BlockStatement | null
+    ) {
+        this.token = token;
+        this.condition = condition;
+        this.consequence = consequence;
+        this.alternative = alternative;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        if (this.alternative) {
+            return `if ${
+                this.condition?.toString() ?? ""
+            } ${this.consequence.toString()} else ${this.alternative.toString()}`;
+        }
+
+        return `if ${
+            this.condition?.toString() ?? ""
+        } ${this.consequence.toString()}`;
+    }
+}
+
+export class FunctionExpression implements Expression {
+    token: Token;
+    parameters: Identifier[];
+    body: BlockStatement | null;
+
+    constructor(
+        token: Token,
+        parameters: Identifier[],
+        body: BlockStatement | null
+    ) {
+        this.token = token;
+        this.parameters = parameters;
+        this.body = body;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+
+    toString(): string {
+        return `${this.tokenLiteral()}(${this.parameters
+            .map((p) => p.toString())
+            .join(", ")}) ${this.body?.toString() ?? ""}`;
+    }
+}
+
 export class LetStatement implements Statement {
     token: Token;
     name: Identifier;
@@ -232,6 +301,34 @@ export class ExpressionStatement implements Statement {
     }
 }
 
+export class BlockStatement implements Statement {
+    token: Token;
+    statements: Statement[];
+
+    constructor(token: Token, statements: Statement[]) {
+        this.token = token;
+        this.statements = statements;
+    }
+
+    statementNode(): Statement {
+        return this;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return (
+            "{ " +
+            this.statements
+                .map((statement) => statement.toString())
+                .join("\n") +
+            " }"
+        );
+    }
+}
+
 export function isLetStatement(st: Node): st is LetStatement {
     return st.tokenLiteral() === "let";
 }
@@ -262,4 +359,16 @@ export function isInfixExpression(n: Node): n is InfixExpression {
 
 export function isBooleanExpression(n: Node): n is BooleanExpression {
     return n instanceof BooleanExpression;
+}
+
+export function isIfExpression(n: Node): n is IfExpression {
+    return n instanceof IfExpression;
+}
+
+export function isBlockStatement(n: Node): n is BlockStatement {
+    return n instanceof BlockStatement;
+}
+
+export function isFunctionExpression(n: Node): n is FunctionExpression {
+    return n instanceof FunctionExpression;
 }

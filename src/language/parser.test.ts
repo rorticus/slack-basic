@@ -1,13 +1,22 @@
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import {
+    BlockStatement,
     BooleanExpression,
     Expression,
     ExpressionStatement,
-    Identifier, InfixExpression,
-    IntegerLiteral, isBooleanExpression,
+    FunctionExpression,
+    Identifier,
+    IfExpression,
+    InfixExpression,
+    IntegerLiteral,
+    isBlockStatement,
+    isBooleanExpression,
     isExpressionStatement,
-    isIdentifier, isInfixExpression,
+    isFunctionExpression,
+    isIdentifier,
+    isIfExpression,
+    isInfixExpression,
     isIntegerLiteral,
     isLetStatement,
     isPrefixExpression,
@@ -50,6 +59,34 @@ describe("Parser tests", () => {
         const integerLiteral = expression as IntegerLiteral;
         expect(integerLiteral.value).toEqual(value);
         expect(integerLiteral.tokenLiteral()).toEqual(`${value}`);
+    }
+
+    function testInfixExpression(
+        expression: Expression | null,
+        left: string,
+        operator: string,
+        right: string
+    ) {
+        const infix = expression as InfixExpression;
+
+        expect(expression).not.toBeNull();
+        expect(isInfixExpression(infix)).toBeTruthy();
+
+        expect(infix.left.tokenLiteral()).toEqual(left);
+        expect(infix.operator).toEqual(operator);
+        expect(infix.right).not.toBeNull();
+        expect(infix.right!.tokenLiteral()).toEqual(right);
+    }
+
+    function testIdentifier(expr: Expression | null, name: string) {
+        expect(expr).not.toBeNull();
+        expect(isIdentifier(expr!)).toBeTruthy();
+        expect((expr as Identifier).value).toEqual(name);
+    }
+
+    function testLiteralExpression(expr: Expression | null, name: string) {
+        expect(expr).not.toBeNull();
+        expect(expr!.tokenLiteral()).toEqual(name);
     }
 
     describe("let statements", () => {
@@ -223,6 +260,91 @@ describe("Parser tests", () => {
             expect(isBooleanExpression(bool2)).toBeTruthy();
             expect(bool2.value).toEqual(false);
             expect(bool2.tokenLiteral()).toEqual("false");
+        });
+
+        it("parses if expressions", () => {
+            const { program } = parse("if(x > y) { x }");
+
+            expect(program.statements).toHaveLength(1);
+
+            const statement = program.statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(statement)).toBeTruthy();
+
+            const ifExpression = statement.expression as IfExpression;
+            expect(isIfExpression(ifExpression)).toBeTruthy();
+
+            testInfixExpression(ifExpression.condition, "x", ">", "y");
+
+            const consequence = ifExpression.consequence as BlockStatement;
+            expect(isBlockStatement(consequence)).toBeTruthy();
+            expect(consequence.statements).toHaveLength(1);
+
+            const exprStatement = consequence
+                .statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(exprStatement)).toBeTruthy();
+
+            testIdentifier(exprStatement.expression, "x");
+
+            expect(ifExpression.alternative).toBeNull();
+        });
+
+        it("parses if/else expressions", () => {
+            const { program } = parse("if(x > y) { x } else { y }");
+
+            expect(program.statements).toHaveLength(1);
+
+            const statement = program.statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(statement)).toBeTruthy();
+
+            const ifExpression = statement.expression as IfExpression;
+            expect(isIfExpression(ifExpression)).toBeTruthy();
+
+            testInfixExpression(ifExpression.condition, "x", ">", "y");
+
+            const consequence = ifExpression.consequence as BlockStatement;
+            expect(isBlockStatement(consequence)).toBeTruthy();
+            expect(consequence.statements).toHaveLength(1);
+
+            const exprStatement = consequence
+                .statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(exprStatement)).toBeTruthy();
+
+            testIdentifier(exprStatement.expression, "x");
+
+            const alternative = ifExpression.alternative as BlockStatement;
+            expect(isBlockStatement(alternative)).toBeTruthy();
+            expect(alternative.statements).toHaveLength(1);
+
+            const alternativeExprStatement = alternative
+                .statements[0] as ExpressionStatement;
+            expect(
+                isExpressionStatement(alternativeExprStatement)
+            ).toBeTruthy();
+
+            testIdentifier(alternativeExprStatement.expression, "y");
+        });
+
+        it("parses function literals", () => {
+            const { program } = parse("fn(x, y) { x + y; }");
+
+            expect(program.statements).toHaveLength(1);
+            const statement = program.statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(statement)).toBeTruthy();
+
+            const fn = statement.expression as FunctionExpression;
+            expect(isFunctionExpression(fn)).toBeTruthy();
+            expect(fn.parameters).toHaveLength(2);
+
+            testLiteralExpression(fn.parameters[0], "x");
+            testLiteralExpression(fn.parameters[1], "y");
+
+            expect(fn.body).not.toBeNull();
+            expect(fn.body!.statements).toHaveLength(1);
+
+            const expr = fn.body!.statements[0] as ExpressionStatement;
+            expect(isExpressionStatement(expr)).toBeTruthy();
+
+            testInfixExpression(expr.expression, "x", "+", "y");
         });
     });
 });

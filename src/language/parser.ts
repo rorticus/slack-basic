@@ -1,10 +1,13 @@
 import Lexer from "./lexer";
 import { Token, TokenType } from "./tokens";
 import {
+    BlockStatement,
     BooleanExpression,
     Expression,
     ExpressionStatement,
+    FunctionExpression,
     Identifier,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -70,6 +73,8 @@ export class Parser {
             TokenType.LPAREN,
             this.parseGroupedExpression.bind(this)
         );
+        this.registerPrefix(TokenType.IF, this.parseIfExpression.bind(this));
+        this.registerPrefix(TokenType.FUNCTION, this.parseFunction.bind(this));
 
         this.registerInfix(
             TokenType.PLUS,
@@ -259,7 +264,7 @@ export class Parser {
         return leftExp;
     }
 
-    parseIdentifier(): Expression {
+    parseIdentifier(): Identifier {
         return new Identifier(this.curToken);
     }
 
@@ -319,5 +324,103 @@ export class Parser {
         }
 
         return exp;
+    }
+
+    parseIfExpression(): Expression | null {
+        const token = this.curToken;
+
+        if (!this.expectPeek(TokenType.LPAREN)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const condition = this.parseExpression(Precedence.LOWEST);
+
+        if (!this.expectPeek(TokenType.RPAREN)) {
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.LBRACE)) {
+            return null;
+        }
+
+        const consequence = this.parseBlockStatement();
+        let alternative: BlockStatement | null = null;
+
+        if (this.peekTokenIs(TokenType.ELSE)) {
+            this.nextToken();
+
+            if (!this.expectPeek(TokenType.LBRACE)) {
+                return null;
+            }
+
+            alternative = this.parseBlockStatement();
+        }
+
+        return new IfExpression(token, condition, consequence, alternative);
+    }
+
+    parseBlockStatement(): BlockStatement {
+        const block = new BlockStatement(this.curToken, []);
+
+        this.nextToken();
+
+        while (
+            !this.curTokenIs(TokenType.RBRACE) &&
+            !this.curTokenIs(TokenType.EOF)
+        ) {
+            const statement = this.parseStatement();
+            if (statement !== null) {
+                block.statements.push(statement);
+            }
+
+            this.nextToken();
+        }
+
+        return block;
+    }
+
+    parseFunction(): FunctionExpression | null {
+        const token = this.curToken;
+
+        if (!this.expectPeek(TokenType.LPAREN)) {
+            return null;
+        }
+
+        const parameters = this.parseFunctionParameters();
+
+        if (!this.expectPeek(TokenType.LBRACE)) {
+            return null;
+        }
+
+        const body = this.parseBlockStatement();
+
+        return new FunctionExpression(token, parameters, body);
+    }
+
+    parseFunctionParameters(): Identifier[] {
+        const params: Identifier[] = [];
+
+        if (this.peekTokenIs(TokenType.RPAREN)) {
+            return params;
+        }
+
+        this.nextToken();
+
+        params.push(this.parseIdentifier());
+
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            params.push(this.parseIdentifier());
+        }
+
+        if (!this.expectPeek(TokenType.RPAREN)) {
+            return [];
+        }
+
+        return params;
     }
 }
