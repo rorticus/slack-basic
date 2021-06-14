@@ -3,6 +3,7 @@ import { Token, TokenType } from "./tokens";
 import {
     BlockStatement,
     BooleanExpression,
+    CallExpression,
     Expression,
     ExpressionStatement,
     FunctionExpression,
@@ -39,6 +40,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.MINUS]: Precedence.SUM,
     [TokenType.ASTERISK]: Precedence.PRODUCT,
     [TokenType.SLASH]: Precedence.PRODUCT,
+    [TokenType.LPAREN]: Precedence.CALL
 };
 
 export class Parser {
@@ -99,6 +101,10 @@ export class Parser {
         );
         this.registerInfix(TokenType.LT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
+        this.registerInfix(
+            TokenType.LPAREN,
+            this.parseCallExpression.bind(this)
+        );
 
         // read the two tokens to fill our buffer
         this.nextToken();
@@ -422,5 +428,41 @@ export class Parser {
         }
 
         return params;
+    }
+
+    parseCallExpression(fn: Expression | null): CallExpression {
+        return new CallExpression(this.curToken, fn!, this.parseCallArguments());
+    }
+
+    parseCallArguments(): Expression[] {
+        const args: Expression[] = [];
+
+        if (this.peekTokenIs(TokenType.RPAREN)) {
+            this.nextToken();
+            return args;
+        }
+
+        this.nextToken();
+
+        const arg = this.parseExpression(Precedence.LOWEST);
+
+        if (arg) {
+            args.push(arg);
+        }
+
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+            const arg = this.parseExpression(Precedence.LOWEST);
+            if (arg) {
+                args.push(arg);
+            }
+        }
+
+        if (!this.expectPeek(TokenType.RPAREN)) {
+            return [];
+        }
+
+        return args;
     }
 }

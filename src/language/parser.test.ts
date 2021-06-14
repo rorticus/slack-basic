@@ -346,5 +346,12 @@ describe("Parser tests", () => {
 
             testInfixExpression(expr.expression, "x", "+", "y");
         });
+
+        describe("test call expression", () => {
+            const { program } = parse("add(1, 2 * 3, 5 + 5)");
+
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual("add(1, (2 * 3), (5 + 5))");
+        });
     });
 });

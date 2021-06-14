@@ -329,6 +329,32 @@ export class BlockStatement implements Statement {
     }
 }
 
+export class CallExpression implements Expression {
+    token: Token;
+    fn: Expression;
+    args: Expression[];
+
+    constructor(token: Token, fn: Expression, args: Expression[]) {
+        this.token = token;
+        this.fn = fn;
+        this.args = args;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+
+    toString(): string {
+        return `${this.fn.toString()}(${this.args
+            .map((arg) => arg.toString())
+            .join(", ")})`;
+    }
+}
+
 export function isLetStatement(st: Node): st is LetStatement {
     return st.tokenLiteral() === "let";
 }
