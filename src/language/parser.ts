@@ -40,7 +40,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.MINUS]: Precedence.SUM,
     [TokenType.ASTERISK]: Precedence.PRODUCT,
     [TokenType.SLASH]: Precedence.PRODUCT,
-    [TokenType.LPAREN]: Precedence.CALL
+    [TokenType.LPAREN]: Precedence.CALL,
 };
 
 export class Parser {
@@ -224,11 +224,15 @@ export class Parser {
             return null;
         }
 
-        while (!this.curTokenIs(TokenType.SEMICOLON)) {
+        this.nextToken();
+
+        const expr = this.parseExpression(Precedence.LOWEST);
+
+        if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
         }
 
-        return new LetStatement(letToken, name, null);
+        return new LetStatement(letToken, name, expr);
     }
 
     parseReturnStatement() {
@@ -236,11 +240,13 @@ export class Parser {
 
         this.nextToken();
 
-        while (!this.curTokenIs(TokenType.SEMICOLON)) {
+        const expr = this.parseExpression(Precedence.LOWEST);
+
+        if (this.peekTokenIs(TokenType.SEMICOLON)) {
             this.nextToken();
         }
 
-        return new ReturnStatement(token, null);
+        return new ReturnStatement(token, expr);
     }
 
     parseExpression(precedence: Precedence): Expression | null {
@@ -431,7 +437,11 @@ export class Parser {
     }
 
     parseCallExpression(fn: Expression | null): CallExpression {
-        return new CallExpression(this.curToken, fn!, this.parseCallArguments());
+        return new CallExpression(
+            this.curToken,
+            fn!,
+            this.parseCallArguments()
+        );
     }
 
     parseCallArguments(): Expression[] {
