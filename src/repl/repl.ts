@@ -3,6 +3,7 @@ import Lexer from "../language/lexer";
 import {TokenType} from "../language/tokens";
 import {Parser} from "../language/parser";
 import {Program} from "../language/ast";
+import {languageEval} from "../language/evaluator";
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -31,7 +32,9 @@ async function repl() {
             const parser = new Parser(lexer);
             const program = parser.parseProgram();
 
-            console.log(program.toString());
+            const result = languageEval(program);
+
+            console.log(result?.inspect());
         }
     }
 }

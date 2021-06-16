@@ -28,6 +28,10 @@ export class IntValue implements ValueObject {
 export class BoolValue implements ValueObject {
     value: boolean = false;
 
+    constructor(value: boolean) {
+        this.value = value;
+    }
+
     inspect(): string {
         return `${this.value}`;
     }
