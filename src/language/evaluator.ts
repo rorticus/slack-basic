@@ -3,6 +3,7 @@ import {
     IntValue,
     NullValue,
     ObjectType,
+    ReturnValue,
     ValueObject,
 } from "./object";
 import {
@@ -15,6 +16,7 @@ import {
     Node,
     PrefixExpression,
     Program,
+    ReturnStatement,
     Statement,
 } from "./ast";
 
@@ -24,7 +26,7 @@ const NULL = new NullValue();
 
 export function languageEval(node: Node | null): ValueObject {
     if (node instanceof Program) {
-        return languageEvalStatements(node.statements);
+        return evalProgram(node);
     } else if (node instanceof ExpressionStatement && node.expression) {
         return languageEval(node.expression);
     } else if (node instanceof IntegerLiteral) {
@@ -39,21 +41,42 @@ export function languageEval(node: Node | null): ValueObject {
         const right = languageEval(node.right);
 
         return evalInfixExpression(node.operator, left, right);
-    } else if (node instanceof BlockStatement) {
-        return languageEvalStatements(node.statements);
     } else if (node instanceof IfExpression) {
         return evalIfExpression(node);
+    } else if (node instanceof ReturnStatement) {
+        const value = languageEval(node.returnValue);
+        return new ReturnValue(value);
+    } else if (node instanceof BlockStatement) {
+        return evalBlockStatement(node);
     }
 
     return NULL;
 }
 
-export function languageEvalStatements(statements: Statement[]) {
+export function evalBlockStatement(statement: BlockStatement) {
     let result: ValueObject = NULL;
 
-    statements.forEach((statement) => {
-        result = languageEval(statement);
-    });
+    for (let i = 0; i < statement.statements.length; i++) {
+        result = languageEval(statement.statements[i]);
+
+        if (result?.type() === ObjectType.RETURN_VALUE_OBJ) {
+            return result;
+        }
+    }
+
+    return result;
+}
+
+export function evalProgram(program: Program) {
+    let result: ValueObject = NULL;
+
+    for (let i = 0; i < program.statements.length; i++) {
+        result = languageEval(program.statements[i]);
+
+        if (result?.type() === ObjectType.RETURN_VALUE_OBJ) {
+            return (result as ReturnValue).value;
+        }
+    }
 
     return result;
 }

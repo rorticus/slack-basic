@@ -1,7 +1,8 @@
 export enum ObjectType {
     INTEGER_OBJ = "INTEGER",
     BOOLEAN_OBJ = "BOOLEAN",
-    NULL_OBJ = "NULL"
+    NULL_OBJ = "NULL",
+    RETURN_VALUE_OBJ = "RETURN_VALUE",
 }
 
 export interface ValueObject {
@@ -48,5 +49,21 @@ export class NullValue implements ValueObject {
 
     type(): ObjectType {
         return ObjectType.NULL_OBJ;
+    }
+}
+
+export class ReturnValue implements ValueObject {
+    value: ValueObject;
+
+    constructor(value: ValueObject) {
+        this.value = value;
+    }
+
+    inspect(): string {
+        return this.value.inspect();
+    }
+
+    type() {
+        return ObjectType.RETURN_VALUE_OBJ;
     }
 }
