@@ -12,8 +12,14 @@ describe("evaluator tests", () => {
         return languageEval(program);
     }
 
-    function testIntegerObject(obj: ValueObject | null, expected: number) {
+    function testIntegerObject(obj: ValueObject | null, expected: number | null) {
         expect(obj).not.toBeNull();
+
+        if(expected === null) {
+            expect(obj!.type()).toEqual("NULL");
+            return;
+        }
+
         expect(obj!.type()).toEqual(ObjectType.INTEGER_OBJ);
         expect((obj as IntValue).value).toEqual(expected);
     }
@@ -83,6 +89,21 @@ describe("evaluator tests", () => {
         for (let i = 0; i < tests.length; i++) {
             const evaluated = testEval(tests[i][0]);
             testBooleanObject(evaluated, tests[i][1]);
+        }
+    });
+
+    it("evaluates if/else expressions", () => {
+        const tests = [
+            [`if(true) { 10; }`, 10],
+            ['if(false) { 10; }', null],
+            ['if(1) { 10; }', 10],
+            ['if(1 < 2) { 10 }', 10],
+            ['if(1 > 2) { 10 } else { 20 } ', 20]
+        ] as const;
+
+        for(let i = 0; i < tests.length; i++) {
+            const evaluated = testEval(tests[i][0]);
+            testIntegerObject(evaluated, tests[i][1]);
         }
     });
 });

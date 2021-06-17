@@ -1,7 +1,15 @@
-import {BoolValue, IntValue, NullValue, ObjectType, ValueObject,} from "./object";
 import {
+    BoolValue,
+    IntValue,
+    NullValue,
+    ObjectType,
+    ValueObject,
+} from "./object";
+import {
+    BlockStatement,
     BooleanExpression,
     ExpressionStatement,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     Node,
@@ -31,6 +39,10 @@ export function languageEval(node: Node | null): ValueObject {
         const right = languageEval(node.right);
 
         return evalInfixExpression(node.operator, left, right);
+    } else if (node instanceof BlockStatement) {
+        return languageEvalStatements(node.statements);
+    } else if (node instanceof IfExpression) {
+        return evalIfExpression(node);
     }
 
     return NULL;
@@ -65,14 +77,10 @@ export function languageEvalPrefixExpression(
 }
 
 export function evalBangOperatorExpression(value: ValueObject) {
-    if (value === TRUE) {
+    if (isTruthy(value)) {
         return FALSE;
-    } else if (value === FALSE) {
-        return TRUE;
-    } else if (value === NULL) {
-        return TRUE;
     } else {
-        return FALSE;
+        return TRUE;
     }
 }
 
@@ -84,17 +92,39 @@ export function evalMinusPrefixExpression(value: ValueObject) {
     return new IntValue(-(value as IntValue).value);
 }
 
-export function evalInfixExpression(operator: string, left: ValueObject, right: ValueObject) {
-    if(left.type() === ObjectType.INTEGER_OBJ && right.type() === ObjectType.INTEGER_OBJ) {
-        return evalIntegerInfixExpression(operator, left as IntValue, right as IntValue);
-    } else if (left.type() === ObjectType.BOOLEAN_OBJ && right.type() === ObjectType.BOOLEAN_OBJ) {
-        return evalBooleanInfixExpression(operator, left as BoolValue, right as BoolValue);
+export function evalInfixExpression(
+    operator: string,
+    left: ValueObject,
+    right: ValueObject
+) {
+    if (
+        left.type() === ObjectType.INTEGER_OBJ &&
+        right.type() === ObjectType.INTEGER_OBJ
+    ) {
+        return evalIntegerInfixExpression(
+            operator,
+            left as IntValue,
+            right as IntValue
+        );
+    } else if (
+        left.type() === ObjectType.BOOLEAN_OBJ &&
+        right.type() === ObjectType.BOOLEAN_OBJ
+    ) {
+        return evalBooleanInfixExpression(
+            operator,
+            left as BoolValue,
+            right as BoolValue
+        );
     }
 
     return NULL;
 }
 
-export function evalIntegerInfixExpression(operator: string, left: IntValue, right: IntValue) {
+export function evalIntegerInfixExpression(
+    operator: string,
+    left: IntValue,
+    right: IntValue
+) {
     const lvalue = left.value;
     const rvalue = right.value;
 
@@ -124,7 +154,11 @@ export function evalIntegerInfixExpression(operator: string, left: IntValue, rig
     return NULL;
 }
 
-export function evalBooleanInfixExpression(operator: string, left: BoolValue, right: BoolValue) {
+export function evalBooleanInfixExpression(
+    operator: string,
+    left: BoolValue,
+    right: BoolValue
+) {
     const lvalue = left.value;
     const rvalue = right.value;
 
@@ -136,4 +170,33 @@ export function evalBooleanInfixExpression(operator: string, left: BoolValue, ri
     }
 
     return NULL;
+}
+
+export function evalIfExpression(node: IfExpression) {
+    const condition = languageEval(node.condition);
+
+    if (isTruthy(condition)) {
+        return languageEval(node.consequence);
+    } else {
+        if (node.alternative) {
+            return languageEval(node.alternative);
+        }
+    }
+
+    return NULL;
+}
+
+export function isTruthy(value: ValueObject) {
+    switch (value) {
+        case NULL:
+            return false;
+        case FALSE:
+            return false;
+        default:
+            if (value.type() === ObjectType.INTEGER_OBJ) {
+                return (value as IntValue).value !== 0;
+            }
+
+            return true;
+    }
 }
