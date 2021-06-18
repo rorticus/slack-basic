@@ -1,6 +1,7 @@
 import {
     BoolValue,
     ErrorValue,
+    FunctionValue,
     IntValue,
     NullValue,
     ObjectType,
@@ -10,7 +11,10 @@ import {
 import {
     BlockStatement,
     BooleanExpression,
+    CallExpression,
+    Expression,
     ExpressionStatement,
+    FunctionExpression,
     Identifier,
     IfExpression,
     InfixExpression,
@@ -21,7 +25,7 @@ import {
     Program,
     ReturnStatement,
 } from "./ast";
-import { Environment } from "./environment";
+import {Environment} from "./environment";
 
 const TRUE = new BoolValue(true);
 const FALSE = new BoolValue(false);
@@ -83,6 +87,20 @@ export function languageEval(
         environment.set(node.name.value, val);
     } else if (node instanceof Identifier) {
         return evalIdentifier(node, environment);
+    } else if (node instanceof FunctionExpression) {
+        return new FunctionValue(node.parameters, node.body!, environment);
+    } else if (node instanceof CallExpression) {
+        const fn = languageEval(node.fn, environment);
+        if(isError(fn)) {
+            return fn;
+        }
+
+        const args = evalExpressions(node.args, environment);
+        if(args.length === 1 && isError(args[0])) {
+            return args[0];
+        }
+
+        return applyFunction(fn, args);
     }
 
     return NULL;
@@ -290,4 +308,54 @@ export function evalIdentifier(node: Identifier, environment: Environment) {
     }
 
     return v;
+}
+
+export function evalExpressions(args: Expression[], environment :Environment) {
+    const result: ValueObject[] = [];
+
+    for(let i = 0; i < args.length; i++) {
+        const evaled = languageEval(args[i], environment);
+        if(isError(evaled)) {
+            return [evaled];
+        }
+
+        result.push(evaled);
+    }
+
+    return result;
+}
+
+export function applyFunction(fn: ValueObject, args: ValueObject[]) {
+    if(fn.type() !== ObjectType.FUNCTION_OBJ) {
+        return newError(`not a function: ${fn.type()}`);
+    }
+
+    const asFn = fn as FunctionValue;
+
+    const extendedEnv = extendFunctionEnv(asFn, args);
+    const result = languageEval(asFn.body, extendedEnv);
+
+    return unwrappedReturnValue(result);
+}
+
+export function extendFunctionEnv(fn: FunctionValue, args: ValueObject[]) {
+    const env = new Environment(fn.env);
+
+    for(let i = 0; i < fn.parameters.length; i++) {
+        if(i < args.length) {
+            env.set(fn.parameters[i].value, args[i]);
+        } else {
+            env.set(fn.parameters[i].value, NULL);
+        }
+    }
+
+    return env;
+}
+
+export function unwrappedReturnValue(obj: ValueObject) {
+    if(obj.type() === ObjectType.RETURN_VALUE_OBJ) {
+        return (obj as ReturnValue).value;
+    }
+
+    return obj;
 }

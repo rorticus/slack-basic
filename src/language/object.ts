@@ -1,9 +1,13 @@
+import {BlockStatement, Identifier} from "./ast";
+import {Environment} from "./environment";
+
 export enum ObjectType {
     INTEGER_OBJ = "INTEGER",
     BOOLEAN_OBJ = "BOOLEAN",
     NULL_OBJ = "NULL",
     RETURN_VALUE_OBJ = "RETURN_VALUE",
-    ERROR_OBJ = "ERROR"
+    ERROR_OBJ = "ERROR",
+    FUNCTION_OBJ = "FUNCTION"
 }
 
 export interface ValueObject {
@@ -82,5 +86,25 @@ export class ErrorValue implements ValueObject {
 
     type(): ObjectType {
         return ObjectType.ERROR_OBJ;
+    }
+}
+
+export class FunctionValue implements ValueObject {
+    parameters: Identifier[];
+    body: BlockStatement;
+    env: Environment;
+
+    constructor(parameters: Identifier[], body: BlockStatement, environment: Environment) {
+        this.parameters = parameters;
+        this.body = body;
+        this.env = environment;
+    }
+
+    type(): ObjectType {
+        return ObjectType.FUNCTION_OBJ;
+    }
+
+    inspect(): string {
+        return `fn(${this.parameters.map(p => p.value).join(', ')} { ${this.body.toString() }`;
     }
 }
