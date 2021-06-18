@@ -1,4 +1,4 @@
-import { BoolValue, IntValue, ObjectType, ValueObject } from "./object";
+import {BoolValue, ErrorValue, IntValue, ObjectType, ValueObject} from "./object";
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import { languageEval } from "./evaluator";
@@ -115,12 +115,33 @@ describe("evaluator tests", () => {
             ["return 10;", 10],
             ["return 10; 9;", 10],
             ["9; return 10;", 10],
-            ["if(10 > 1) { if(10 > 1) { return 10; } return 1;}", 10]
+            ["if(10 > 1) { if(10 > 1) { return 10; } return 1;}", 10],
         ] as const;
 
         for (let i = 0; i < tests.length; i++) {
             const evaluated = testEval(tests[i][0]);
             testIntegerObject(evaluated, tests[i][1]);
+        }
+    });
+
+    it("handles errors", () => {
+        const tests = [
+            ["5 + true", "type mismatch: INTEGER + BOOLEAN"],
+            ["5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"],
+            ["-true", "unknown operator: -BOOLEAN"],
+            ["true + false", "unknown operator: BOOLEAN + BOOLEAN"],
+            [
+                "if(10 > 1) { true + false; }",
+                "unknown operator: BOOLEAN + BOOLEAN",
+            ],
+        ] as const;
+
+        for (let i = 0; i < tests.length; i++) {
+            const evaluated = testEval(tests[i][0]);
+
+            expect(evaluated).not.toBeNull();
+            expect(evaluated!.type()).toEqual(ObjectType.ERROR_OBJ);
+            expect((evaluated as ErrorValue).message).toEqual(tests[i][1]);
         }
     });
 });

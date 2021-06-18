@@ -3,6 +3,7 @@ export enum ObjectType {
     BOOLEAN_OBJ = "BOOLEAN",
     NULL_OBJ = "NULL",
     RETURN_VALUE_OBJ = "RETURN_VALUE",
+    ERROR_OBJ = "ERROR"
 }
 
 export interface ValueObject {
@@ -65,5 +66,21 @@ export class ReturnValue implements ValueObject {
 
     type() {
         return ObjectType.RETURN_VALUE_OBJ;
+    }
+}
+
+export class ErrorValue implements ValueObject {
+    message: string;
+
+    constructor(message: string) {
+        this.message = message;
+    }
+
+    inspect(): string {
+        return `ERROR: ${this.message}`;
+    }
+
+    type(): ObjectType {
+        return ObjectType.ERROR_OBJ;
     }
 }
