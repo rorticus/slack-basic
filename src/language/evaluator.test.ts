@@ -1,15 +1,23 @@
-import {BoolValue, ErrorValue, IntValue, ObjectType, ValueObject} from "./object";
+import {
+    BoolValue,
+    ErrorValue,
+    IntValue,
+    ObjectType,
+    ValueObject,
+} from "./object";
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import { languageEval } from "./evaluator";
+import {Environment} from "./environment";
 
 describe("evaluator tests", () => {
     function testEval(code: string): ValueObject | null {
         const lexer = new Lexer(code);
         const parser = new Parser(lexer);
         const program = parser.parseProgram();
+        const env = new Environment();
 
-        return languageEval(program);
+        return languageEval(program, env);
     }
 
     function testIntegerObject(
@@ -134,6 +142,7 @@ describe("evaluator tests", () => {
                 "if(10 > 1) { true + false; }",
                 "unknown operator: BOOLEAN + BOOLEAN",
             ],
+            ["foobar", "identifier not found: foobar"],
         ] as const;
 
         for (let i = 0; i < tests.length; i++) {
@@ -142,6 +151,20 @@ describe("evaluator tests", () => {
             expect(evaluated).not.toBeNull();
             expect(evaluated!.type()).toEqual(ObjectType.ERROR_OBJ);
             expect((evaluated as ErrorValue).message).toEqual(tests[i][1]);
+        }
+    });
+
+    it("evaluates let statements", () => {
+        const tests = [
+            ["let a = 5; a;", 5],
+            ["let a = 5 * 5; a;", 25],
+            ["let a = 5; let b = a; b;", 5],
+            ["let a = 5; let b = a; let c = a + b + 5; c;", 15],
+        ] as const;
+
+        for (let i = 0; i < tests.length; i++) {
+            const evaluated = testEval(tests[i][0]);
+            testIntegerObject(evaluated, tests[i][1]);
         }
     });
 });

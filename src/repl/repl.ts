@@ -4,6 +4,7 @@ import {TokenType} from "../language/tokens";
 import {Parser} from "../language/parser";
 import {Program} from "../language/ast";
 import {languageEval} from "../language/evaluator";
+import {Environment} from "../language/environment";
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -22,6 +23,8 @@ async function promptLine(): Promise<string> {
 }
 
 async function repl() {
+    const env = new Environment();
+
     while (1) {
         const line = await promptLine();
 
@@ -32,7 +35,7 @@ async function repl() {
             const parser = new Parser(lexer);
             const program = parser.parseProgram();
 
-            const result = languageEval(program);
+            const result = languageEval(program, env);
 
             console.log(result?.inspect());
         }
