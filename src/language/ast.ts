@@ -77,6 +77,28 @@ export class IntegerLiteral implements Expression {
     }
 }
 
+export class StringLiteral implements Expression {
+    token: Token;
+    value: string;
+
+    constructor(token: Token, value: string) {
+        this.token = token;
+        this.value = value;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `"${this.token.literal}"`;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+}
+
 export class PrefixExpression implements Expression {
     token: Token;
     operator: string;

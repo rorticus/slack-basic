@@ -85,6 +85,19 @@ export class Lexer {
         }
     }
 
+    readString() {
+        let position = this.position + 1;
+        while(1) {
+            this.readChar();
+
+            if(this.ch === '"' || this.ch === "") {
+                break;
+            }
+        }
+
+        return this.input.substr(position, this.position - position);
+    }
+
     nextToken(): Token {
         let tok: Token;
 
@@ -145,6 +158,9 @@ export class Lexer {
                 break;
             case "":
                 tok = newToken(TokenType.EOF, this.ch);
+                break;
+            case "\"":
+                tok = newToken(TokenType.STRING, this.readString());
                 break;
             default:
                 if (isLetter(this.ch)) {

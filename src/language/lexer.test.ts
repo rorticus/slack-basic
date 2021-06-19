@@ -23,6 +23,8 @@ describe("Token Tests", () => {
         
         10 == 10;
         10 != 9;
+        
+        "foo bar"
         `;
 
         const expectedTypes = [
@@ -99,6 +101,7 @@ describe("Token Tests", () => {
             [TokenType.NOT_EQ, "!="],
             [TokenType.INT, "9"],
             [TokenType.SEMICOLON, ";"],
+            [TokenType.STRING, "foo bar"],
             [TokenType.EOF, ""]
         ];
 

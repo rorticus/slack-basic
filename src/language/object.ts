@@ -7,7 +7,8 @@ export enum ObjectType {
     NULL_OBJ = "NULL",
     RETURN_VALUE_OBJ = "RETURN_VALUE",
     ERROR_OBJ = "ERROR",
-    FUNCTION_OBJ = "FUNCTION"
+    FUNCTION_OBJ = "FUNCTION",
+    STRING_OBJ = "STRING"
 }
 
 export interface ValueObject {
@@ -28,6 +29,22 @@ export class IntValue implements ValueObject {
 
     type(): ObjectType {
         return ObjectType.INTEGER_OBJ;
+    }
+}
+
+export class StringValue implements ValueObject {
+    value: string;
+
+    constructor(value: string) {
+        this.value = value;
+    }
+
+    inspect(): string {
+        return `"${this.value}"`;
+    }
+
+    type(): ObjectType {
+        return ObjectType.STRING_OBJ;
     }
 }
 

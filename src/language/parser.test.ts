@@ -24,7 +24,7 @@ import {
     LetStatement,
     PrefixExpression,
     Program,
-    Statement,
+    Statement, StringLiteral,
 } from "./ast";
 import { newToken, TokenType } from "./tokens";
 
@@ -59,6 +59,15 @@ describe("Parser tests", () => {
         const integerLiteral = expression as IntegerLiteral;
         expect(integerLiteral.value).toEqual(value);
         expect(integerLiteral.tokenLiteral()).toEqual(`${value}`);
+    }
+
+    function testStringLiteral(expression: Expression | null, value: string) {
+        expect(expression).not.toBeNull();
+        expect(expression instanceof StringLiteral).toBeTruthy();
+
+        const stringLiteral = expression as StringLiteral;
+        expect(stringLiteral.value).toEqual(value);
+        expect(stringLiteral.tokenLiteral()).toEqual(`${value}`);
     }
 
     function testInfixExpression(
@@ -185,6 +194,18 @@ describe("Parser tests", () => {
             expect(isIntegerLiteral(ident!)).toBeTruthy();
             expect(ident.value).toEqual(5);
             expect(ident?.tokenLiteral()).toEqual("5");
+        });
+
+        it("parses string expressions", () => {
+            const { program } = parse('"hello world"');
+
+            expect(program.statements).toHaveLength(1);
+
+            const statement = program.statements[0] as ExpressionStatement;
+
+            expect(isExpressionStatement(statement)).toBeTruthy();
+
+            testStringLiteral(statement.expression, "hello world");
         });
 
         it("parses prefix operators", () => {

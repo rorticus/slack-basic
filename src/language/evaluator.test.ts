@@ -182,5 +182,17 @@ describe("evaluator tests", () => {
             const evaluated = testEval(tests[i][0]);
             testIntegerObject(evaluated, tests[i][1]);
         }
-    })
+    });
+
+    it("evaluates strings", () => {
+        const evaluated = testEval('"hello world"')!;
+        expect(evaluated.type()).toEqual(ObjectType.STRING_OBJ);
+        expect(evaluated.inspect()).toEqual(`"hello world"`);
+    });
+
+    it("evaluates string concatenation", () => {
+        const evaluated = testEval('"hello" + " " + "world"')!;
+        expect(evaluated.type()).toEqual(ObjectType.STRING_OBJ);
+        expect(evaluated.inspect()).toEqual(`"hello world"`);
+    });
 });

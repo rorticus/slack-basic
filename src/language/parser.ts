@@ -15,7 +15,7 @@ import {
     PrefixExpression,
     Program,
     ReturnStatement,
-    Statement,
+    Statement, StringLiteral,
 } from "./ast";
 
 export type PrefixParser = () => Expression | null;
@@ -61,6 +61,7 @@ export class Parser {
 
         this.registerPrefix(TokenType.IDENT, this.parseIdentifier.bind(this));
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral.bind(this));
+        this.registerPrefix(TokenType.STRING, this.parseStringLiteral.bind(this));
         this.registerPrefix(
             TokenType.BANG,
             this.parsePrefixExpression.bind(this)
@@ -291,6 +292,10 @@ export class Parser {
         }
 
         return new IntegerLiteral(this.curToken, value);
+    }
+
+    parseStringLiteral(): Expression {
+        return new StringLiteral(this.curToken, this.curToken.literal);
     }
 
     parsePrefixExpression(): Expression | null {

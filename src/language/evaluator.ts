@@ -6,6 +6,7 @@ import {
     NullValue,
     ObjectType,
     ReturnValue,
+    StringValue,
     ValueObject,
 } from "./object";
 import {
@@ -24,6 +25,7 @@ import {
     PrefixExpression,
     Program,
     ReturnStatement,
+    StringLiteral,
 } from "./ast";
 import {Environment} from "./environment";
 
@@ -101,6 +103,8 @@ export function languageEval(
         }
 
         return applyFunction(fn, args);
+    } else if (node instanceof StringLiteral) {
+        return new StringValue(node.value);
     }
 
     return NULL;
@@ -205,6 +209,8 @@ export function evalInfixExpression(
             left as BoolValue,
             right as BoolValue
         );
+    } else if (left.type() === ObjectType.STRING_OBJ && right.type() === ObjectType.STRING_OBJ) {
+        return evalStringInfixExpression(operator, left as StringValue, right as StringValue);
     }
 
     return newError(
@@ -266,6 +272,14 @@ export function evalBooleanInfixExpression(
     return newError(
         `unknown operator: ${left.type()} ${operator} ${right.type()}`
     );
+}
+
+export function evalStringInfixExpression(operator: string, left: StringValue, right: StringValue) {
+    if(operator !== '+') {
+        return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
+    }
+
+    return new StringValue(left.value + right.value);
 }
 
 export function evalIfExpression(node: IfExpression, environment: Environment) {
