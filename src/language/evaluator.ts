@@ -3,11 +3,13 @@ import {
     ErrorValue,
     FunctionValue,
     IntValue,
-    NullValue,
     ObjectType,
     ReturnValue,
     StringValue,
     ValueObject,
+    TRUE,
+    FALSE,
+    NULL, BuiltInFunctionValue
 } from "./object";
 import {
     BlockStatement,
@@ -28,10 +30,7 @@ import {
     StringLiteral,
 } from "./ast";
 import {Environment} from "./environment";
-
-const TRUE = new BoolValue(true);
-const FALSE = new BoolValue(false);
-const NULL = new NullValue();
+import {builtins} from "./builtins";
 
 export function newError(message: string) {
     return new ErrorValue(message);
@@ -318,6 +317,10 @@ export function evalIdentifier(node: Identifier, environment: Environment) {
     const v = environment.get(node.value);
 
     if (v === undefined) {
+        if (builtins[node.value]) {
+            return builtins[node.value];
+        }
+
         return newError(`identifier not found: ${node.value}`);
     }
 
@@ -340,16 +343,19 @@ export function evalExpressions(args: Expression[], environment :Environment) {
 }
 
 export function applyFunction(fn: ValueObject, args: ValueObject[]) {
-    if(fn.type() !== ObjectType.FUNCTION_OBJ) {
-        return newError(`not a function: ${fn.type()}`);
+    if(fn.type() === ObjectType.FUNCTION_OBJ) {
+        const asFn = fn as FunctionValue;
+
+        const extendedEnv = extendFunctionEnv(asFn, args);
+        const result = languageEval(asFn.body, extendedEnv);
+
+        return unwrappedReturnValue(result);
+    } else if (fn.type() === ObjectType.BUILTIN_OBJ) {
+        const asBuiltin = fn as BuiltInFunctionValue;
+        return asBuiltin.fn(...args);
     }
 
-    const asFn = fn as FunctionValue;
-
-    const extendedEnv = extendFunctionEnv(asFn, args);
-    const result = languageEval(asFn.body, extendedEnv);
-
-    return unwrappedReturnValue(result);
+    return newError(`not a function: ${fn.type()}`);
 }
 
 export function extendFunctionEnv(fn: FunctionValue, args: ValueObject[]) {

@@ -195,4 +195,9 @@ describe("evaluator tests", () => {
         expect(evaluated.type()).toEqual(ObjectType.STRING_OBJ);
         expect(evaluated.inspect()).toEqual(`"hello world"`);
     });
+
+    it("evaluates the built in function len", () => {
+        const evaluated = testEval('len("hello world")')!;
+        testIntegerObject(evaluated, 11);
+    });
 });
