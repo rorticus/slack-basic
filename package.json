@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "prettier": "prettier --write"
+    "prettier": "prettier --write",
+    "repl": "npx ts-node src/repl/repl.ts"
   },
   "repository": {
     "type": "git",

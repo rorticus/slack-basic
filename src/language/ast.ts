@@ -99,6 +99,52 @@ export class StringLiteral implements Expression {
     }
 }
 
+export class ArrayLiteral implements Expression {
+    token: Token;
+    elements: Expression[];
+
+    constructor(token: Token, elements: Expression[]) {
+        this.token = token;
+        this.elements = elements;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `[${this.elements.map((e) => e.toString()).join(", ")}]`;
+    }
+}
+
+export class IndexExpression implements Expression {
+    token: Token;
+    left: Expression;
+    index: Expression;
+
+    constructor(token: Token, left: Expression, index: Expression) {
+        this.token = token;
+        this.left = left;
+        this.index = index;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `(${this.left}[${this.index}])`;
+    }
+}
+
 export class PrefixExpression implements Expression {
     token: Token;
     operator: string;

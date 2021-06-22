@@ -87,10 +87,10 @@ export class Lexer {
 
     readString() {
         let position = this.position + 1;
-        while(1) {
+        while (1) {
             this.readChar();
 
-            if(this.ch === '"' || this.ch === "") {
+            if (this.ch === '"' || this.ch === "") {
                 break;
             }
         }
@@ -156,10 +156,16 @@ export class Lexer {
             case "}":
                 tok = newToken(TokenType.RBRACE, this.ch);
                 break;
+            case "[":
+                tok = newToken(TokenType.LBRACKET, this.ch);
+                break;
+            case "]":
+                tok = newToken(TokenType.RBRACKET, this.ch);
+                break;
             case "":
                 tok = newToken(TokenType.EOF, this.ch);
                 break;
-            case "\"":
+            case '"':
                 tok = newToken(TokenType.STRING, this.readString());
                 break;
             default:

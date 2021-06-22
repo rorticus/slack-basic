@@ -1,6 +1,7 @@
 import Lexer from "./lexer";
 import { Token, TokenType } from "./tokens";
 import {
+    ArrayLiteral,
     BlockStatement,
     BooleanExpression,
     CallExpression,
@@ -9,13 +10,15 @@ import {
     FunctionExpression,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
     PrefixExpression,
     Program,
     ReturnStatement,
-    Statement, StringLiteral,
+    Statement,
+    StringLiteral,
 } from "./ast";
 
 export type PrefixParser = () => Expression | null;
@@ -29,6 +32,7 @@ export enum Precedence {
     PRODUCT,
     PREFIX,
     CALL,
+    INDEX
 }
 
 const precedences: Record<string, Precedence> = {
@@ -41,6 +45,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.ASTERISK]: Precedence.PRODUCT,
     [TokenType.SLASH]: Precedence.PRODUCT,
     [TokenType.LPAREN]: Precedence.CALL,
+    [TokenType.LBRACKET]: Precedence.INDEX
 };
 
 export class Parser {
@@ -61,7 +66,10 @@ export class Parser {
 
         this.registerPrefix(TokenType.IDENT, this.parseIdentifier.bind(this));
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral.bind(this));
-        this.registerPrefix(TokenType.STRING, this.parseStringLiteral.bind(this));
+        this.registerPrefix(
+            TokenType.STRING,
+            this.parseStringLiteral.bind(this)
+        );
         this.registerPrefix(
             TokenType.BANG,
             this.parsePrefixExpression.bind(this)
@@ -78,6 +86,10 @@ export class Parser {
         );
         this.registerPrefix(TokenType.IF, this.parseIfExpression.bind(this));
         this.registerPrefix(TokenType.FUNCTION, this.parseFunction.bind(this));
+        this.registerPrefix(
+            TokenType.LBRACKET,
+            this.parseArrayLiteral.bind(this)
+        );
 
         this.registerInfix(
             TokenType.PLUS,
@@ -105,6 +117,10 @@ export class Parser {
         this.registerInfix(
             TokenType.LPAREN,
             this.parseCallExpression.bind(this)
+        );
+        this.registerInfix(
+            TokenType.LBRACKET,
+            this.parseIndexExpression.bind(this)
         );
 
         // read the two tokens to fill our buffer
@@ -445,14 +461,14 @@ export class Parser {
         return new CallExpression(
             this.curToken,
             fn!,
-            this.parseCallArguments()
+            this.parseExpressionList(TokenType.RPAREN)
         );
     }
 
-    parseCallArguments(): Expression[] {
+    parseExpressionList(end: TokenType): Expression[] {
         const args: Expression[] = [];
 
-        if (this.peekTokenIs(TokenType.RPAREN)) {
+        if (this.peekTokenIs(end)) {
             this.nextToken();
             return args;
         }
@@ -474,10 +490,35 @@ export class Parser {
             }
         }
 
-        if (!this.expectPeek(TokenType.RPAREN)) {
+        if (!this.expectPeek(end)) {
             return [];
         }
 
         return args;
+    }
+
+    parseArrayLiteral(): Expression {
+        const token = this.curToken;
+        const elements = this.parseExpressionList(TokenType.RBRACKET);
+
+        return new ArrayLiteral(token, elements);
+    }
+
+    parseIndexExpression(left: Expression | null): Expression | null {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const index = this.parseExpression(Precedence.LOWEST);
+
+        if (!this.expectPeek(TokenType.RBRACKET)) {
+            return null;
+        }
+
+        if (!index || !left) {
+            return null;
+        }
+
+        return new IndexExpression(token, left, index);
     }
 }

@@ -1,5 +1,5 @@
-import {BlockStatement, Identifier} from "./ast";
-import {Environment} from "./environment";
+import { BlockStatement, Identifier } from "./ast";
+import { Environment } from "./environment";
 
 export type BuiltInFunction = (...args: ValueObject[]) => ValueObject;
 
@@ -11,7 +11,8 @@ export enum ObjectType {
     ERROR_OBJ = "ERROR",
     FUNCTION_OBJ = "FUNCTION",
     STRING_OBJ = "STRING",
-    BUILTIN_OBJ = "BUILTIN"
+    BUILTIN_OBJ = "BUILTIN",
+    ARRAY_OBJ = "ARRAY",
 }
 
 export interface ValueObject {
@@ -114,7 +115,11 @@ export class FunctionValue implements ValueObject {
     body: BlockStatement;
     env: Environment;
 
-    constructor(parameters: Identifier[], body: BlockStatement, environment: Environment) {
+    constructor(
+        parameters: Identifier[],
+        body: BlockStatement,
+        environment: Environment
+    ) {
         this.parameters = parameters;
         this.body = body;
         this.env = environment;
@@ -125,7 +130,9 @@ export class FunctionValue implements ValueObject {
     }
 
     inspect(): string {
-        return `fn(${this.parameters.map(p => p.value).join(', ')} { ${this.body.toString() }`;
+        return `fn(${this.parameters
+            .map((p) => p.value)
+            .join(", ")} { ${this.body.toString()}`;
     }
 }
 
@@ -142,6 +149,22 @@ export class BuiltInFunctionValue implements ValueObject {
 
     inspect(): string {
         return "builtin function";
+    }
+}
+
+export class ArrayValue implements ValueObject {
+    elements: ValueObject[];
+
+    constructor(elements: ValueObject[] = []) {
+        this.elements = elements;
+    }
+
+    type(): ObjectType {
+        return ObjectType.ARRAY_OBJ;
+    }
+
+    inspect(): string {
+        return `[${this.elements.map((e) => e.inspect()).join(", ")}]`;
     }
 }
 

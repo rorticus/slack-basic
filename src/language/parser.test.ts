@@ -24,7 +24,8 @@ import {
     LetStatement,
     PrefixExpression,
     Program,
-    Statement, StringLiteral,
+    Statement,
+    StringLiteral,
 } from "./ast";
 import { newToken, TokenType } from "./tokens";
 
@@ -368,11 +369,28 @@ describe("Parser tests", () => {
             testInfixExpression(expr.expression, "x", "+", "y");
         });
 
-        describe("test call expression", () => {
+        it("test call expression", () => {
             const { program } = parse("add(1, 2 * 3, 5 + 5)");
 
             expect(program.statements).toHaveLength(1);
-            expect(program.statements[0].toString()).toEqual("add(1, (2 * 3), (5 + 5))");
+            expect(program.statements[0].toString()).toEqual(
+                "add(1, (2 * 3), (5 + 5))"
+            );
+        });
+
+        it("tests array literals", () => {
+            const { program } = parse("[1, 2 * 2]");
+
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual("[1, (2 * 2)]");
+        });
+
+        it("tests array accessors", () => {
+            const { program } = parse("myArray[1 + 1]");
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual(
+                `(myArray[(1 + 1)])`
+            );
         });
     });
 });

@@ -1,17 +1,20 @@
 import {
+    ArrayValue,
     BoolValue,
+    BuiltInFunctionValue,
     ErrorValue,
+    FALSE,
     FunctionValue,
     IntValue,
+    NULL,
     ObjectType,
     ReturnValue,
     StringValue,
-    ValueObject,
     TRUE,
-    FALSE,
-    NULL, BuiltInFunctionValue
+    ValueObject,
 } from "./object";
 import {
+    ArrayLiteral,
     BlockStatement,
     BooleanExpression,
     CallExpression,
@@ -20,6 +23,7 @@ import {
     FunctionExpression,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -29,8 +33,8 @@ import {
     ReturnStatement,
     StringLiteral,
 } from "./ast";
-import {Environment} from "./environment";
-import {builtins} from "./builtins";
+import { Environment } from "./environment";
+import { builtins } from "./builtins";
 
 export function newError(message: string) {
     return new ErrorValue(message);
@@ -92,18 +96,39 @@ export function languageEval(
         return new FunctionValue(node.parameters, node.body!, environment);
     } else if (node instanceof CallExpression) {
         const fn = languageEval(node.fn, environment);
-        if(isError(fn)) {
+        if (isError(fn)) {
             return fn;
         }
 
         const args = evalExpressions(node.args, environment);
-        if(args.length === 1 && isError(args[0])) {
+        if (args.length === 1 && isError(args[0])) {
             return args[0];
         }
 
         return applyFunction(fn, args);
     } else if (node instanceof StringLiteral) {
         return new StringValue(node.value);
+    } else if (node instanceof ArrayLiteral) {
+        const elements = evalExpressions(node.elements, environment);
+        if (
+            elements.length === 1 &&
+            elements[0].type() === ObjectType.ERROR_OBJ
+        ) {
+            return elements[0];
+        }
+        return new ArrayValue(elements);
+    } else if (node instanceof IndexExpression) {
+        const left = languageEval(node.left, environment);
+        if (isError(left)) {
+            return left;
+        }
+
+        const index = languageEval(node.index, environment);
+        if (isError(index)) {
+            return index;
+        }
+
+        return evalIndexExpression(left, index);
     }
 
     return NULL;
@@ -208,8 +233,15 @@ export function evalInfixExpression(
             left as BoolValue,
             right as BoolValue
         );
-    } else if (left.type() === ObjectType.STRING_OBJ && right.type() === ObjectType.STRING_OBJ) {
-        return evalStringInfixExpression(operator, left as StringValue, right as StringValue);
+    } else if (
+        left.type() === ObjectType.STRING_OBJ &&
+        right.type() === ObjectType.STRING_OBJ
+    ) {
+        return evalStringInfixExpression(
+            operator,
+            left as StringValue,
+            right as StringValue
+        );
     }
 
     return newError(
@@ -273,9 +305,15 @@ export function evalBooleanInfixExpression(
     );
 }
 
-export function evalStringInfixExpression(operator: string, left: StringValue, right: StringValue) {
-    if(operator !== '+') {
-        return newError(`unknown operator: ${left.type()} ${operator} ${right.type()}`);
+export function evalStringInfixExpression(
+    operator: string,
+    left: StringValue,
+    right: StringValue
+) {
+    if (operator !== "+") {
+        return newError(
+            `unknown operator: ${left.type()} ${operator} ${right.type()}`
+        );
     }
 
     return new StringValue(left.value + right.value);
@@ -327,12 +365,12 @@ export function evalIdentifier(node: Identifier, environment: Environment) {
     return v;
 }
 
-export function evalExpressions(args: Expression[], environment :Environment) {
+export function evalExpressions(args: Expression[], environment: Environment) {
     const result: ValueObject[] = [];
 
-    for(let i = 0; i < args.length; i++) {
+    for (let i = 0; i < args.length; i++) {
         const evaled = languageEval(args[i], environment);
-        if(isError(evaled)) {
+        if (isError(evaled)) {
             return [evaled];
         }
 
@@ -343,7 +381,7 @@ export function evalExpressions(args: Expression[], environment :Environment) {
 }
 
 export function applyFunction(fn: ValueObject, args: ValueObject[]) {
-    if(fn.type() === ObjectType.FUNCTION_OBJ) {
+    if (fn.type() === ObjectType.FUNCTION_OBJ) {
         const asFn = fn as FunctionValue;
 
         const extendedEnv = extendFunctionEnv(asFn, args);
@@ -361,8 +399,8 @@ export function applyFunction(fn: ValueObject, args: ValueObject[]) {
 export function extendFunctionEnv(fn: FunctionValue, args: ValueObject[]) {
     const env = new Environment(fn.env);
 
-    for(let i = 0; i < fn.parameters.length; i++) {
-        if(i < args.length) {
+    for (let i = 0; i < fn.parameters.length; i++) {
+        if (i < args.length) {
             env.set(fn.parameters[i].value, args[i]);
         } else {
             env.set(fn.parameters[i].value, NULL);
@@ -373,9 +411,30 @@ export function extendFunctionEnv(fn: FunctionValue, args: ValueObject[]) {
 }
 
 export function unwrappedReturnValue(obj: ValueObject) {
-    if(obj.type() === ObjectType.RETURN_VALUE_OBJ) {
+    if (obj.type() === ObjectType.RETURN_VALUE_OBJ) {
         return (obj as ReturnValue).value;
     }
 
     return obj;
+}
+
+export function evalIndexExpression(left: ValueObject, index: ValueObject) {
+    if (
+        left.type() == ObjectType.ARRAY_OBJ &&
+        index.type() === ObjectType.INTEGER_OBJ
+    ) {
+        return evalArrayIndexExpression(left as ArrayValue, index as IntValue);
+    } else {
+        return newError(`index operator not supported: ${left.type()}`);
+    }
+}
+
+export function evalArrayIndexExpression(left: ArrayValue, index: IntValue) {
+    const i = index.value;
+
+    if (i < 0 || i >= left.elements.length) {
+        return NULL;
+    }
+
+    return left.elements[i];
 }

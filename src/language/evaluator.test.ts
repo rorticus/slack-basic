@@ -1,4 +1,5 @@
 import {
+    ArrayValue,
     BoolValue,
     ErrorValue,
     IntValue,
@@ -8,7 +9,7 @@ import {
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import { languageEval } from "./evaluator";
-import {Environment} from "./environment";
+import { Environment } from "./environment";
 
 describe("evaluator tests", () => {
     function testEval(code: string): ValueObject | null {
@@ -199,5 +200,32 @@ describe("evaluator tests", () => {
     it("evaluates the built in function len", () => {
         const evaluated = testEval('len("hello world")')!;
         testIntegerObject(evaluated, 11);
+    });
+
+    it("evaluates array literals", () => {
+        const evaluated = testEval("[1, 2, 3]") as ArrayValue;
+
+        expect(evaluated instanceof ArrayValue).toBeTruthy();
+        expect(evaluated.inspect()).toEqual("[1, 2, 3]");
+    });
+
+    it("evaluates index operators", () => {
+        const tests = [
+            ["[1, 2 , 3][0]", 1],
+            ["[1, 2 , 3][1]", 2],
+            ["let i = 0; [1][i]", 1],
+            ["[1, 2, 3][3]", null],
+            ["[1, 2, 3][-1]", null],
+        ] as const;
+
+        for (let i = 0; i < tests.length; i++) {
+            const evaluated = testEval(tests[i][0])!;
+
+            if (tests[i][1] === null) {
+                expect(evaluated.type()).toEqual("NULL");
+            } else {
+                testIntegerObject(evaluated, tests[i][1]);
+            }
+        }
     });
 });

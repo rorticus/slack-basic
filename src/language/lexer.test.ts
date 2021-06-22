@@ -25,6 +25,8 @@ describe("Token Tests", () => {
         10 != 9;
         
         "foo bar"
+        
+        [1,2]
         `;
 
         const expectedTypes = [
@@ -102,6 +104,11 @@ describe("Token Tests", () => {
             [TokenType.INT, "9"],
             [TokenType.SEMICOLON, ";"],
             [TokenType.STRING, "foo bar"],
+            [TokenType.LBRACKET, "["],
+            [TokenType.INT, "1"],
+            [TokenType.COMMA, ","],
+            [TokenType.INT, "2"],
+            [TokenType.RBRACKET, "]"],
             [TokenType.EOF, ""]
         ];
 
