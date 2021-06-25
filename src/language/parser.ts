@@ -8,6 +8,7 @@ import {
     Expression,
     ExpressionStatement,
     FunctionExpression,
+    HashLiteral,
     Identifier,
     IfExpression,
     IndexExpression,
@@ -32,7 +33,7 @@ export enum Precedence {
     PRODUCT,
     PREFIX,
     CALL,
-    INDEX
+    INDEX,
 }
 
 const precedences: Record<string, Precedence> = {
@@ -45,7 +46,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.ASTERISK]: Precedence.PRODUCT,
     [TokenType.SLASH]: Precedence.PRODUCT,
     [TokenType.LPAREN]: Precedence.CALL,
-    [TokenType.LBRACKET]: Precedence.INDEX
+    [TokenType.LBRACKET]: Precedence.INDEX,
 };
 
 export class Parser {
@@ -90,6 +91,7 @@ export class Parser {
             TokenType.LBRACKET,
             this.parseArrayLiteral.bind(this)
         );
+        this.registerPrefix(TokenType.LBRACE, this.parseHashLiteral.bind(this));
 
         this.registerInfix(
             TokenType.PLUS,
@@ -520,5 +522,40 @@ export class Parser {
         }
 
         return new IndexExpression(token, left, index);
+    }
+
+    parseHashLiteral(): Expression | null {
+        const token = this.curToken;
+        const pairs = new Map<Expression, Expression>();
+
+        while (!this.peekTokenIs(TokenType.RBRACE)) {
+            this.nextToken();
+
+            const key = this.parseExpression(Precedence.LOWEST);
+            if (!this.expectPeek(TokenType.COLON)) {
+                return null;
+            }
+
+            this.nextToken();
+
+            const value = this.parseExpression(Precedence.LOWEST);
+
+            if (key && value) {
+                pairs.set(key, value);
+            }
+
+            if (
+                !this.peekTokenIs(TokenType.RBRACE) &&
+                !this.expectPeek(TokenType.COMMA)
+            ) {
+                return null;
+            }
+        }
+
+        if (!this.expectPeek(TokenType.RBRACE)) {
+            return null;
+        }
+
+        return new HashLiteral(token, pairs);
     }
 }

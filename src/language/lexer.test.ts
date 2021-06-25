@@ -27,6 +27,8 @@ describe("Token Tests", () => {
         "foo bar"
         
         [1,2]
+        
+        { "foo": "bar" }
         `;
 
         const expectedTypes = [
@@ -109,6 +111,11 @@ describe("Token Tests", () => {
             [TokenType.COMMA, ","],
             [TokenType.INT, "2"],
             [TokenType.RBRACKET, "]"],
+            [TokenType.LBRACE, "{"],
+            [TokenType.STRING, "foo"],
+            [TokenType.COLON, ":"],
+            [TokenType.STRING, "bar"],
+            [TokenType.RBRACE, "}"],
             [TokenType.EOF, ""]
         ];
 

@@ -392,5 +392,41 @@ describe("Parser tests", () => {
                 `(myArray[(1 + 1)])`
             );
         });
+
+        it("tests hash literals", () => {
+            const { program } = parse('{"one": 1, "two": 2}');
+
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual(
+                '{ "one": 1, "two": 2 }'
+            );
+        });
+
+        it("tests empty hash literals", () => {
+            const { program } = parse('{}');
+
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual(
+                '{  }'
+            );
+        });
+
+        it("tests hash literals with boolean keys", () => {
+            const { program } = parse('{ true: 5 }');
+
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual(
+                '{ true: 5 }'
+            );
+        });
+
+        it("tests hash literals with numeric keys", () => {
+            const { program } = parse('{ 4: 5 }');
+
+            expect(program.statements).toHaveLength(1);
+            expect(program.statements[0].toString()).toEqual(
+                '{ 4: 5 }'
+            );
+        });
     });
 });

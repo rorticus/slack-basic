@@ -423,6 +423,30 @@ export class CallExpression implements Expression {
     }
 }
 
+export class HashLiteral implements Expression {
+    token: Token;
+    pairs: Map<Expression, Expression>;
+
+    constructor(token: Token, pairs: Map<Expression, Expression>) {
+        this.token = token;
+        this.pairs = pairs;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    expressionNode(): Expression {
+        return this;
+    }
+
+    toString(): string {
+        return `{ ${Array.from(this.pairs.keys())
+            .map((key) => `${key.toString()}: ${this.pairs.get(key)}`)
+            .join(", ")} }`;
+    }
+}
+
 export function isLetStatement(st: Node): st is LetStatement {
     return st.tokenLiteral() === "let";
 }

@@ -5,7 +5,11 @@ import {
     ErrorValue,
     FALSE,
     FunctionValue,
+    HashKey,
+    HashPair,
+    HashValue,
     IntValue,
+    isHashable,
     NULL,
     ObjectType,
     ReturnValue,
@@ -21,6 +25,7 @@ import {
     Expression,
     ExpressionStatement,
     FunctionExpression,
+    HashLiteral,
     Identifier,
     IfExpression,
     IndexExpression,
@@ -129,6 +134,8 @@ export function languageEval(
         }
 
         return evalIndexExpression(left, index);
+    } else if (node instanceof HashLiteral) {
+        return evalHashLiteral(node, environment);
     }
 
     return NULL;
@@ -424,6 +431,8 @@ export function evalIndexExpression(left: ValueObject, index: ValueObject) {
         index.type() === ObjectType.INTEGER_OBJ
     ) {
         return evalArrayIndexExpression(left as ArrayValue, index as IntValue);
+    } else if (left.type() === ObjectType.HASH_OBJ) {
+        return evalHashIndexExpression(left as HashValue, index);
     } else {
         return newError(`index operator not supported: ${left.type()}`);
     }
@@ -437,4 +446,51 @@ export function evalArrayIndexExpression(left: ArrayValue, index: IntValue) {
     }
 
     return left.elements[i];
+}
+
+export function evalHashLiteral(
+    node: HashLiteral,
+    environment: Environment
+): ValueObject {
+    const pairs = new Map<HashKey, HashPair>();
+
+    const keys = Array.from(node.pairs.keys());
+    for (let i = 0; i < keys.length; i++) {
+        const key = languageEval(keys[i], environment);
+        if (isError(key)) {
+            return key;
+        }
+
+        if (!isHashable(key)) {
+            return newError(`unable to use ${key.inspect()} as a hash key`);
+        }
+
+        const hashKey = key.hashKey();
+
+        const value = languageEval(node.pairs.get(keys[i])!, environment);
+        if (isError(value)) {
+            return value;
+        }
+
+        pairs.set(hashKey, {
+            key,
+            value,
+        });
+    }
+
+    return new HashValue(pairs);
+}
+
+export function evalHashIndexExpression(left: HashValue, index: ValueObject) {
+    if (!isHashable(index)) {
+        return newError(`unusable as a key: ${index.type()}`);
+    }
+
+    const pair = left.pairs.get(index.hashKey());
+
+    if (!pair) {
+        return NULL;
+    }
+
+    return pair.value;
 }

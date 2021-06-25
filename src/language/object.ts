@@ -13,6 +13,7 @@ export enum ObjectType {
     STRING_OBJ = "STRING",
     BUILTIN_OBJ = "BUILTIN",
     ARRAY_OBJ = "ARRAY",
+    HASH_OBJ = "HASH",
 }
 
 export interface ValueObject {
@@ -20,7 +21,13 @@ export interface ValueObject {
     inspect(): string;
 }
 
-export class IntValue implements ValueObject {
+export type HashKey = string;
+
+export interface Hashable {
+    hashKey(): HashKey;
+}
+
+export class IntValue implements ValueObject, Hashable {
     value: number = 0;
 
     constructor(value: number) {
@@ -34,9 +41,13 @@ export class IntValue implements ValueObject {
     type(): ObjectType {
         return ObjectType.INTEGER_OBJ;
     }
+
+    hashKey(): HashKey {
+        return `${this.type()}:${this.value}`;
+    }
 }
 
-export class StringValue implements ValueObject {
+export class StringValue implements ValueObject, Hashable {
     value: string;
 
     constructor(value: string) {
@@ -50,9 +61,13 @@ export class StringValue implements ValueObject {
     type(): ObjectType {
         return ObjectType.STRING_OBJ;
     }
+
+    hashKey(): HashKey {
+        return `${this.type()}:${this.value}`;
+    }
 }
 
-export class BoolValue implements ValueObject {
+export class BoolValue implements ValueObject, Hashable {
     value: boolean = false;
 
     constructor(value: boolean) {
@@ -65,6 +80,10 @@ export class BoolValue implements ValueObject {
 
     type(): ObjectType {
         return ObjectType.BOOLEAN_OBJ;
+    }
+
+    hashKey(): HashKey {
+        return `${this.type()}:${this.value}`;
     }
 }
 
@@ -168,6 +187,38 @@ export class ArrayValue implements ValueObject {
     }
 }
 
+export interface HashPair {
+    key: ValueObject;
+    value: ValueObject;
+}
+
+export class HashValue implements ValueObject {
+    pairs: Map<HashKey, HashPair>;
+
+    constructor(pairs: Map<string, HashPair>) {
+        this.pairs = pairs;
+    }
+
+    type(): ObjectType {
+        return ObjectType.HASH_OBJ;
+    }
+
+    inspect(): string {
+        return `{ ${Array.from(this.pairs.keys())
+            .map(
+                (k) =>
+                    `${this.pairs.get(k)!.key.inspect()}: ${this.pairs
+                        .get(k)!
+                        .value.inspect()}`
+            )
+            .join(", ")} }`;
+    }
+}
+
 export const TRUE = new BoolValue(true);
 export const FALSE = new BoolValue(false);
 export const NULL = new NullValue();
+
+export function isHashable(value: any): value is Hashable {
+    return typeof value.hashKey === "function";
+}

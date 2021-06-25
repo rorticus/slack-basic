@@ -2,8 +2,13 @@ import {
     ArrayValue,
     BoolValue,
     ErrorValue,
+    FALSE,
+    HashValue,
     IntValue,
+    NULL,
     ObjectType,
+    StringValue,
+    TRUE,
     ValueObject,
 } from "./object";
 import Lexer from "./lexer";
@@ -223,6 +228,51 @@ describe("evaluator tests", () => {
 
             if (tests[i][1] === null) {
                 expect(evaluated.type()).toEqual("NULL");
+            } else {
+                testIntegerObject(evaluated, tests[i][1]);
+            }
+        }
+    });
+
+    it("evaluates hash literals", () => {
+        const evaluated = testEval(
+            `let two = "two"; { "one": 10 - 9, two: 1 + 1, "thr" + "ee": 6 / 2, 4: 4, true: 5, false: 6 }`
+        );
+
+        expect(evaluated!.type()).toEqual(ObjectType.HASH_OBJ);
+
+        const hash = evaluated as HashValue;
+
+        const expected = [
+            [new StringValue("one").hashKey(), 1],
+            [new StringValue("two").hashKey(), 2],
+            [new StringValue("three").hashKey(), 3],
+            [new IntValue(4).hashKey(), 4],
+            [TRUE.hashKey(), 5],
+            [FALSE.hashKey(), 6],
+        ] as const;
+
+        expect(hash.pairs.size).toEqual(expected.length);
+
+        for (let i = 0; i < expected.length; i++) {
+            testIntegerObject(
+                hash.pairs.get(expected[i][0])!.value,
+                expected[i][1]
+            );
+        }
+    });
+
+    it("evaluates hash index expressions", () => {
+        const tests = [
+            [`{"foo": 5}["foo"]`, 5],
+            [`{"foo": 5}["bar"]`, null],
+        ] as const;
+
+        for (let i = 0; i < tests.length; i++) {
+            const evaluated = testEval(tests[i][0]);
+
+            if (tests[i][1] === null) {
+                expect(evaluated).toEqual(NULL);
             } else {
                 testIntegerObject(evaluated, tests[i][1]);
             }
