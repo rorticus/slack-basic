@@ -1,10 +1,10 @@
 import * as readline from "readline";
-import Lexer from "../language/lexer";
-import {TokenType} from "../language/tokens";
-import {Parser} from "../language/parser";
-import {Program} from "../language/ast";
-import {languageEval} from "../language/evaluator";
-import {Environment} from "../language/environment";
+import Lexer from "../monkey/lexer";
+import {TokenType} from "../monkey/tokens";
+import {Parser} from "../monkey/parser";
+import {Program} from "../monkey/ast";
+import {languageEval} from "../monkey/evaluator";
+import {Environment} from "../monkey/environment";
 import readlineSync from "readline-sync";
 
 console.log("Welcome to the Monkey REPL!");
