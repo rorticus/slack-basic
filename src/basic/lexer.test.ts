@@ -38,4 +38,26 @@ describe("Token Tests", () => {
             expect(tok.literal).toEqual(expectedTypes[i][1]);
         }
     });
+
+    it("returns correct line and column information", () => {
+        const code = `123
+hello world
+again`;
+
+        const results = [
+            [1, 1],
+            [2, 1],
+            [2, 7],
+            [3, 1],
+        ] as const;
+
+        const l = new Lexer(code);
+
+        for (let i = 0; i < results.length; i++) {
+            const t = l.nextToken();
+
+            expect(t.line).toEqual(results[i][0]);
+            expect(t.column).toEqual(results[i][1]);
+        }
+    });
 });

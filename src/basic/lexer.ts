@@ -34,7 +34,7 @@ export class Lexer {
         this.readPosition = 0;
         this.ch = "";
         this.line = 1;
-        this.column = 1;
+        this.column = 0;
 
         this.readChar();
     }
@@ -197,22 +197,28 @@ export class Lexer {
                 break;
             default:
                 if (isLetter(this.ch)) {
+                    const line = this.line;
+                    const column = this.column;
+
                     const literal = this.readIdentifier();
                     tok = newToken(
                         lookupIdent(literal),
                         literal,
-                        this.line,
-                        this.column
+                        line,
+                        column
                     );
                     return tok;
                 } else if (isDigit(this.ch)) {
+                    const line = this.line;
+                    const column = this.column;
+
                     const num = this.readNumber();
 
                     tok = newToken(
                         num.indexOf(".") >= 0 ? TokenType.FLOAT : TokenType.INT,
                         num,
-                        this.line,
-                        this.column
+                        line,
+                        column
                     );
                     return tok;
                 } else {
