@@ -135,6 +135,14 @@ export class Lexer {
                     this.column
                 );
                 break;
+            case ",":
+                tok = newToken(
+                    TokenType.COMMA,
+                    this.ch,
+                    this.line,
+                    this.column
+                );
+                break;
             case "(":
                 tok = newToken(
                     TokenType.LPAREN,
@@ -201,12 +209,7 @@ export class Lexer {
                     const column = this.column;
 
                     const literal = this.readIdentifier();
-                    tok = newToken(
-                        lookupIdent(literal),
-                        literal,
-                        line,
-                        column
-                    );
+                    tok = newToken(lookupIdent(literal), literal, line, column);
                     return tok;
                 } else if (isDigit(this.ch)) {
                     const line = this.line;

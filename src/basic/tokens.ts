@@ -18,6 +18,7 @@ export enum TokenType {
     NOT_EQ = "<>",
 
     COLON = ":",
+    COMMA = ",",
 
     LPAREN = "(",
     RPAREN = ")",
