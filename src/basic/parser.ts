@@ -194,8 +194,9 @@ export class Parser {
                     statements.push(this.parseLetStatement());
             }
 
-            if (this.peekTokenIs(TokenType.COLON)) {
-                this.nextToken();
+            this.nextToken();
+
+            if (this.curTokenIs(TokenType.COLON)) {
                 this.nextToken();
             } else {
                 break;
@@ -252,10 +253,13 @@ export class Parser {
         const token = this.curToken;
         const args: (Expression | null)[] = [];
 
+        // consume print
         this.nextToken();
 
+        // consume the first argument
         args.push(this.parseExpression(Precedence.LOWEST));
 
+        // consume additional arguments, if available
         while (
             !this.peekTokenIs(TokenType.COLON) &&
             !this.peekTokenIs(TokenType.EOF)
