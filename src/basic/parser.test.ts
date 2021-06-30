@@ -1,11 +1,14 @@
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import {
+    CompoundStatement,
     Expression,
     FloatLiteral,
     Identifier,
+    InfixExpression,
     IntegerLiteral,
     LetStatement,
+    PrintStatement,
     StatementType,
     StringLiteral,
 } from "./ast";
@@ -14,13 +17,14 @@ describe("Parser tests", () => {
     function parse(source: string) {
         const lexer = new Lexer(source);
         const parser = new Parser(lexer);
-        const program = parser.parseProgram();
+        const statement = parser.parseStatement();
 
         expect(parser.errors).toHaveLength(0);
+        expect(statement).not.toBeNull();
 
         return {
             parser,
-            program,
+            statement: statement!,
         };
     }
 
@@ -56,15 +60,33 @@ describe("Parser tests", () => {
         expect((expression as Identifier).value).toEqual(name);
     }
 
+    function testInfix(
+        expression: Expression | null,
+        left: number,
+        operator: string,
+        right: number
+    ) {
+        expect(expression).not.toBeNull();
+        expect(expression instanceof InfixExpression).toBeTruthy();
+
+        const infix = expression as InfixExpression;
+
+        expect(infix.left instanceof IntegerLiteral).toBeTruthy();
+        expect(infix.right instanceof IntegerLiteral).toBeTruthy();
+
+        expect((infix.left as IntegerLiteral).value).toEqual(left);
+        expect(infix.operator).toEqual(operator);
+        expect((infix.right as IntegerLiteral).value).toEqual(right);
+    }
+
     describe("statements", () => {
         describe("let statements", () => {
             it("parses let statements with a single identifier", () => {
-                const { program } = parse("LET A = 3");
+                const { statement } = parse("LET A = 3");
 
-                expect(program.statements).toHaveLength(1);
-                expect(program.statements[0].type).toEqual(StatementType.LET);
+                expect(statement.type).toEqual(StatementType.LET);
 
-                const letStatement = program.statements[0] as LetStatement;
+                const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(1);
                 testIdentifier(letStatement.names[0], "A");
 
@@ -72,12 +94,11 @@ describe("Parser tests", () => {
             });
 
             it("parses let statements with multiple identifiers", () => {
-                const { program } = parse("LET A, B = 3");
+                const { statement } = parse("LET A, B = 3");
 
-                expect(program.statements).toHaveLength(1);
-                expect(program.statements[0].type).toEqual(StatementType.LET);
+                expect(statement.type).toEqual(StatementType.LET);
 
-                const letStatement = program.statements[0] as LetStatement;
+                const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(2);
                 testIdentifier(letStatement.names[0], "A");
                 testIdentifier(letStatement.names[1], "B");
@@ -88,35 +109,78 @@ describe("Parser tests", () => {
 
         describe("labels and line numbers", () => {
             it("parses and assigns line numbers", () => {
-                const { program } = parse("10 LET A = 3");
-
-                expect(program.statements).toHaveLength(1);
-                expect(program.statements[0].type).toEqual(StatementType.LET);
-
-                const letStatement = program.statements[0] as LetStatement;
-                expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0], "A");
-
-                testIntegerLiteral(letStatement.value, 3);
-
-                expect(letStatement.label).toBeUndefined();
-                expect(letStatement.lineNumber).toEqual(10);
+                const { statement } = parse("10 LET A = 3");
+                expect(statement.lineNumber).toEqual(10);
             });
 
-            it("parses and assigns labels", () => {
-                const { program } = parse("TEST: LET A = 3");
+            it("does not require line numbers", () => {
+                const { statement } = parse("LET A = 3");
+                expect(statement.lineNumber).toBeUndefined();
+            });
+        });
 
-                expect(program.statements).toHaveLength(1);
-                expect(program.statements[0].type).toEqual(StatementType.LET);
+        describe("print statements", () => {
+            it("parses print statements", () => {
+                const { statement } = parse('PRINT "hello"');
+                expect(statement.type).toEqual(StatementType.PRINT);
 
-                const letStatement = program.statements[0] as LetStatement;
-                expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0], "A");
+                const printStatement = statement as PrintStatement;
 
-                testIntegerLiteral(letStatement.value, 3);
+                expect(printStatement.args).toHaveLength(1);
+                testStringLiteral(printStatement.args[0], "hello");
+            });
 
-                expect(letStatement.label).toEqual("TEST");
-                expect(letStatement.lineNumber).toEqual(1);
+            it("parses print statements with multiple arguments", () => {
+                const { statement } = parse('PRINT "hello" SPACE$ "world"');
+                expect(statement.type).toEqual(StatementType.PRINT);
+
+                const printStatement = statement as PrintStatement;
+
+                expect(printStatement.args).toHaveLength(3);
+                testStringLiteral(printStatement.args[0], "hello");
+                testIdentifier(printStatement.args[1], "SPACE$");
+                testStringLiteral(printStatement.args[2], "world");
+            });
+
+            it("parses print statements with expressions", () => {
+                const { statement } = parse('PRINT "2 + 2 = " 2 + 2');
+                expect(statement.type).toEqual(StatementType.PRINT);
+
+                const printStatement = statement as PrintStatement;
+                expect(printStatement.args).toHaveLength(2);
+                testStringLiteral(printStatement.args[0], "2 + 2 = ");
+                testInfix(printStatement.args[1], 2, "+", 2);
+            });
+
+            it("stops parsing print statements at colons", () => {
+                const { statement } = parse('PRINT "one" : PRINT "two"');
+                expect(statement.type).toEqual(StatementType.COMPOUND);
+
+                const compoundStatement = statement as CompoundStatement;
+                expect(compoundStatement.statements).toHaveLength(2);
+
+                expect(compoundStatement.statements[0].type).toEqual(
+                    StatementType.PRINT
+                );
+                expect(compoundStatement.statements[1].type).toEqual(
+                    StatementType.PRINT
+                );
+
+                expect(
+                    (compoundStatement.statements[0] as PrintStatement).args
+                ).toHaveLength(1);
+                expect(
+                    (compoundStatement.statements[1] as PrintStatement).args
+                ).toHaveLength(1);
+
+                testStringLiteral(
+                    (compoundStatement.statements[0] as PrintStatement).args[0],
+                    "one"
+                );
+                testStringLiteral(
+                    (compoundStatement.statements[1] as PrintStatement).args[0],
+                    "two"
+                );
             });
         });
     });

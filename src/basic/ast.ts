@@ -11,12 +11,11 @@ export enum StatementType {
     ELSE = "ELSE",
     END = "END",
     COMPOUND = "COMPOUND",
+    PRINT = "PRINT",
 }
 
 export interface Statement extends Node {
-    lineNumber: number;
-    label: string | undefined;
-
+    lineNumber: number | undefined;
     type: StatementType;
 }
 
@@ -182,7 +181,6 @@ export class InfixExpression implements Expression {
 export class IfStatement implements Statement {
     token: Token;
     lineNumber = 0;
-    label: string | undefined;
     type = StatementType.IF;
 
     condition: Expression | null;
@@ -206,7 +204,6 @@ export class LetStatement implements Statement {
     names: Identifier[];
     value: Expression | null;
     lineNumber = 0;
-    label: string | undefined;
 
     type = StatementType.LET;
 
@@ -231,7 +228,6 @@ export class CompoundStatement implements Statement {
     token: Token;
     statements: Statement[];
     lineNumber = 0;
-    label: string | undefined;
     type = StatementType.COMPOUND;
 
     constructor(token: Token, statements: Statement[]) {
@@ -245,5 +241,25 @@ export class CompoundStatement implements Statement {
 
     toString(): string {
         return this.statements.map((s) => s.toString()).join(" : ");
+    }
+}
+
+export class PrintStatement implements Statement {
+    token: Token;
+    args: Expression[];
+    type = StatementType.PRINT;
+    lineNumber: number | undefined;
+
+    constructor(token: Token, args: Expression[]) {
+        this.token = token;
+        this.args = args;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `PRINT ${this.args.map((a) => a.toString()).join(" ")}`;
     }
 }

@@ -15,6 +15,8 @@ export enum TokenType {
     SLASH = "/",
     LT = "<",
     GT = ">",
+    LTE = "<=",
+    GTE = ">=",
     NOT_EQ = "<>",
 
     COLON = ":",
@@ -39,6 +41,10 @@ export enum TokenType {
     REM = "REM",
     RETURN = "RETURN",
     STOP = "STOP",
+    AND = "AND",
+    OR = "OR",
+    NOT = "NOT",
+    PRINT = "PRINT"
 }
 
 export interface Token {
@@ -49,6 +55,9 @@ export interface Token {
 }
 
 const keywords: { [key: string]: TokenType } = {
+    AND: TokenType.AND,
+    OR: TokenType.OR,
+    NOT: TokenType.NOT,
     LET: TokenType.LET,
     IF: TokenType.IF,
     ELSE: TokenType.ELSE,
@@ -65,6 +74,7 @@ const keywords: { [key: string]: TokenType } = {
     REM: TokenType.REM,
     RETURN: TokenType.RETURN,
     STOP: TokenType.STOP,
+    PRINT: TokenType.PRINT
 };
 
 export function newToken(

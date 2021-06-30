@@ -72,7 +72,7 @@ export class Lexer {
             this.readChar();
         }
 
-        if (this.ch === "$" || this.ch === "!") {
+        if (this.ch === "$" || this.ch === "%") {
             this.readChar();
         }
 
@@ -187,10 +187,48 @@ export class Lexer {
                 );
                 break;
             case "<":
-                tok = newToken(TokenType.LT, this.ch, this.line, this.column);
+                if (this.peekChar() === "=") {
+                    tok = newToken(
+                        TokenType.LTE,
+                        this.ch,
+                        this.line,
+                        this.column
+                    );
+                    this.readChar();
+                } else if (this.peekChar() === ">") {
+                    tok = newToken(
+                        TokenType.NOT_EQ,
+                        this.ch,
+                        this.line,
+                        this.column
+                    );
+                    this.readChar();
+                } else {
+                    tok = newToken(
+                        TokenType.LT,
+                        this.ch,
+                        this.line,
+                        this.column
+                    );
+                }
                 break;
             case ">":
-                tok = newToken(TokenType.GT, this.ch, this.line, this.column);
+                if (this.peekChar() === "=") {
+                    tok = newToken(
+                        TokenType.GTE,
+                        this.ch,
+                        this.line,
+                        this.column
+                    );
+                    this.readChar();
+                } else {
+                    tok = newToken(
+                        TokenType.GT,
+                        this.ch,
+                        this.line,
+                        this.column
+                    );
+                }
                 break;
             case "":
                 tok = newToken(TokenType.EOF, this.ch, this.line, this.column);

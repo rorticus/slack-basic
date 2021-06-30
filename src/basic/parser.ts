@@ -9,6 +9,7 @@ import {
     IntegerLiteral,
     LetStatement,
     PrefixExpression,
+    PrintStatement,
     Program,
     Statement,
     StringLiteral,
@@ -19,12 +20,12 @@ export type InfixParser = (expression: Expression | null) => Expression | null;
 
 export enum Precedence {
     LOWEST = 0,
+    LOGICAL,
     EQUALS,
     LESSGREATER,
     SUM,
     PRODUCT,
     PREFIX,
-    CALL,
     INDEX,
 }
 
@@ -37,13 +38,14 @@ const precedences: Record<string, Precedence> = {
     [TokenType.MINUS]: Precedence.SUM,
     [TokenType.ASTERISK]: Precedence.PRODUCT,
     [TokenType.SLASH]: Precedence.PRODUCT,
+    [TokenType.AND]: Precedence.LOGICAL,
+    [TokenType.OR]: Precedence.LOGICAL,
+    [TokenType.NOT]: Precedence.LOGICAL,
 };
 
 export class Parser {
     lexer: Lexer;
     errors: string[];
-
-    private lastLineNumber;
 
     private curToken!: Token;
     private peekToken!: Token;
@@ -56,7 +58,6 @@ export class Parser {
         this.errors = [];
         this.prefixParsers = {};
         this.infixParsers = {};
-        this.lastLineNumber = 0;
 
         this.registerPrefix(TokenType.IDENT, this.parseIdentifier.bind(this));
         this.registerPrefix(TokenType.INT, this.parseIntegerLiteral.bind(this));
@@ -68,6 +69,10 @@ export class Parser {
         this.registerPrefix(
             TokenType.MINUS,
             this.parsePrefixExpression.bind(this)
+        );
+        this.registerPrefix(
+            TokenType.LPAREN,
+            this.parseGroupedExpression.bind(this)
         );
         this.registerInfix(
             TokenType.PLUS,
@@ -95,6 +100,9 @@ export class Parser {
         );
         this.registerInfix(TokenType.LT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.AND, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.OR, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.NOT, this.parseInfixExpression.bind(this));
 
         // read the two tokens to fill our buffer
         this.nextToken();
@@ -161,41 +169,15 @@ export class Parser {
         return Precedence.LOWEST;
     }
 
-    parseProgram(): Program {
-        const program = new Program();
-        this.lastLineNumber = 0;
-
-        while (!this.curTokenIs(TokenType.EOF)) {
-            const statement = this.parseStatement();
-            if (statement !== null) {
-                program.statements.push(statement);
-            }
-            this.nextToken();
-        }
-
-        return program;
-    }
-
     parseStatement(): Statement | null {
-        let label = undefined;
-        let lineNumber = this.lastLineNumber + 1;
+        let lineNumber: number | undefined = undefined;
 
         // statements can start with numbers
         if (this.curToken.type === TokenType.INT) {
             lineNumber = parseInt(this.curToken.literal, 10);
             // consume the number
             this.nextToken();
-        } else if (this.curToken.type === TokenType.IDENT) {
-            // or they can start with labels
-            if (this.peekTokenIs(TokenType.COLON)) {
-                label = this.curToken.literal;
-                // consume the identifier and the colon
-                this.nextToken();
-                this.nextToken();
-            }
         }
-
-        this.lastLineNumber = lineNumber;
 
         const originalToken = this.curToken;
         let statements: (Statement | null)[] = [];
@@ -204,12 +186,16 @@ export class Parser {
                 case TokenType.LET:
                     statements.push(this.parseLetStatement());
                     break;
+                case TokenType.PRINT:
+                    statements.push(this.parsePrintStatement());
+                    break;
                 default:
                     // statements with no labels default to LET statements
                     statements.push(this.parseLetStatement());
             }
 
             if (this.peekTokenIs(TokenType.COLON)) {
+                this.nextToken();
                 this.nextToken();
             } else {
                 break;
@@ -226,7 +212,6 @@ export class Parser {
 
         if (result) {
             result.lineNumber = lineNumber;
-            result.label = label;
         }
 
         return result;
@@ -261,6 +246,25 @@ export class Parser {
         const expr = this.parseExpression(Precedence.LOWEST);
 
         return new LetStatement(letToken, names, expr);
+    }
+
+    parsePrintStatement(): Statement | null {
+        const token = this.curToken;
+        const args: (Expression | null)[] = [];
+
+        this.nextToken();
+
+        args.push(this.parseExpression(Precedence.LOWEST));
+
+        while (
+            !this.peekTokenIs(TokenType.COLON) &&
+            !this.peekTokenIs(TokenType.EOF)
+        ) {
+            this.nextToken();
+            args.push(this.parseExpression(Precedence.LOWEST));
+        }
+
+        return new PrintStatement(token, args.filter((a) => a) as Expression[]);
     }
 
     parseExpression(precedence: Precedence): Expression | null {
