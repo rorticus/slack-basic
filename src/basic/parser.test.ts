@@ -105,6 +105,18 @@ describe("Parser tests", () => {
 
                 testIntegerLiteral(letStatement.value, 3);
             });
+
+            it("defaults to let statements if no statement type specified", () => {
+                const { statement } = parse("A = 3");
+
+                expect(statement.type).toEqual(StatementType.LET);
+
+                const letStatement = statement as LetStatement;
+                expect(letStatement.names).toHaveLength(1);
+                testIdentifier(letStatement.names[0], "A");
+
+                testIntegerLiteral(letStatement.value, 3);
+            });
         });
 
         describe("labels and line numbers", () => {

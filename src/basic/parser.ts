@@ -221,7 +221,15 @@ export class Parser {
     parseLetStatement(): LetStatement | null {
         const letToken = this.curToken;
 
-        if (!this.expectPeek(TokenType.IDENT)) {
+        // swallow the LET statement if its here, but it's optional
+        if (this.curTokenIs(TokenType.LET)) {
+            this.nextToken();
+        }
+
+        if (!this.curTokenIs(TokenType.IDENT)) {
+            this.errors.push(
+                `Expecting identifier but found ${this.curToken.type}`
+            );
             return null;
         }
 
