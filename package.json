@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "prettier": "prettier --write",
-    "repl": "npx ts-node src/repl/repl.ts"
+    "repl": "npx ts-node src/repl/repl.ts",
+    "basic": "npx ts-node src/repl/basic-repl.ts"
   },
   "repository": {
     "type": "git",
