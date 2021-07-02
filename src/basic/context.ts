@@ -2,8 +2,11 @@ import { Stack } from "./stack";
 import {
     Expression,
     FloatLiteral,
+    Identifier,
+    IdentifierType,
     InfixExpression,
     IntegerLiteral,
+    LetStatement,
     PrefixExpression,
     PrintStatement,
     Statement,
@@ -58,6 +61,8 @@ export class Context {
         switch (statement.type) {
             case StatementType.PRINT:
                 return this.runPrintStatement(statement as PrintStatement);
+            case StatementType.LET:
+                return this.runLetStatement(statement as LetStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -77,6 +82,44 @@ export class Context {
         return NULL;
     }
 
+    private runLetStatement(statement: LetStatement): ValueObject {
+        if (!statement.value) {
+            return new ErrorValue(`let value does not exist`);
+        }
+
+        const value = this.evalExpression(statement.value);
+        if (isError(value)) {
+            return value;
+        }
+
+        const validConversions: { [identifierType: string]: ObjectType[] } = {
+            [IdentifierType.INT]: [
+                ObjectType.INTEGER_OBJ,
+                ObjectType.FLOAT_OBJ,
+            ],
+            [IdentifierType.FLOAT]: [
+                ObjectType.INTEGER_OBJ,
+                ObjectType.FLOAT_OBJ,
+            ],
+            [IdentifierType.STRING]: [ObjectType.STRING_OBJ],
+        };
+
+        for (let i = 0; i < statement.names.length; i++) {
+            const identifier = statement.names[i];
+
+            const validObjectTypes = validConversions[identifier.type] ?? [];
+            if (validObjectTypes.indexOf(value.type()) < 0) {
+                return new ErrorValue(
+                    `type mismatch, ${identifier.toString()} (${identifier.type}) = ${value.inspect()}`
+                );
+            }
+
+            this.globalStack.set(identifier.value, value);
+        }
+
+        return value;
+    }
+
     private evalExpression(expression: Expression): ValueObject {
         if (expression instanceof StringLiteral) {
             return this.evalStringLiteral(expression);
@@ -88,6 +131,8 @@ export class Context {
             return this.evalInfixExpression(expression);
         } else if (expression instanceof PrefixExpression) {
             return this.evalPrefixExpression(expression);
+        } else if (expression instanceof Identifier) {
+            return this.evalIdentifier(expression);
         }
 
         return new ErrorValue(`unknown expression ${expression.toString()}`);
@@ -224,5 +269,22 @@ export class Context {
         }
 
         return new ErrorValue(`invalid prefix operator ${operator}`);
+    }
+
+    private evalIdentifier(expr: Identifier): ValueObject {
+        const result = this.globalStack.get(expr.value);
+
+        if (!result) {
+            switch (expr.type) {
+                case IdentifierType.INT:
+                    return new IntValue(0);
+                case IdentifierType.STRING:
+                    return new StringValue("");
+                default:
+                    return new FloatValue(0);
+            }
+        }
+
+        return result;
     }
 }

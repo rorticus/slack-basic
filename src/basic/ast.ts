@@ -14,6 +14,12 @@ export enum StatementType {
     PRINT = "PRINT",
 }
 
+export enum IdentifierType {
+    FLOAT = "FLOAT",
+    INT = "INT",
+    STRING = "STRING",
+}
+
 export interface Statement extends Node {
     lineNumber: number | undefined;
     type: StatementType;
@@ -44,14 +50,22 @@ export class Program implements Node {
 export class Identifier implements Expression {
     token: Token;
     value: string;
+    type: IdentifierType;
 
     constructor(token: Token) {
         this.token = token;
         this.value = token.literal;
-    }
 
-    expressionNode(): Expression {
-        return this;
+        switch (this.value[this.value.length - 1]) {
+            case "%":
+                this.type = IdentifierType.INT;
+                break;
+            case "$":
+                this.type = IdentifierType.STRING;
+                break;
+            default:
+                this.type = IdentifierType.FLOAT;
+        }
     }
 
     tokenLiteral(): string {
@@ -115,10 +129,6 @@ export class StringLiteral implements Expression {
     toString(): string {
         return `"${this.token.literal}"`;
     }
-
-    expressionNode(): Expression {
-        return this;
-    }
 }
 
 export class PrefixExpression implements Expression {
@@ -130,10 +140,6 @@ export class PrefixExpression implements Expression {
         this.token = token;
         this.operator = operator;
         this.right = right;
-    }
-
-    expressionNode(): Expression {
-        return this;
     }
 
     tokenLiteral(): string {
@@ -161,10 +167,6 @@ export class InfixExpression implements Expression {
         this.left = left;
         this.operator = operator;
         this.right = right;
-    }
-
-    expressionNode(): Expression {
-        return this;
     }
 
     tokenLiteral(): string {
