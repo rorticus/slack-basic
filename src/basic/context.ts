@@ -47,7 +47,13 @@ export class Context {
 
     runImmediateStatement(statement: Statement) {
         if (statement.lineNumber) {
-            this.lines = [...this.lines, statement].sort((l1, l2) =>
+            // replace this line?
+            this.lines = [
+                ...this.lines.filter(
+                    (l) => (l.lineNumber ?? 0) !== statement.lineNumber
+                ),
+                statement,
+            ].sort((l1, l2) =>
                 (l1.lineNumber ?? 0) < (l2.lineNumber ?? 0) ? -1 : 1
             );
 
@@ -110,7 +116,9 @@ export class Context {
             const validObjectTypes = validConversions[identifier.type] ?? [];
             if (validObjectTypes.indexOf(value.type()) < 0) {
                 return new ErrorValue(
-                    `type mismatch, ${identifier.toString()} (${identifier.type}) = ${value.inspect()}`
+                    `type mismatch, ${identifier.toString()} (${
+                        identifier.type
+                    }) = ${value.inspect()}`
                 );
             }
 
