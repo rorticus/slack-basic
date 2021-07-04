@@ -4,16 +4,11 @@ import { Parser } from "./parser";
 import { LetStatement, StatementType } from "./ast";
 
 describe("context tests", () => {
-    beforeEach(() => {
-        jest.spyOn(console, "log").mockReturnValue(undefined);
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
     function run(code: string) {
-        const context = new Context();
+        const context = new Context({
+            print: jest.fn(),
+            input: jest.fn().mockResolvedValue(""),
+        });
 
         code.split("\n").forEach((line) => {
             const lexer = new Lexer(line);
@@ -30,8 +25,8 @@ describe("context tests", () => {
 
     describe("immediate tasks", () => {
         it("runs statements without line numbers immediately", () => {
-            run('PRINT "hello"');
-            expect(console.log).toHaveBeenCalledWith("hello");
+            const context = run('PRINT "hello"');
+            expect(context.api.print).toHaveBeenCalledWith("hello");
         });
 
         it("add statements with line numbers to the program", () => {
@@ -64,16 +59,32 @@ describe("context tests", () => {
 
     describe("evaluation", () => {
         it("evaluates expressions", () => {
-            run(`PRINT 1 + 2`);
-            expect(console.log).toHaveBeenCalledWith("3");
+            const context = run(`PRINT 1 + 2`);
+            expect(context.api.print).toHaveBeenCalledWith("3");
         });
 
         it("evaluates identifieres", () => {
-            run(`
+            const context = run(`
             LET A$ = "hello"
             PRINT A$ + " world"
             `);
-            expect(console.log).toHaveBeenCalledWith("hello world");
+            expect(context.api.print).toHaveBeenCalledWith("hello world");
+        });
+    });
+
+    describe("stored programs", () => {
+        it("runs stored programs", async () => {
+            const context = run(`
+        10 LET A, B = 2
+        20 LET C = A + B
+        30 PRINT "the answer is " C
+        `);
+
+            expect(context.api.print).not.toHaveBeenCalled();
+
+            await context.runProgram();
+
+            expect(context.api.print).toHaveBeenCalledWith("the answer is 4");
         });
     });
 });

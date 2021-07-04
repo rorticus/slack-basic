@@ -29,23 +29,42 @@ function isError(obj: ValueObject): obj is ErrorValue {
 
 export const NULL = new NullValue();
 
+export enum ContextState {
+    IDLE = "IDLE",
+    RUNNING = "RUNNING",
+}
+
+export interface ContextApi {
+    print(str: string): void;
+    input(str: string): Promise<string>;
+}
+
 export class Context {
     globalStack: Stack;
     lines: Statement[];
     programCounter: number;
+    state: ContextState;
+    api: ContextApi;
 
-    constructor() {
+    constructor(api: ContextApi) {
         this.globalStack = new Stack();
         this.lines = [];
         this.programCounter = 0;
+        this.state = ContextState.IDLE;
+        this.api = api;
     }
 
     reset() {
+        this.state = ContextState.IDLE;
         this.programCounter = 0;
         this.globalStack.clear();
     }
 
     runImmediateStatement(statement: Statement) {
+        if (this.state === ContextState.RUNNING) {
+            return new ErrorValue(`busy`);
+        }
+
         if (statement.lineNumber) {
             // replace this line?
             this.lines = [
@@ -63,15 +82,38 @@ export class Context {
         }
     }
 
-    runStatement(statement: Statement) {
+    async runStatement(statement: Statement): Promise<ValueObject> {
         switch (statement.type) {
             case StatementType.PRINT:
                 return this.runPrintStatement(statement as PrintStatement);
             case StatementType.LET:
                 return this.runLetStatement(statement as LetStatement);
+            case StatementType.RUN:
+                return this.runProgram();
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
+    }
+
+    async runProgram(): Promise<ValueObject> {
+        this.state = ContextState.RUNNING;
+        this.reset();
+
+        try {
+            while (this.lines[this.programCounter]) {
+                const result = await this.runStatement(
+                    this.lines[this.programCounter]
+                );
+                if (result.type() === ObjectType.ERROR_OBJ) {
+                    return result;
+                }
+                this.programCounter++;
+            }
+        } finally {
+            this.state = ContextState.IDLE;
+        }
+
+        return NULL;
     }
 
     private runPrintStatement(statement: PrintStatement): ValueObject {
@@ -83,7 +125,7 @@ export class Context {
             }
         }
 
-        console.log(values.map((v) => v.toString()).join(""));
+        this.api.print(values.map((v) => v.toString()).join(""));
 
         return NULL;
     }

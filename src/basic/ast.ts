@@ -12,6 +12,7 @@ export enum StatementType {
     END = "END",
     COMPOUND = "COMPOUND",
     PRINT = "PRINT",
+    RUN = "RUN",
 }
 
 export enum IdentifierType {
@@ -128,6 +129,24 @@ export class StringLiteral implements Expression {
 
     toString(): string {
         return `"${this.token.literal}"`;
+    }
+}
+
+export class RunStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.RUN;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return this.token.literal;
     }
 }
 
