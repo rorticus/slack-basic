@@ -5,6 +5,7 @@ import {
     Identifier,
     IdentifierType,
     InfixExpression,
+    InputStatement,
     IntegerLiteral,
     LetStatement,
     PrefixExpression,
@@ -36,7 +37,7 @@ export enum ContextState {
 
 export interface ContextApi {
     print(str: string): void;
-    input(str: string): Promise<string>;
+    input(): Promise<string>;
 }
 
 export class Context {
@@ -60,7 +61,7 @@ export class Context {
         this.globalStack.clear();
     }
 
-    runImmediateStatement(statement: Statement) {
+    async runImmediateStatement(statement: Statement): Promise<ValueObject> {
         if (this.state === ContextState.RUNNING) {
             return new ErrorValue(`busy`);
         }
@@ -90,6 +91,8 @@ export class Context {
                 return this.runLetStatement(statement as LetStatement);
             case StatementType.RUN:
                 return this.runProgram();
+            case StatementType.INPUT:
+                return this.runInputStatement(statement as InputStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -336,5 +339,50 @@ export class Context {
         }
 
         return result;
+    }
+
+    private async runInputStatement(
+        expr: InputStatement
+    ): Promise<ValueObject> {
+        try {
+            const result = await this.api.input();
+            let intermediate: number;
+
+            switch (expr.destination.type) {
+                case IdentifierType.STRING:
+                    this.globalStack.set(
+                        expr.destination.value,
+                        new StringValue(result)
+                    );
+                    break;
+
+                case IdentifierType.INT:
+                    intermediate = parseInt(result, 10);
+                    if (isNaN(intermediate)) {
+                        return new ErrorValue(
+                            `invalid integer value: ${result}`
+                        );
+                    }
+                    this.globalStack.set(
+                        expr.destination.value,
+                        new IntValue(intermediate)
+                    );
+                    break;
+                case IdentifierType.FLOAT:
+                    intermediate = parseFloat(result);
+                    if (isNaN(intermediate)) {
+                        return new ErrorValue(`invalid float value: ${result}`);
+                    }
+                    this.globalStack.set(
+                        expr.destination.value,
+                        new FloatValue(intermediate)
+                    );
+                    break;
+            }
+        } catch (e) {
+            return new ErrorValue(`error with input: ${e.message}`);
+        }
+
+        return NULL;
     }
 }

@@ -46,6 +46,7 @@ export enum TokenType {
     NOT = "NOT",
     PRINT = "PRINT",
     RUN = "RUN",
+    INPUT = "INPUT"
 }
 
 export interface Token {
@@ -77,6 +78,7 @@ const keywords: { [key: string]: TokenType } = {
     STOP: TokenType.STOP,
     PRINT: TokenType.PRINT,
     RUN: TokenType.RUN,
+    INPUT: TokenType.INPUT
 };
 
 export function newToken(

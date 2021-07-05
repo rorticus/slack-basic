@@ -26,4 +26,10 @@ export class Stack {
     clear() {
         this.store.clear();
     }
+
+    debug() {
+        this.store.forEach((value, key) => {
+            console.log(`"${key}": "${value}"`);
+        });
+    }
 }

@@ -10,7 +10,7 @@ console.log("");
 async function repl() {
     const context = new Context({
         print: (str) => console.log(str),
-        input: (str) => Promise.resolve(""),
+        input: () => Promise.resolve(readlineSync.question()),
     });
 
     while (1) {

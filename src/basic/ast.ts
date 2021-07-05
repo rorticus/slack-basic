@@ -13,6 +13,7 @@ export enum StatementType {
     COMPOUND = "COMPOUND",
     PRINT = "PRINT",
     RUN = "RUN",
+    INPUT = "INPUT",
 }
 
 export enum IdentifierType {
@@ -282,5 +283,25 @@ export class PrintStatement implements Statement {
 
     toString(): string {
         return `PRINT ${this.args.map((a) => a.toString()).join(" ")}`;
+    }
+}
+
+export class InputStatement implements Statement {
+    token: Token;
+    destination: Identifier;
+    type = StatementType.INPUT;
+    lineNumber: number | undefined;
+
+    constructor(token: Token, destination: Identifier) {
+        this.token = token;
+        this.destination = destination;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `INPUT ${this.destination.value}`;
     }
 }

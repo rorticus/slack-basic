@@ -6,6 +6,7 @@ import {
     FloatLiteral,
     Identifier,
     InfixExpression,
+    InputStatement,
     IntegerLiteral,
     LetStatement,
     PrintStatement,
@@ -192,6 +193,16 @@ describe("Parser tests", () => {
                 testStringLiteral(
                     (compoundStatement.statements[1] as PrintStatement).args[0],
                     "two"
+                );
+            });
+        });
+
+        describe("input statements", () => {
+            it("parses input statements", () => {
+                const { statement } = parse("INPUT A$");
+                expect(statement.type).toEqual(StatementType.INPUT);
+                expect((statement as InputStatement).destination.value).toEqual(
+                    "A$"
                 );
             });
         });

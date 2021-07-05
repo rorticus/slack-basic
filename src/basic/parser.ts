@@ -6,11 +6,13 @@ import {
     FloatLiteral,
     Identifier,
     InfixExpression,
+    InputStatement,
     IntegerLiteral,
     LetStatement,
     PrefixExpression,
     PrintStatement,
-    Program, RunStatement,
+    Program,
+    RunStatement,
     Statement,
     StringLiteral,
 } from "./ast";
@@ -192,6 +194,9 @@ export class Parser {
                 case TokenType.RUN:
                     statements.push(new RunStatement(this.curToken));
                     break;
+                case TokenType.INPUT:
+                    statements.push(this.parseInputStatement());
+                    break;
                 default:
                     // statements with no labels default to LET statements
                     statements.push(this.parseLetStatement());
@@ -280,6 +285,19 @@ export class Parser {
         }
 
         return new PrintStatement(token, args.filter((a) => a) as Expression[]);
+    }
+
+    parseInputStatement(): Statement | null {
+        const token = this.curToken;
+
+        if (!this.peekTokenIs(TokenType.IDENT)) {
+            return null;
+        }
+
+        // consume input
+        this.nextToken();
+
+        return new InputStatement(token, this.parseIdentifier());
     }
 
     parseExpression(precedence: Precedence): Expression | null {
