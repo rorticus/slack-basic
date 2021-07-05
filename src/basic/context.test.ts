@@ -109,7 +109,7 @@ describe("context tests", () => {
             `,
                 {
                     input,
-                    print
+                    print,
                 }
             );
 
@@ -120,6 +120,15 @@ describe("context tests", () => {
             await new Promise(setImmediate);
 
             expect(print).toHaveBeenCalledWith("test");
+        });
+    });
+
+    describe("compound statements", () => {
+        it("runs compound statements", async () => {
+            const context = await run(`PRINT "a" : PRINT "b"`);
+
+            expect(context.api.print).toHaveBeenCalledWith("a");
+            expect(context.api.print).toHaveBeenCalledWith("b");
         });
     });
 });

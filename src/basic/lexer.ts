@@ -76,7 +76,7 @@ export class Lexer {
             this.readChar();
         }
 
-        return this.input.slice(position, this.position);
+        return this.input.slice(position, this.position).toUpperCase();
     }
 
     readNumber() {

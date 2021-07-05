@@ -1,5 +1,6 @@
 import { Stack } from "./stack";
 import {
+    CompoundStatement,
     Expression,
     FloatLiteral,
     Identifier,
@@ -93,6 +94,10 @@ export class Context {
                 return this.runProgram();
             case StatementType.INPUT:
                 return this.runInputStatement(statement as InputStatement);
+            case StatementType.COMPOUND:
+                return this.runCompoundStatement(
+                    statement as CompoundStatement
+                );
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -117,6 +122,18 @@ export class Context {
         }
 
         return NULL;
+    }
+
+    private async runCompoundStatement(
+        statement: CompoundStatement
+    ): Promise<ValueObject> {
+        let result: ValueObject = NULL;
+
+        for (let i = 0; i < statement.statements.length; i++) {
+            result = await this.runStatement(statement.statements[i]);
+        }
+
+        return result;
     }
 
     private runPrintStatement(statement: PrintStatement): ValueObject {
