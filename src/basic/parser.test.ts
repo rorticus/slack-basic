@@ -4,6 +4,7 @@ import {
     CompoundStatement,
     Expression,
     FloatLiteral,
+    GotoStatement,
     Identifier,
     InfixExpression,
     InputStatement,
@@ -15,13 +16,15 @@ import {
 } from "./ast";
 
 describe("Parser tests", () => {
-    function parse(source: string) {
+    function parse(source: string, checkForErrors = true) {
         const lexer = new Lexer(source);
         const parser = new Parser(lexer);
         const statement = parser.parseStatement();
 
-        expect(parser.errors).toHaveLength(0);
-        expect(statement).not.toBeNull();
+        if (checkForErrors) {
+            expect(parser.errors).toHaveLength(0);
+            expect(statement).not.toBeNull();
+        }
 
         return {
             parser,
@@ -204,6 +207,29 @@ describe("Parser tests", () => {
                 expect((statement as InputStatement).destination.value).toEqual(
                     "A$"
                 );
+            });
+        });
+
+        describe("goto statements", () => {
+            it("parses goto statements", () => {
+                const { statement } = parse("GOTO 10");
+                expect(statement.type).toEqual(StatementType.GOTO);
+                expect((statement as GotoStatement).destination).toEqual(10);
+            });
+
+            it("does not allow string destinations", () => {
+                const { parser } = parse("GOTO \"10\"", false);
+                expect(parser.errors).toHaveLength(1);
+            });
+
+            it("does not allow float destinations", () => {
+                const { parser } = parse("GOTO 10.2", false);
+                expect(parser.errors).toHaveLength(1);
+            });
+
+            it("does not allow variable destinations", () => {
+                const { parser } = parse("GOTO C%", false);
+                expect(parser.errors).toHaveLength(1);
             });
         });
     });

@@ -14,6 +14,7 @@ export enum StatementType {
     PRINT = "PRINT",
     RUN = "RUN",
     INPUT = "INPUT",
+    GOTO = "GOTO",
 }
 
 export enum IdentifierType {
@@ -148,6 +149,26 @@ export class RunStatement implements Statement {
 
     toString(): string {
         return this.token.literal;
+    }
+}
+
+export class GotoStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.GOTO;
+    destination: number;
+
+    constructor(token: Token, destination: number) {
+        this.token = token;
+        this.destination = destination;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `${this.token.literal} ${this.destination}`;
     }
 }
 

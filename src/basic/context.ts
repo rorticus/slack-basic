@@ -3,6 +3,7 @@ import {
     CompoundStatement,
     Expression,
     FloatLiteral,
+    GotoStatement,
     Identifier,
     IdentifierType,
     InfixExpression,
@@ -37,7 +38,7 @@ export enum ContextState {
 }
 
 export interface ContextApi {
-    print(str: string): void;
+    print(str: string): Promise<void>;
     input(): Promise<string>;
 }
 
@@ -48,10 +49,13 @@ export class Context {
     state: ContextState;
     api: ContextApi;
 
+    private nextLine: number;
+
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
         this.lines = [];
         this.programCounter = 0;
+        this.nextLine = 0;
         this.state = ContextState.IDLE;
         this.api = api;
     }
@@ -98,24 +102,31 @@ export class Context {
                 return this.runCompoundStatement(
                     statement as CompoundStatement
                 );
+            case StatementType.GOTO:
+                return this.goto((statement as GotoStatement).destination);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
     }
 
     async runProgram(): Promise<ValueObject> {
-        this.state = ContextState.RUNNING;
+        if (this.lines.length == 0) {
+            return new ErrorValue(`cannot run program, no program!`);
+        }
+
         this.reset();
+        this.state = ContextState.RUNNING;
 
         try {
             while (this.lines[this.programCounter]) {
+                this.nextLine = this.programCounter + 1;
                 const result = await this.runStatement(
                     this.lines[this.programCounter]
                 );
                 if (result.type() === ObjectType.ERROR_OBJ) {
                     return result;
                 }
-                this.programCounter++;
+                this.programCounter = this.nextLine;
             }
         } finally {
             this.state = ContextState.IDLE;
@@ -136,7 +147,9 @@ export class Context {
         return result;
     }
 
-    private runPrintStatement(statement: PrintStatement): ValueObject {
+    private async runPrintStatement(
+        statement: PrintStatement
+    ): Promise<ValueObject> {
         const values = statement.args.map((a) => this.evalExpression(a));
 
         for (let i = 0; i < values.length; i++) {
@@ -145,7 +158,7 @@ export class Context {
             }
         }
 
-        this.api.print(values.map((v) => v.toString()).join(""));
+        await this.api.print(values.map((v) => v.toString()).join(""));
 
         return NULL;
     }
@@ -399,6 +412,28 @@ export class Context {
         } catch (e) {
             return new ErrorValue(`error with input: ${e.message}`);
         }
+
+        return NULL;
+    }
+
+    private goto(lineNumber: number): ValueObject {
+        if (this.state !== ContextState.RUNNING) {
+            return new ErrorValue(
+                `cannot execute goto if program is not running`
+            );
+        }
+
+        const lineIndex = this.lines.findIndex(
+            (l) => l.lineNumber === lineNumber
+        );
+
+        if (lineIndex < 0) {
+            return new ErrorValue(
+                `cannot goto line that does not exist, ${lineNumber}`
+            );
+        }
+
+        this.nextLine = lineIndex;
 
         return NULL;
     }

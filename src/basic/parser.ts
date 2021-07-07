@@ -4,6 +4,7 @@ import {
     CompoundStatement,
     Expression,
     FloatLiteral,
+    GotoStatement,
     Identifier,
     InfixExpression,
     InputStatement,
@@ -196,6 +197,9 @@ export class Parser {
                     break;
                 case TokenType.INPUT:
                     statements.push(this.parseInputStatement());
+                    break;
+                case TokenType.GOTO:
+                    statements.push(this.parseGotoStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -393,5 +397,21 @@ export class Parser {
         }
 
         return exp;
+    }
+
+    parseGotoStatement(): Statement | null {
+        const token = this.curToken;
+
+        if (!this.expectPeek(TokenType.INT)) {
+            return null;
+        }
+
+        const dest = parseInt(this.curToken.literal, 10);
+        if (isNaN(dest)) {
+            this.errors.push(`invalid line number ${this.curToken.literal}`);
+            return null;
+        }
+
+        return new GotoStatement(token, dest);
     }
 }
