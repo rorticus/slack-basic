@@ -6,6 +6,7 @@ import {
     GotoStatement,
     Identifier,
     IdentifierType,
+    IfStatement,
     InfixExpression,
     InputStatement,
     IntegerLiteral,
@@ -25,6 +26,7 @@ import {
     StringValue,
     ValueObject,
 } from "./object";
+import { FALSE } from "../monkey/object";
 
 function isError(obj: ValueObject): obj is ErrorValue {
     return obj.type() === ObjectType.ERROR_OBJ;
@@ -40,6 +42,23 @@ export enum ContextState {
 export interface ContextApi {
     print(str: string): Promise<void>;
     input(): Promise<string>;
+}
+
+export function isTruthy(value: ValueObject) {
+    switch (value) {
+        case NULL:
+            return false;
+        default:
+            if (value.type() === ObjectType.INTEGER_OBJ) {
+                return (value as IntValue).value !== 0;
+            } else if (value.type() === ObjectType.FLOAT_OBJ) {
+                return (value as FloatValue).value !== 0;
+            } else if (value.type() === ObjectType.STRING_OBJ) {
+                return (value as StringValue).value !== "";
+            }
+
+            return true;
+    }
 }
 
 export class Context {
@@ -104,6 +123,8 @@ export class Context {
                 );
             case StatementType.GOTO:
                 return this.goto((statement as GotoStatement).destination);
+            case StatementType.IF:
+                return this.runIfStatement(statement as IfStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -434,6 +455,26 @@ export class Context {
         }
 
         this.nextLine = lineIndex;
+
+        return NULL;
+    }
+
+    async runIfStatement(statement: IfStatement): Promise<ValueObject> {
+        if (!statement.condition) {
+            return new ErrorValue(`cannot run an if with no condition`);
+        }
+
+        const condition = this.evalExpression(statement.condition);
+
+        if (isTruthy(condition)) {
+            if (statement.goto !== undefined) {
+                return this.goto(statement.goto);
+            } else if (typeof statement.then === "number") {
+                return this.goto(statement.then);
+            } else if (statement.then) {
+                return this.runStatement(statement.then);
+            }
+        }
 
         return NULL;
     }

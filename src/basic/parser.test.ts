@@ -6,6 +6,7 @@ import {
     FloatLiteral,
     GotoStatement,
     Identifier,
+    IfStatement,
     InfixExpression,
     InputStatement,
     IntegerLiteral,
@@ -218,7 +219,7 @@ describe("Parser tests", () => {
             });
 
             it("does not allow string destinations", () => {
-                const { parser } = parse("GOTO \"10\"", false);
+                const { parser } = parse('GOTO "10"', false);
                 expect(parser.errors).toHaveLength(1);
             });
 
@@ -230,6 +231,54 @@ describe("Parser tests", () => {
             it("does not allow variable destinations", () => {
                 const { parser } = parse("GOTO C%", false);
                 expect(parser.errors).toHaveLength(1);
+            });
+        });
+
+        describe("if statements", () => {
+            it("parses if..goto", () => {
+                const { statement } = parse(`IF 1 GOTO 2`);
+
+                const ifStatement = statement as IfStatement;
+
+                expect(statement).not.toBeNull();
+                expect(statement.type).toEqual(StatementType.IF);
+
+                testIntegerLiteral(ifStatement.condition, 1);
+
+                expect(ifStatement.goto).toBe(2);
+                expect(ifStatement.then).toBeUndefined();
+            });
+
+            it("parses if..then number", () => {
+                const { statement } = parse(`IF 1 THEN 2`);
+
+                const ifStatement = statement as IfStatement;
+
+                expect(statement).not.toBeNull();
+                expect(statement.type).toEqual(StatementType.IF);
+
+                testIntegerLiteral(ifStatement.condition, 1);
+
+                expect(ifStatement.goto).toBeUndefined();
+                expect(ifStatement.then).toBe(2);
+            });
+
+            it("parses if..then condition", () => {
+                const { statement } = parse(`IF 1 THEN PRINT "hello"`);
+
+                const ifStatement = statement as IfStatement;
+
+                expect(statement).not.toBeNull();
+                expect(statement.type).toEqual(StatementType.IF);
+
+                testIntegerLiteral(ifStatement.condition, 1);
+
+                expect(ifStatement.goto).toBeUndefined();
+
+                expect(ifStatement.then).not.toBeUndefined();
+                expect((ifStatement.then as PrintStatement).type).toEqual(
+                    StatementType.PRINT
+                );
             });
         });
     });

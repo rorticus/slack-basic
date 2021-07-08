@@ -227,6 +227,8 @@ export class IfStatement implements Statement {
     type = StatementType.IF;
 
     condition: Expression | null;
+    then: number | Statement | undefined;
+    goto: number | undefined;
 
     constructor(token: Token, condition: Expression | null) {
         this.token = token;

@@ -6,6 +6,7 @@ import {
     FloatLiteral,
     GotoStatement,
     Identifier,
+    IfStatement,
     InfixExpression,
     InputStatement,
     IntegerLiteral,
@@ -200,6 +201,9 @@ export class Parser {
                     break;
                 case TokenType.GOTO:
                     statements.push(this.parseGotoStatement());
+                    break;
+                case TokenType.IF:
+                    statements.push(this.parseIfStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -413,5 +417,61 @@ export class Parser {
         }
 
         return new GotoStatement(token, dest);
+    }
+
+    parseIfStatement(): Statement | null {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const condition = this.parseExpression(Precedence.LOWEST);
+
+        const statement = new IfStatement(token, condition);
+
+        if (this.peekTokenIs(TokenType.GOTO)) {
+            this.nextToken();
+
+            if (!this.expectPeek(TokenType.INT)) {
+                return null;
+            }
+
+            const nextLine = parseInt(this.curToken.literal, 10);
+            if (isNaN(nextLine)) {
+                this.errors.push(
+                    `cannot goto a number that is not a number, ${this.curToken.literal}`
+                );
+                return null;
+            }
+
+            statement.goto = nextLine;
+        } else if (this.peekTokenIs(TokenType.THEN)) {
+            this.nextToken();
+
+            if (this.peekTokenIs(TokenType.INT)) {
+                // another goto!
+                this.nextToken();
+                const nextLine = parseInt(this.curToken.literal, 10);
+                if (isNaN(nextLine)) {
+                    this.errors.push(
+                        `cannot goto a number that is not a number, ${this.curToken.literal}`
+                    );
+                    return null;
+                }
+
+                statement.then = nextLine;
+            } else {
+                this.nextToken();
+
+                const then = this.parseStatement();
+                if (then) {
+                    statement.then = then;
+                }
+            }
+        } else {
+            this.errors.push(`IF must be followed by GOTO or THEN`);
+            return null;
+        }
+
+        return statement;
     }
 }

@@ -165,4 +165,61 @@ describe("context tests", () => {
             testForError(result, "cannot goto line that does not exist, 50");
         });
     });
+
+    describe("runs if statements", () => {
+        it("runs if..goto statements", async () => {
+            const { context, result } = await run(`
+            10 PRINT "a"
+            20 IF 1 GOTO 40
+            30 PRINT "b"
+            40 PRINT "c"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("a");
+            expect(context.api.print).not.toHaveBeenCalledWith("b");
+            expect(context.api.print).toHaveBeenCalledWith("c");
+        });
+
+        it("runs if..then goto statements", async () => {
+            const { context, result } = await run(`
+            10 PRINT "a"
+            20 IF 1 THEN 40
+            30 PRINT "b"
+            40 PRINT "c"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("a");
+            expect(context.api.print).not.toHaveBeenCalledWith("b");
+            expect(context.api.print).toHaveBeenCalledWith("c");
+        });
+
+        it("runs if..then statements", async () => {
+            const { context, result } = await run(`
+            10 PRINT "a"
+            20 IF 1 THEN PRINT "b"
+            40 PRINT "c"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("a");
+            expect(context.api.print).toHaveBeenCalledWith("b");
+            expect(context.api.print).toHaveBeenCalledWith("c");
+        });
+
+        it("does not run if..then statements if condition is false", async () => {
+            const { context, result } = await run(`
+            10 PRINT "a"
+            20 IF 0 GOTO 40
+            30 PRINT "b"
+            40 PRINT "c"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("a");
+            expect(context.api.print).toHaveBeenCalledWith("b");
+            expect(context.api.print).toHaveBeenCalledWith("c");
+        });
+    });
 });

@@ -1,3 +1,5 @@
+import {FALSE, NULL} from "../monkey/object";
+
 export enum ObjectType {
     INTEGER_OBJ = "INTEGER",
     FLOAT_OBJ = "FLOAT",
