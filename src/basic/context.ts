@@ -321,6 +321,18 @@ export class Context {
                 return new FloatValue(leftValue * rightValue);
             case "/":
                 return new FloatValue(leftValue / rightValue);
+            case "=":
+                return new FloatValue(leftValue === rightValue ? 1 : 0);
+            case "<>":
+                return new FloatValue(leftValue !== rightValue ? 1 : 0);
+            case "<":
+                return new FloatValue(leftValue < rightValue ? 1 : 0);
+            case ">":
+                return new FloatValue(leftValue > rightValue ? 1 : 0);
+            case "<=":
+                return new FloatValue(leftValue <= rightValue ? 1 : 0);
+            case ">=":
+                return new FloatValue(leftValue >= rightValue ? 1 : 0);
         }
 
         return new ErrorValue(`invalid operator ${operator}`);
@@ -337,6 +349,10 @@ export class Context {
         switch (operator) {
             case "+":
                 return new StringValue(leftValue + rightValue);
+            case "=":
+                return new FloatValue(leftValue === rightValue ? 1 : 0);
+            case "<>":
+                return new FloatValue(leftValue !== rightValue ? 1 : 0);
         }
 
         return new ErrorValue(`invalid operator ${operator}`);

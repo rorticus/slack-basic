@@ -9,6 +9,7 @@ describe("Token Tests", () => {
         IF A < 4.5 THEN
             GOSUB DOTHING
         END
+        <>
         `;
 
         const expectedTypes = [
@@ -26,6 +27,7 @@ describe("Token Tests", () => {
             [TokenType.GOSUB, "GOSUB"],
             [TokenType.IDENT, "DOTHING"],
             [TokenType.END, "END"],
+            [TokenType.NOT_EQ, "<>"],
             [TokenType.EOF, ""],
         ];
 

@@ -190,7 +190,7 @@ export class Lexer {
                 if (this.peekChar() === "=") {
                     tok = newToken(
                         TokenType.LTE,
-                        this.ch,
+                        "<=",
                         this.line,
                         this.column
                     );
@@ -198,7 +198,7 @@ export class Lexer {
                 } else if (this.peekChar() === ">") {
                     tok = newToken(
                         TokenType.NOT_EQ,
-                        this.ch,
+                        "<>",
                         this.line,
                         this.column
                     );

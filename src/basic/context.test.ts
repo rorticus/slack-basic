@@ -221,5 +221,17 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("b");
             expect(context.api.print).toHaveBeenCalledWith("c");
         });
+
+        it("runs the conditions", async () => {
+            const { context, result } = await run(`
+            10 A = 0
+            20 IF A = 1 THEN PRINT "a is 1"
+            30 IF A <> 1 THEN PRINT "a is not 1"
+            RUN
+            `);
+
+            expect(context.api.print).not.toHaveBeenCalledWith("a is 1");
+            expect(context.api.print).toHaveBeenCalledWith("a is not 1");
+        });
     });
 });
