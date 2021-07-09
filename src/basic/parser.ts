@@ -4,6 +4,7 @@ import {
     CompoundStatement,
     Expression,
     FloatLiteral,
+    ForStatement,
     GotoStatement,
     Identifier,
     IfStatement,
@@ -204,6 +205,9 @@ export class Parser {
                     break;
                 case TokenType.IF:
                     statements.push(this.parseIfStatement());
+                    break;
+                case TokenType.FOR:
+                    statements.push(this.parseForStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -473,5 +477,42 @@ export class Parser {
         }
 
         return statement;
+    }
+
+    parseForStatement(): Statement | null {
+        const token = this.curToken;
+
+        if (!this.expectPeek(TokenType.IDENT)) {
+            return null;
+        }
+
+        const iterator = this.parseIdentifier();
+
+        if (!this.expectPeek(TokenType.ASSIGN)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const from = this.parseExpression(Precedence.LOWEST);
+
+        if (!this.expectPeek(TokenType.TO)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const to = this.parseExpression(Precedence.LOWEST);
+
+        let step = null;
+
+        if (this.peekTokenIs(TokenType.STEP)) {
+            this.nextToken();
+            this.nextToken();
+
+            step = this.parseExpression(Precedence.LOWEST);
+        }
+
+        return new ForStatement(token, iterator, from, to, step);
     }
 }

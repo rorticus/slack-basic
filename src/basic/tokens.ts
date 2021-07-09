@@ -27,7 +27,6 @@ export enum TokenType {
 
     LET = "LET",
     IF = "IF",
-    ELSE = "ELSE",
     DIM = "DIM",
     END = "END",
     FOR = "FOR",
@@ -46,7 +45,8 @@ export enum TokenType {
     NOT = "NOT",
     PRINT = "PRINT",
     RUN = "RUN",
-    INPUT = "INPUT"
+    INPUT = "INPUT",
+    STEP = "STEP",
 }
 
 export interface Token {
@@ -62,7 +62,6 @@ const keywords: { [key: string]: TokenType } = {
     NOT: TokenType.NOT,
     LET: TokenType.LET,
     IF: TokenType.IF,
-    ELSE: TokenType.ELSE,
     DIM: TokenType.DIM,
     END: TokenType.END,
     FOR: TokenType.FOR,
@@ -78,7 +77,8 @@ const keywords: { [key: string]: TokenType } = {
     STOP: TokenType.STOP,
     PRINT: TokenType.PRINT,
     RUN: TokenType.RUN,
-    INPUT: TokenType.INPUT
+    INPUT: TokenType.INPUT,
+    STEP: TokenType.STEP,
 };
 
 export function newToken(

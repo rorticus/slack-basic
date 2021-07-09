@@ -8,13 +8,13 @@ export interface Node {
 export enum StatementType {
     LET = "LET",
     IF = "IF",
-    ELSE = "ELSE",
     END = "END",
     COMPOUND = "COMPOUND",
     PRINT = "PRINT",
     RUN = "RUN",
     INPUT = "INPUT",
     GOTO = "GOTO",
+    FOR = "NEXT",
 }
 
 export enum IdentifierType {
@@ -240,6 +240,13 @@ export class IfStatement implements Statement {
     }
 
     toString(): string {
+        const condition = this.condition?.toString() ?? "";
+
+        if (this.goto !== undefined) {
+            return `IF ${condition} GOTO ${this.goto}`;
+        } else if (this.then !== undefined) {
+            return `IF ${condition} THEN ${this.then}`;
+        }
         return `IF ${this.condition?.toString() ?? ""}`;
     }
 }
@@ -326,5 +333,38 @@ export class InputStatement implements Statement {
 
     toString(): string {
         return `INPUT ${this.destination.value}`;
+    }
+}
+
+export class ForStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.FOR;
+
+    iterator: Identifier | null;
+    from: Expression | null;
+    to: Expression | null;
+    step: Expression | null;
+
+    constructor(
+        token: Token,
+        iterator: Identifier | null,
+        from: Expression | null,
+        to: Expression | null,
+        step: Expression | null
+    ) {
+        this.token = token;
+        this.iterator = iterator;
+        this.from = from;
+        this.to = to;
+        this.step = step;
+    }
+
+    toString(): string {
+        return `FOR ${this.iterator}=${this.from} TO ${this.to} STEP ${this.step}`;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
     }
 }

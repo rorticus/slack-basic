@@ -4,6 +4,7 @@ import {
     CompoundStatement,
     Expression,
     FloatLiteral,
+    ForStatement,
     GotoStatement,
     Identifier,
     IfStatement,
@@ -279,6 +280,35 @@ describe("Parser tests", () => {
                 expect((ifStatement.then as PrintStatement).type).toEqual(
                     StatementType.PRINT
                 );
+            });
+        });
+
+        describe("for statements", () => {
+            it("parses for statements with no steps", () => {
+                const { statement } = parse(`FOR I=1 TO 5`);
+
+                expect(statement.type).toEqual(StatementType.FOR);
+
+                const forStatement = statement as ForStatement;
+
+                testIdentifier(forStatement.iterator, "I");
+                testIntegerLiteral(forStatement.from, 1);
+                testIntegerLiteral(forStatement.to, 5);
+
+                expect(forStatement.step).toBeNull();
+            });
+
+            it("parses for statements with a step", () => {
+                const { statement } = parse(`FOR I=1 TO 5 STEP 2`);
+
+                expect(statement.type).toEqual(StatementType.FOR);
+
+                const forStatement = statement as ForStatement;
+
+                testIdentifier(forStatement.iterator, "I");
+                testIntegerLiteral(forStatement.from, 1);
+                testIntegerLiteral(forStatement.to, 5);
+                testIntegerLiteral(forStatement.step, 2);
             });
         });
     });
