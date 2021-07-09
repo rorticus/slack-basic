@@ -170,7 +170,7 @@ describe("context tests", () => {
         it("runs if..goto statements", async () => {
             const { context, result } = await run(`
             10 PRINT "a"
-            20 IF 1 GOTO 40
+            20 IF -1 GOTO 40
             30 PRINT "b"
             40 PRINT "c"
             RUN
@@ -184,7 +184,7 @@ describe("context tests", () => {
         it("runs if..then goto statements", async () => {
             const { context, result } = await run(`
             10 PRINT "a"
-            20 IF 1 THEN 40
+            20 IF -1 THEN 40
             30 PRINT "b"
             40 PRINT "c"
             RUN
@@ -198,7 +198,7 @@ describe("context tests", () => {
         it("runs if..then statements", async () => {
             const { context, result } = await run(`
             10 PRINT "a"
-            20 IF 1 THEN PRINT "b"
+            20 IF -1 THEN PRINT "b"
             40 PRINT "c"
             RUN
             `);
@@ -209,7 +209,7 @@ describe("context tests", () => {
         });
 
         it("does not run if..then statements if condition is false", async () => {
-            const { context, result } = await run(`
+            const { context } = await run(`
             10 PRINT "a"
             20 IF 0 GOTO 40
             30 PRINT "b"

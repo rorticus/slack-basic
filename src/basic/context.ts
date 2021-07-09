@@ -50,14 +50,14 @@ export function isTruthy(value: ValueObject) {
             return false;
         default:
             if (value.type() === ObjectType.INTEGER_OBJ) {
-                return (value as IntValue).value !== 0;
+                return (value as IntValue).value === -1;
             } else if (value.type() === ObjectType.FLOAT_OBJ) {
-                return (value as FloatValue).value !== 0;
+                return (value as FloatValue).value === -1;
             } else if (value.type() === ObjectType.STRING_OBJ) {
                 return (value as StringValue).value !== "";
             }
 
-            return true;
+            return false;
     }
 }
 
@@ -322,17 +322,17 @@ export class Context {
             case "/":
                 return new FloatValue(leftValue / rightValue);
             case "=":
-                return new FloatValue(leftValue === rightValue ? 1 : 0);
+                return new FloatValue(leftValue === rightValue ? -1 : 0);
             case "<>":
-                return new FloatValue(leftValue !== rightValue ? 1 : 0);
+                return new FloatValue(leftValue !== rightValue ? -1 : 0);
             case "<":
-                return new FloatValue(leftValue < rightValue ? 1 : 0);
+                return new FloatValue(leftValue < rightValue ? -1 : 0);
             case ">":
-                return new FloatValue(leftValue > rightValue ? 1 : 0);
+                return new FloatValue(leftValue > rightValue ? -1 : 0);
             case "<=":
-                return new FloatValue(leftValue <= rightValue ? 1 : 0);
+                return new FloatValue(leftValue <= rightValue ? -1 : 0);
             case ">=":
-                return new FloatValue(leftValue >= rightValue ? 1 : 0);
+                return new FloatValue(leftValue >= rightValue ? -1 : 0);
         }
 
         return new ErrorValue(`invalid operator ${operator}`);
