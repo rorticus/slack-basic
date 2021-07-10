@@ -12,6 +12,7 @@ import {
     InputStatement,
     IntegerLiteral,
     LetStatement,
+    NextStatement,
     PrefixExpression,
     PrintStatement,
     Program,
@@ -208,6 +209,9 @@ export class Parser {
                     break;
                 case TokenType.FOR:
                     statements.push(this.parseForStatement());
+                    break;
+                case TokenType.NEXT:
+                    statements.push(this.parseNextStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -514,5 +518,31 @@ export class Parser {
         }
 
         return new ForStatement(token, iterator, from, to, step);
+    }
+
+    parseNextStatement(): Statement | null {
+        const token = this.curToken;
+        const values: Identifier[] = [];
+
+        if (this.peekTokenIs(TokenType.IDENT)) {
+            this.nextToken();
+
+            const v = this.parseIdentifier();
+            if (v) {
+                values.push(v);
+            }
+
+            while (this.peekTokenIs(TokenType.COMMA)) {
+                this.nextToken();
+                this.nextToken();
+
+                const v = this.parseIdentifier();
+                if (v) {
+                    values.push(v);
+                }
+            }
+        }
+
+        return new NextStatement(token, values);
     }
 }

@@ -12,6 +12,7 @@ import {
     InputStatement,
     IntegerLiteral,
     LetStatement,
+    NextStatement,
     PrintStatement,
     StatementType,
     StringLiteral,
@@ -309,6 +310,39 @@ describe("Parser tests", () => {
                 testIntegerLiteral(forStatement.from, 1);
                 testIntegerLiteral(forStatement.to, 5);
                 testIntegerLiteral(forStatement.step, 2);
+            });
+
+            it("parses next statements with no arguments", () => {
+                const { statement } = parse(`NEXT`);
+
+                expect(statement.type).toEqual(StatementType.NEXT);
+
+                const nextStatement = statement as NextStatement;
+
+                expect(nextStatement.values).toHaveLength(0);
+            });
+
+            it("parses next statements with a single argument", () => {
+                const { statement } = parse(`NEXT X`);
+
+                expect(statement.type).toEqual(StatementType.NEXT);
+
+                const nextStatement = statement as NextStatement;
+
+                expect(nextStatement.values).toHaveLength(1);
+                testIdentifier(nextStatement.values[0], "X");
+            });
+
+            it("parses next statements with multiple arguments", () => {
+                const { statement } = parse(`NEXT X, Y`);
+
+                expect(statement.type).toEqual(StatementType.NEXT);
+
+                const nextStatement = statement as NextStatement;
+
+                expect(nextStatement.values).toHaveLength(2);
+                testIdentifier(nextStatement.values[0], "X");
+                testIdentifier(nextStatement.values[1], "Y");
             });
         });
     });

@@ -10,7 +10,6 @@ export enum TokenType {
     ASSIGN = "=",
     PLUS = "+",
     MINUS = "-",
-    BANG = "!",
     ASTERISK = "*",
     SLASH = "/",
     LT = "<",

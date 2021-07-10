@@ -3,6 +3,7 @@ import {
     CompoundStatement,
     Expression,
     FloatLiteral,
+    ForStatement,
     GotoStatement,
     Identifier,
     IdentifierType,
@@ -11,6 +12,7 @@ import {
     InputStatement,
     IntegerLiteral,
     LetStatement,
+    NextStatement,
     PrefixExpression,
     PrintStatement,
     Statement,
@@ -26,7 +28,6 @@ import {
     StringValue,
     ValueObject,
 } from "./object";
-import { FALSE } from "../monkey/object";
 
 function isError(obj: ValueObject): obj is ErrorValue {
     return obj.type() === ObjectType.ERROR_OBJ;
@@ -65,8 +66,10 @@ export class Context {
     globalStack: Stack;
     lines: Statement[];
     programCounter: number;
+    programCommandIndex: number;
     state: ContextState;
     api: ContextApi;
+    forStack: ForStatement[];
 
     private nextLine: number;
 
@@ -74,15 +77,19 @@ export class Context {
         this.globalStack = new Stack();
         this.lines = [];
         this.programCounter = 0;
+        this.programCommandIndex = 0;
         this.nextLine = 0;
         this.state = ContextState.IDLE;
         this.api = api;
+        this.forStack = [];
     }
 
     reset() {
         this.state = ContextState.IDLE;
         this.programCounter = 0;
+        this.programCommandIndex = 0;
         this.globalStack.clear();
+        this.forStack = [];
     }
 
     async runImmediateStatement(statement: Statement): Promise<ValueObject> {
@@ -125,6 +132,10 @@ export class Context {
                 return this.goto((statement as GotoStatement).destination);
             case StatementType.IF:
                 return this.runIfStatement(statement as IfStatement);
+            case StatementType.FOR:
+                return this.runForStatement(statement as ForStatement);
+            case StatementType.NEXT:
+                return this.runNextStatement(statement as NextStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -148,6 +159,7 @@ export class Context {
                     return result;
                 }
                 this.programCounter = this.nextLine;
+                this.programCommandIndex = 0;
             }
         } finally {
             this.state = ContextState.IDLE;
@@ -162,6 +174,7 @@ export class Context {
         let result: ValueObject = NULL;
 
         for (let i = 0; i < statement.statements.length; i++) {
+            this.programCommandIndex = i;
             result = await this.runStatement(statement.statements[i]);
         }
 
@@ -489,6 +502,128 @@ export class Context {
                 return this.goto(statement.then);
             } else if (statement.then) {
                 return this.runStatement(statement.then);
+            }
+        }
+
+        return NULL;
+    }
+
+    async runForStatement(statement: ForStatement): Promise<ValueObject> {
+        if (!statement.iterator) {
+            return new ErrorValue(`cannot run a for loop with no iterator`);
+        }
+
+        if (!statement.from) {
+            return new ErrorValue(`cannot run a for statement with no from`);
+        }
+
+        const start = this.evalExpression(statement.from);
+        if (isError(start)) {
+            return start;
+        }
+
+        this.globalStack.set(statement.iterator.value, start);
+
+        this.forStack.push(statement);
+
+        return NULL;
+    }
+
+    async runNextStatement(statement: NextStatement): Promise<ValueObject> {
+        const runStackIndex: (index: number) => [boolean, ValueObject] = (
+            index: number
+        ) => {
+            const forStatement = this.forStack[index];
+
+            if (!forStatement) {
+                return [true, new ErrorValue(`next without for`)];
+            }
+
+            const variableName = forStatement.iterator?.value ?? "";
+
+            const v = this.globalStack.get(variableName);
+            if (!v) {
+                return [
+                    true,
+                    new ErrorValue(`invalid variable ${variableName}`),
+                ];
+            }
+
+            if (
+                v.type() !== ObjectType.INTEGER_OBJ &&
+                v.type() !== ObjectType.FLOAT_OBJ
+            ) {
+                return [
+                    true,
+                    new ErrorValue(`cannot loop on non numeric variable`),
+                ];
+            }
+
+            let step = 1;
+
+            if (forStatement.step) {
+                const stepValue = this.evalExpression(forStatement.step);
+
+                if (isError(stepValue)) {
+                    return [true, stepValue];
+                }
+
+                if (
+                    stepValue.type() !== ObjectType.INTEGER_OBJ &&
+                    stepValue.type() !== ObjectType.FLOAT_OBJ
+                ) {
+                    return [
+                        true,
+                        new ErrorValue(`cannot step on non numeric value`),
+                    ];
+                }
+
+                step = (stepValue as IntValue | FloatValue).value;
+            }
+
+            const iteratorValue = this.evalNumberInfix(
+                v,
+                "+",
+                new FloatValue(step)
+            );
+            if (isError(iteratorValue)) {
+                return [true, iteratorValue];
+            }
+            this.globalStack.set(variableName, iteratorValue);
+
+            if (!forStatement.to) {
+                return [true, new ErrorValue(`invalid to`)];
+            }
+            const toValue = this.evalExpression(forStatement.to);
+            if (isError(toValue)) {
+                return [true, toValue];
+            }
+
+            if (isTruthy(this.evalNumberInfix(iteratorValue, "<", toValue))) {
+                return [true, NULL];
+            }
+
+            return [false, NULL];
+        };
+
+        if (statement.values.length === 0) {
+            runStackIndex(0);
+        } else {
+            for (let i = 0; i < statement.values.length; i++) {
+                // find the stack index
+                const index = this.forStack.findIndex(
+                    (f) => f.iterator?.value === statement.values[i].value
+                );
+                if (!index) {
+                    return new ErrorValue(
+                        `cannot iterate on unknown variable ${statement.values[i].value}`
+                    );
+                }
+
+                const result = runStackIndex(index);
+                if (result[0]) {
+                    return result[1];
+                }
             }
         }
 

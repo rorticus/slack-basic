@@ -234,4 +234,21 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("a is not 1");
         });
     });
+
+    describe("for/next statements", () => {
+        it("runs for loops on multiple lines", async () => {
+            const { context } = await run(`
+            10 FOR I = 0 TO 5
+            20 PRINT I
+            30 NEXT
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("0");
+            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith("2");
+            expect(context.api.print).toHaveBeenCalledWith("3");
+            expect(context.api.print).toHaveBeenCalledWith("4");
+        });
+    });
 });

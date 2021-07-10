@@ -14,7 +14,8 @@ export enum StatementType {
     RUN = "RUN",
     INPUT = "INPUT",
     GOTO = "GOTO",
-    FOR = "NEXT",
+    FOR = "FOR",
+    NEXT = "NEXT",
 }
 
 export enum IdentifierType {
@@ -362,6 +363,30 @@ export class ForStatement implements Statement {
 
     toString(): string {
         return `FOR ${this.iterator}=${this.from} TO ${this.to} STEP ${this.step}`;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+}
+
+export class NextStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.NEXT;
+
+    values: Identifier[];
+
+    constructor(
+        token: Token,
+        values: Identifier[]
+    ) {
+        this.token = token;
+        this.values = values;
+    }
+
+    toString(): string {
+        return `NEXT ${this.values.map((v) => v.toString()).join(", ")}`;
     }
 
     tokenLiteral(): string {
