@@ -45,7 +45,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.SLASH]: Precedence.PRODUCT,
     [TokenType.AND]: Precedence.LOGICAL,
     [TokenType.OR]: Precedence.LOGICAL,
-    [TokenType.XOR]: Precedence.LOGICAL,
+    [TokenType.NOT]: Precedence.LOGICAL,
 };
 
 export class Parser {
@@ -79,6 +79,10 @@ export class Parser {
             TokenType.LPAREN,
             this.parseGroupedExpression.bind(this)
         );
+        this.registerPrefix(
+            TokenType.NOT,
+            this.parsePrefixExpression.bind(this)
+        );
         this.registerInfix(
             TokenType.PLUS,
             this.parseInfixExpression.bind(this)
@@ -107,7 +111,6 @@ export class Parser {
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.AND, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.OR, this.parseInfixExpression.bind(this));
-        this.registerInfix(TokenType.XOR, this.parseInfixExpression.bind(this));
 
         // read the two tokens to fill our buffer
         this.nextToken();
@@ -375,7 +378,11 @@ export class Parser {
     parsePrefixExpression(): Expression | null {
         const token = this.curToken;
         this.nextToken();
-        const right = this.parseExpression(Precedence.PREFIX);
+        const right = this.parseExpression(
+            token.type === TokenType.NOT
+                ? Precedence.LOGICAL
+                : Precedence.PREFIX
+        );
 
         return new PrefixExpression(token, token.literal, right);
     }

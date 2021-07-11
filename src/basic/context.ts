@@ -276,7 +276,7 @@ export class Context {
         } else if (expression instanceof InfixExpression) {
             return this.evalInfixExpression(expression, isInCondition);
         } else if (expression instanceof PrefixExpression) {
-            return this.evalPrefixExpression(expression);
+            return this.evalPrefixExpression(expression, isInCondition);
         } else if (expression instanceof Identifier) {
             return this.evalIdentifier(expression);
         }
@@ -421,7 +421,10 @@ export class Context {
         return new ErrorValue(`invalid operator ${operator}`);
     }
 
-    private evalPrefixExpression(expression: PrefixExpression): ValueObject {
+    private evalPrefixExpression(
+        expression: PrefixExpression,
+        isInCondition: boolean
+    ): ValueObject {
         if (!expression.right) {
             return new ErrorValue(
                 `prefix expressions require a right hand side`
@@ -438,17 +441,32 @@ export class Context {
             case ObjectType.FLOAT_OBJ:
                 return this.evalNumberPrefix(
                     expression.operator,
-                    value as IntValue | FloatValue
+                    value as IntValue | FloatValue,
+                    isInCondition
                 );
         }
 
         return new ErrorValue(`invalid prefix type ${value.type()}`);
     }
 
-    private evalNumberPrefix(operator: string, right: IntValue | FloatValue) {
+    private evalNumberPrefix(
+        operator: string,
+        right: IntValue | FloatValue,
+        isInCondition: boolean
+    ) {
         switch (operator) {
             case "-":
                 return new FloatValue(0 - right.value);
+            case "NOT":
+                if (isInCondition) {
+                    if (isTruthy(right)) {
+                        return new FloatValue(0);
+                    } else {
+                        return new FloatValue(-1);
+                    }
+                } else {
+                    return new FloatValue(~right.value);
+                }
         }
 
         return new ErrorValue(`invalid prefix operator ${operator}`);
@@ -650,7 +668,11 @@ export class Context {
                 return [false, toValue];
             }
 
-            if (isTruthy(this.evalNumberInfix(iteratorValue, "<", toValue, false))) {
+            if (
+                isTruthy(
+                    this.evalNumberInfix(iteratorValue, "<", toValue, false)
+                )
+            ) {
                 return [true, NULL];
             }
 

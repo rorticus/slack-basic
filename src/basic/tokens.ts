@@ -41,7 +41,7 @@ export enum TokenType {
     STOP = "STOP",
     AND = "AND",
     OR = "OR",
-    XOR = "XOR",
+    NOT = "NOT",
     PRINT = "PRINT",
     RUN = "RUN",
     INPUT = "INPUT",
@@ -58,7 +58,7 @@ export interface Token {
 const keywords: { [key: string]: TokenType } = {
     AND: TokenType.AND,
     OR: TokenType.OR,
-    XOR: TokenType.XOR,
+    NOT: TokenType.NOT,
     LET: TokenType.LET,
     IF: TokenType.IF,
     DIM: TokenType.DIM,

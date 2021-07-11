@@ -322,5 +322,15 @@ describe("context tests", () => {
             );
             expect(context.api.print).toHaveBeenCalledWith("1");
         });
+
+        it("treats NOT operators in expressions as bitwise", async () => {
+            const { context } = await run(`PRINT NOT 1`);
+            expect(context.api.print).toHaveBeenCalledWith(`${~1}`);
+        });
+
+        it("treats NOT operators in condtionals as boolean operators", async () => {
+            const { context } = await run(`IF NOT 1 = 3 THEN PRINT "true"`);
+            expect(context.api.print).toHaveBeenCalledWith(`true`);
+        });
     });
 });
