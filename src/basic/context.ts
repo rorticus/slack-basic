@@ -263,7 +263,10 @@ export class Context {
         return value;
     }
 
-    private evalExpression(expression: Expression): ValueObject {
+    private evalExpression(
+        expression: Expression,
+        isInCondition = false
+    ): ValueObject {
         if (expression instanceof StringLiteral) {
             return this.evalStringLiteral(expression);
         } else if (expression instanceof IntegerLiteral) {
@@ -271,7 +274,7 @@ export class Context {
         } else if (expression instanceof FloatLiteral) {
             return this.evalFloatLiteral(expression);
         } else if (expression instanceof InfixExpression) {
-            return this.evalInfixExpression(expression);
+            return this.evalInfixExpression(expression, isInCondition);
         } else if (expression instanceof PrefixExpression) {
             return this.evalPrefixExpression(expression);
         } else if (expression instanceof Identifier) {
@@ -293,13 +296,17 @@ export class Context {
         return new FloatValue(expr.value);
     }
 
-    private evalInfixExpression(expression: InfixExpression) {
+    private evalInfixExpression(
+        expression: InfixExpression,
+        isInCondition = false
+    ) {
         const infixTypes: {
             [left: string]: {
                 [right: string]: (
                     left: ValueObject,
                     operator: string,
-                    right: ValueObject
+                    right: ValueObject,
+                    isInCondition: boolean
                 ) => ValueObject;
             };
         } = {
@@ -317,12 +324,12 @@ export class Context {
         };
 
         if (expression.left && expression.right) {
-            const left = this.evalExpression(expression.left);
+            const left = this.evalExpression(expression.left, isInCondition);
             if (isError(left)) {
                 return left;
             }
 
-            const right = this.evalExpression(expression.right);
+            const right = this.evalExpression(expression.right, isInCondition);
             if (isError(right)) {
                 return right;
             }
@@ -337,7 +344,7 @@ export class Context {
                 );
             }
 
-            return handler(left, expression.operator, right);
+            return handler(left, expression.operator, right, isInCondition);
         }
 
         return new ErrorValue(`operator must have both a left and right side`);
@@ -346,7 +353,8 @@ export class Context {
     private evalNumberInfix(
         left: ValueObject,
         operator: string,
-        right: ValueObject
+        right: ValueObject,
+        isInCondition: boolean
     ) {
         const leftValue = (left as IntValue | FloatValue).value;
         const rightValue = (right as IntValue | FloatValue).value;
@@ -372,6 +380,22 @@ export class Context {
                 return new FloatValue(leftValue <= rightValue ? -1 : 0);
             case ">=":
                 return new FloatValue(leftValue >= rightValue ? -1 : 0);
+            case "AND":
+                if (isInCondition) {
+                    return new FloatValue(
+                        leftValue === -1 && rightValue === -1 ? -1 : 0
+                    );
+                } else {
+                    return new FloatValue(leftValue & rightValue);
+                }
+            case "OR":
+                if (isInCondition) {
+                    return new FloatValue(
+                        leftValue === -1 || rightValue === -1 ? -1 : 0
+                    );
+                } else {
+                    return new FloatValue(leftValue | rightValue);
+                }
         }
 
         return new ErrorValue(`invalid operator ${operator}`);
@@ -610,7 +634,8 @@ export class Context {
             const iteratorValue = this.evalNumberInfix(
                 v,
                 "+",
-                new FloatValue(step)
+                new FloatValue(step),
+                false
             );
             if (isError(iteratorValue)) {
                 return [true, iteratorValue];
@@ -625,7 +650,7 @@ export class Context {
                 return [false, toValue];
             }
 
-            if (isTruthy(this.evalNumberInfix(iteratorValue, "<", toValue))) {
+            if (isTruthy(this.evalNumberInfix(iteratorValue, "<", toValue, false))) {
                 return [true, NULL];
             }
 

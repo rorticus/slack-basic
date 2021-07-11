@@ -300,4 +300,27 @@ describe("context tests", () => {
             expect(context.forStack).toHaveLength(0);
         });
     });
+
+    describe("boolean conditions", () => {
+        it("treats boolean AND operators in conditions as conditions", async () => {
+            const { context } = await run(
+                `IF 1 = 1 AND 2 = 2 THEN PRINT "true"`
+            );
+            expect(context.api.print).toHaveBeenCalledWith("true");
+        });
+
+        it("treats boolean OR operators in conditions as conditions", async () => {
+            const { context } = await run(
+                `IF 1 = 1 OR 2 = 3 THEN PRINT "true"`
+            );
+            expect(context.api.print).toHaveBeenCalledWith("true");
+        });
+
+        it("treats AND operators in expressions as bitwise", async () => {
+            const { context } = await run(
+                `IF 1 = 1 AND 2 = 2 THEN PRINT 3 AND 1`
+            );
+            expect(context.api.print).toHaveBeenCalledWith("1");
+        });
+    });
 });

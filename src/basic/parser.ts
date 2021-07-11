@@ -15,7 +15,6 @@ import {
     NextStatement,
     PrefixExpression,
     PrintStatement,
-    Program,
     RunStatement,
     Statement,
     StringLiteral,
@@ -46,7 +45,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.SLASH]: Precedence.PRODUCT,
     [TokenType.AND]: Precedence.LOGICAL,
     [TokenType.OR]: Precedence.LOGICAL,
-    [TokenType.NOT]: Precedence.LOGICAL,
+    [TokenType.XOR]: Precedence.LOGICAL,
 };
 
 export class Parser {
@@ -108,7 +107,7 @@ export class Parser {
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.AND, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.OR, this.parseInfixExpression.bind(this));
-        this.registerInfix(TokenType.NOT, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.XOR, this.parseInfixExpression.bind(this));
 
         // read the two tokens to fill our buffer
         this.nextToken();
