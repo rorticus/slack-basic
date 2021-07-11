@@ -62,23 +62,47 @@ export function isTruthy(value: ValueObject) {
     }
 }
 
+export function linkNextStatement(
+    statement: Statement,
+    nextStatement: Statement | null
+) {
+    if (statement.type === StatementType.COMPOUND) {
+        // compound statements need special linking
+        const compound = statement as CompoundStatement;
+        if (compound.statements.length > 0) {
+            // head
+            compound.next = compound.statements[0];
+
+            // middle
+            for (let i = 0; i < compound.statements.length - 1; i++) {
+                linkNextStatement(
+                    compound.statements[i],
+                    compound.statements[i + 1]
+                );
+            }
+
+            // tail
+            compound.statements[compound.statements.length - 1].next =
+                nextStatement;
+        }
+    } else {
+        statement.next = nextStatement;
+    }
+}
+
 export class Context {
     globalStack: Stack;
     lines: Statement[];
-    programCounter: number;
-    programCommandIndex: number;
     state: ContextState;
     api: ContextApi;
     forStack: ForStatement[];
 
-    private nextLine: number;
+    private nextStatement: Statement | null;
 
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
         this.lines = [];
-        this.programCounter = 0;
-        this.programCommandIndex = 0;
-        this.nextLine = 0;
+        this.nextStatement = null;
         this.state = ContextState.IDLE;
         this.api = api;
         this.forStack = [];
@@ -86,10 +110,16 @@ export class Context {
 
     reset() {
         this.state = ContextState.IDLE;
-        this.programCounter = 0;
-        this.programCommandIndex = 0;
         this.globalStack.clear();
         this.forStack = [];
+
+        if (this.lines.length > 0) {
+            for (let i = 0; i < this.lines.length - 1; i++) {
+                linkNextStatement(this.lines[i], this.lines[i + 1]);
+            }
+
+            this.lines[this.lines.length - 1].next = null;
+        }
     }
 
     async runImmediateStatement(statement: Statement): Promise<ValueObject> {
@@ -110,7 +140,17 @@ export class Context {
 
             return NULL;
         } else {
-            return this.runStatement(statement);
+            linkNextStatement(statement, null);
+
+            let root: Statement | null = statement;
+            let result: ValueObject = NULL;
+            while (root) {
+                this.nextStatement = root.next;
+                result = await this.runStatement(root);
+                root = this.nextStatement;
+            }
+
+            return result;
         }
     }
 
@@ -125,9 +165,7 @@ export class Context {
             case StatementType.INPUT:
                 return this.runInputStatement(statement as InputStatement);
             case StatementType.COMPOUND:
-                return this.runCompoundStatement(
-                    statement as CompoundStatement
-                );
+                return NULL;
             case StatementType.GOTO:
                 return this.goto((statement as GotoStatement).destination);
             case StatementType.IF:
@@ -150,35 +188,23 @@ export class Context {
         this.state = ContextState.RUNNING;
 
         try {
-            while (this.lines[this.programCounter]) {
-                this.nextLine = this.programCounter + 1;
-                const result = await this.runStatement(
-                    this.lines[this.programCounter]
-                );
+            let statement: Statement | null = this.lines[0];
+
+            while (statement) {
+                this.nextStatement = statement.next ?? null;
+
+                const result = await this.runStatement(statement);
                 if (result.type() === ObjectType.ERROR_OBJ) {
                     return result;
                 }
-                this.programCounter = this.nextLine;
-                this.programCommandIndex = 0;
+
+                statement = this.nextStatement;
             }
         } finally {
             this.state = ContextState.IDLE;
         }
 
         return NULL;
-    }
-
-    private async runCompoundStatement(
-        statement: CompoundStatement
-    ): Promise<ValueObject> {
-        let result: ValueObject = NULL;
-
-        for (let i = 0; i < statement.statements.length; i++) {
-            this.programCommandIndex = i;
-            result = await this.runStatement(statement.statements[i]);
-        }
-
-        return result;
     }
 
     private async runPrintStatement(
@@ -483,7 +509,7 @@ export class Context {
             );
         }
 
-        this.nextLine = lineIndex;
+        this.nextStatement = this.lines[lineIndex];
 
         return NULL;
     }
@@ -592,11 +618,11 @@ export class Context {
             this.globalStack.set(variableName, iteratorValue);
 
             if (!forStatement.to) {
-                return [true, new ErrorValue(`invalid to`)];
+                return [false, new ErrorValue(`invalid to`)];
             }
             const toValue = this.evalExpression(forStatement.to);
             if (isError(toValue)) {
-                return [true, toValue];
+                return [false, toValue];
             }
 
             if (isTruthy(this.evalNumberInfix(iteratorValue, "<", toValue))) {
@@ -606,24 +632,33 @@ export class Context {
             return [false, NULL];
         };
 
-        if (statement.values.length === 0) {
-            runStackIndex(0);
-        } else {
-            for (let i = 0; i < statement.values.length; i++) {
-                // find the stack index
-                const index = this.forStack.findIndex(
-                    (f) => f.iterator?.value === statement.values[i].value
-                );
-                if (!index) {
-                    return new ErrorValue(
-                        `cannot iterate on unknown variable ${statement.values[i].value}`
-                    );
-                }
+        const indicies =
+            statement.values.length === 0
+                ? [this.forStack.length - 1]
+                : statement.values.map((v) =>
+                      this.forStack.findIndex(
+                          (f) => f.iterator?.value === v.value
+                      )
+                  );
 
-                const result = runStackIndex(index);
-                if (result[0]) {
-                    return result[1];
-                }
+        for (let i = 0; i < indicies.length; i++) {
+            const index = indicies[i];
+            if (index < 0) {
+                return new ErrorValue(`cannot iterate on unknown variable`);
+            }
+
+            const result = runStackIndex(index);
+            if (isError(result[1])) {
+                return result[1];
+            }
+
+            if (result[0]) {
+                this.nextStatement = this.forStack[index].next;
+                return result[1];
+            } else {
+                const forStatement = this.forStack[index];
+
+                this.forStack = this.forStack.filter((f) => f !== forStatement);
             }
         }
 

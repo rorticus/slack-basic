@@ -74,7 +74,7 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("3");
         });
 
-        it("evaluates identifieres", async () => {
+        it("evaluates identifiers", async () => {
             const { context } = await run(`
             LET A$ = "hello"
             PRINT A$ + " world"
@@ -249,6 +249,55 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("2");
             expect(context.api.print).toHaveBeenCalledWith("3");
             expect(context.api.print).toHaveBeenCalledWith("4");
+
+            expect(context.forStack).toHaveLength(0);
+        });
+
+        it("runs for in a compound statement", async () => {
+            const { context } = await run(`FOR I = 0 TO 5 : PRINT I : NEXT`);
+
+            expect(context.api.print).toHaveBeenCalledWith("0");
+            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith("2");
+            expect(context.api.print).toHaveBeenCalledWith("3");
+            expect(context.api.print).toHaveBeenCalledWith("4");
+
+            expect(context.forStack).toHaveLength(0);
+        });
+
+        it("runs nested for loops", async () => {
+            const { context } = await run(`
+            10 FOR X = 0 TO 2
+            20    FOR Y = 0 TO 2
+            30        PRINT X "," Y
+            40    NEXT
+            50 NEXT
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("0,0");
+            expect(context.api.print).toHaveBeenCalledWith("0,1");
+            expect(context.api.print).toHaveBeenCalledWith("1,0");
+            expect(context.api.print).toHaveBeenCalledWith("1,1");
+
+            expect(context.forStack).toHaveLength(0);
+        });
+
+        it("runs for loops by name", async () => {
+            const { context } = await run(`
+            10 FOR X = 0 TO 2
+            20    FOR Y = 0 TO 2
+            30        PRINT X "," Y
+            40 NEXT Y, X
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("0,0");
+            expect(context.api.print).toHaveBeenCalledWith("0,1");
+            expect(context.api.print).toHaveBeenCalledWith("1,0");
+            expect(context.api.print).toHaveBeenCalledWith("1,1");
+
+            expect(context.forStack).toHaveLength(0);
         });
     });
 });

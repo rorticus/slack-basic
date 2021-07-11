@@ -27,6 +27,7 @@ export enum IdentifierType {
 export interface Statement extends Node {
     lineNumber: number | undefined;
     type: StatementType;
+    next: Statement | null;
 }
 
 export interface Expression extends Node {}
@@ -139,6 +140,7 @@ export class RunStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
     type = StatementType.RUN;
+    next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
@@ -158,6 +160,7 @@ export class GotoStatement implements Statement {
     lineNumber: number | undefined;
     type = StatementType.GOTO;
     destination: number;
+    next: Statement | null = null;
 
     constructor(token: Token, destination: number) {
         this.token = token;
@@ -226,6 +229,7 @@ export class IfStatement implements Statement {
     token: Token;
     lineNumber = 0;
     type = StatementType.IF;
+    next: Statement | null = null;
 
     condition: Expression | null;
     then: number | Statement | undefined;
@@ -257,6 +261,7 @@ export class LetStatement implements Statement {
     names: Identifier[];
     value: Expression | null;
     lineNumber = 0;
+    next: Statement | null = null;
 
     type = StatementType.LET;
 
@@ -282,6 +287,7 @@ export class CompoundStatement implements Statement {
     statements: Statement[];
     lineNumber = 0;
     type = StatementType.COMPOUND;
+    next: Statement | null = null;
 
     constructor(token: Token, statements: Statement[]) {
         this.token = token;
@@ -302,6 +308,7 @@ export class PrintStatement implements Statement {
     args: Expression[];
     type = StatementType.PRINT;
     lineNumber: number | undefined;
+    next: Statement | null = null;
 
     constructor(token: Token, args: Expression[]) {
         this.token = token;
@@ -322,6 +329,7 @@ export class InputStatement implements Statement {
     destination: Identifier;
     type = StatementType.INPUT;
     lineNumber: number | undefined;
+    next: Statement | null = null;
 
     constructor(token: Token, destination: Identifier) {
         this.token = token;
@@ -341,6 +349,7 @@ export class ForStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
     type = StatementType.FOR;
+    next: Statement | null = null;
 
     iterator: Identifier | null;
     from: Expression | null;
@@ -374,6 +383,7 @@ export class NextStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
     type = StatementType.NEXT;
+    next: Statement | null = null;
 
     values: Identifier[];
 
