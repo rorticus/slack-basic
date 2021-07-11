@@ -345,5 +345,12 @@ describe("Parser tests", () => {
                 testIdentifier(nextStatement.values[1], "Y");
             });
         });
+
+        describe("rem statements", () => {
+            it("ignores rem statements", () => {
+                const { statement } = parse("REM 1234adsfasdf 987ds\"asdff");
+                expect(statement).toBeUndefined();
+            });
+        })
     });
 });

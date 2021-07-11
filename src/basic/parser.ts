@@ -215,6 +215,9 @@ export class Parser {
                 case TokenType.NEXT:
                     statements.push(this.parseNextStatement());
                     break;
+                case TokenType.REM:
+                    // skip rem statements
+                    break;
                 default:
                     // statements with no labels default to LET statements
                     statements.push(this.parseLetStatement());

@@ -188,12 +188,7 @@ export class Lexer {
                 break;
             case "<":
                 if (this.peekChar() === "=") {
-                    tok = newToken(
-                        TokenType.LTE,
-                        "<=",
-                        this.line,
-                        this.column
-                    );
+                    tok = newToken(TokenType.LTE, "<=", this.line, this.column);
                     this.readChar();
                 } else if (this.peekChar() === ">") {
                     tok = newToken(
@@ -248,6 +243,15 @@ export class Lexer {
 
                     const literal = this.readIdentifier();
                     tok = newToken(lookupIdent(literal), literal, line, column);
+                    if (tok.type === TokenType.REM) {
+                        let startPos = this.readPosition;
+                        let rest = "";
+                        while (this.ch !== "\n" && this.ch !== "") {
+                            rest += this.ch;
+                            this.readChar();
+                        }
+                        tok.literal = "REM" + rest;
+                    }
                     return tok;
                 } else if (isDigit(this.ch)) {
                     const line = this.line;
