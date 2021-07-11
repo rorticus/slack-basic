@@ -5,6 +5,7 @@ import {
     Expression,
     FloatLiteral,
     ForStatement,
+    GosubStatement,
     GotoStatement,
     Identifier,
     IfStatement,
@@ -347,10 +348,25 @@ describe("Parser tests", () => {
         });
 
         describe("rem statements", () => {
-            it("ignores rem statements", () => {
-                const { statement } = parse("REM 1234adsfasdf 987ds\"asdff");
-                expect(statement).toBeUndefined();
+            it("parses rem statements", () => {
+                const { statement } = parse('REM 1234adsfasdf 987ds"asdff');
+                expect(statement.type).toEqual(StatementType.REM);
             });
-        })
+        });
+
+        describe("gosub statements", () => {
+            it("parses return statements", () => {
+                const { statement } = parse("RETURN");
+                expect(statement.type).toEqual(StatementType.RETURN);
+            });
+
+            it("parses gosub statements", () => {
+                const { statement } = parse("GOSUB 1000");
+                expect(statement.type).toEqual(StatementType.GOSUB);
+                expect((statement as GosubStatement).gosubLineNumber).toEqual(
+                    1000
+                );
+            });
+        });
     });
 });

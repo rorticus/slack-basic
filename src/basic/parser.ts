@@ -5,6 +5,7 @@ import {
     Expression,
     FloatLiteral,
     ForStatement,
+    GosubStatement,
     GotoStatement,
     Identifier,
     IfStatement,
@@ -14,7 +15,8 @@ import {
     LetStatement,
     NextStatement,
     PrefixExpression,
-    PrintStatement,
+    PrintStatement, RemStatement,
+    ReturnStatement,
     RunStatement,
     Statement,
     StringLiteral,
@@ -216,7 +218,13 @@ export class Parser {
                     statements.push(this.parseNextStatement());
                     break;
                 case TokenType.REM:
-                    // skip rem statements
+                    statements.push(new RemStatement(this.curToken));
+                    break;
+                case TokenType.RETURN:
+                    statements.push(new ReturnStatement(this.curToken));
+                    break;
+                case TokenType.GOSUB:
+                    statements.push(this.parseGosubStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -553,5 +561,20 @@ export class Parser {
         }
 
         return new NextStatement(token, values);
+    }
+
+    parseGosubStatement(): Statement | null {
+        const token = this.curToken;
+
+        if (!this.expectPeek(TokenType.INT)) {
+            return null;
+        }
+
+        const target = this.parseIntegerLiteral();
+        if (!target) {
+            return null;
+        }
+
+        return new GosubStatement(token, (target as IntegerLiteral).value);
     }
 }

@@ -16,6 +16,9 @@ export enum StatementType {
     GOTO = "GOTO",
     FOR = "FOR",
     NEXT = "NEXT",
+    GOSUB = "GOSUB",
+    RETURN = "RETURN",
+    REM = "REM"
 }
 
 export enum IdentifierType {
@@ -387,10 +390,7 @@ export class NextStatement implements Statement {
 
     values: Identifier[];
 
-    constructor(
-        token: Token,
-        values: Identifier[]
-    ) {
+    constructor(token: Token, values: Identifier[]) {
         this.token = token;
         this.values = values;
     }
@@ -400,6 +400,66 @@ export class NextStatement implements Statement {
     }
 
     tokenLiteral(): string {
+        return this.token.literal;
+    }
+}
+
+export class GosubStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.GOSUB;
+    next: Statement | null = null;
+
+    gosubLineNumber: number;
+
+    constructor(token: Token, lineNumber: number) {
+        this.token = token;
+        this.gosubLineNumber = lineNumber;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `GOSUB ${this.gosubLineNumber}`;
+    }
+}
+
+export class ReturnStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.RETURN;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `RETURN`;
+    }
+}
+
+export class RemStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.REM;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
         return this.token.literal;
     }
 }

@@ -4,6 +4,7 @@ import {
     Expression,
     FloatLiteral,
     ForStatement,
+    GosubStatement,
     GotoStatement,
     Identifier,
     IdentifierType,
@@ -15,6 +16,7 @@ import {
     NextStatement,
     PrefixExpression,
     PrintStatement,
+    ReturnStatement,
     Statement,
     StatementType,
     StringLiteral,
@@ -98,6 +100,7 @@ export class Context {
     forStack: ForStatement[];
 
     private nextStatement: Statement | null;
+    private returnStack: (Statement | null)[] = [];
 
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
@@ -112,6 +115,7 @@ export class Context {
         this.state = ContextState.IDLE;
         this.globalStack.clear();
         this.forStack = [];
+        this.returnStack = [];
 
         if (this.lines.length > 0) {
             for (let i = 0; i < this.lines.length - 1; i++) {
@@ -174,6 +178,12 @@ export class Context {
                 return this.runForStatement(statement as ForStatement);
             case StatementType.NEXT:
                 return this.runNextStatement(statement as NextStatement);
+            case StatementType.GOSUB:
+                return this.runGosubStatement(statement as GosubStatement);
+            case StatementType.RETURN:
+                return this.runReturnStatement();
+            case StatementType.REM:
+                return NULL;
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -708,6 +718,25 @@ export class Context {
                 this.forStack = this.forStack.filter((f) => f !== forStatement);
             }
         }
+
+        return NULL;
+    }
+
+    private async runGosubStatement(
+        statement: GosubStatement
+    ): Promise<ValueObject> {
+        this.returnStack.push(statement.next);
+        return this.goto(statement.gosubLineNumber);
+    }
+
+    private async runReturnStatement(): Promise<ValueObject> {
+        if (this.returnStack.length === 0) {
+            return new ErrorValue(`cannot return on empty stack`);
+        }
+
+        const where = this.returnStack.pop();
+
+        this.nextStatement = where || null;
 
         return NULL;
     }

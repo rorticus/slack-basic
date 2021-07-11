@@ -333,4 +333,32 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith(`true`);
         });
     });
+
+    describe("gosub statements", () => {
+        it("runs gosub statements", async () => {
+            const { context } = await run(`
+            5 PRINT "starting"
+            10 GOSUB 30
+            20 PRINT "done"
+            30 REM hello func
+            40 PRINT "hello"
+            50 RETURN
+            
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenNthCalledWith(1, "starting");
+            expect(context.api.print).toHaveBeenNthCalledWith(2, "hello");
+            expect(context.api.print).toHaveBeenNthCalledWith(3, "done");
+        });
+
+        it("it errors if you return with no gosub", async () => {
+            const { context, result } = await run(`
+            50 RETURN            
+            RUN
+            `);
+
+            testForError(result, "cannot return on empty stack");
+        });
+    });
 });
