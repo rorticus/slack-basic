@@ -236,6 +236,9 @@ export class Lexer {
                     this.column
                 );
                 break;
+            case "^":
+                tok = newToken(TokenType.EXP, this.ch, this.line, this.column);
+                break;
             default:
                 if (isLetter(this.ch)) {
                     const line = this.line;

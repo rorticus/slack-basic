@@ -378,6 +378,8 @@ export class Context {
                 return new FloatValue(leftValue * rightValue);
             case "/":
                 return new FloatValue(leftValue / rightValue);
+            case "^":
+                return new FloatValue(Math.pow(leftValue, rightValue));
             case "=":
                 return new FloatValue(leftValue === rightValue ? -1 : 0);
             case "<>":

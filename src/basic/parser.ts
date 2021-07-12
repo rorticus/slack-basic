@@ -15,7 +15,8 @@ import {
     LetStatement,
     NextStatement,
     PrefixExpression,
-    PrintStatement, RemStatement,
+    PrintStatement,
+    RemStatement,
     ReturnStatement,
     RunStatement,
     Statement,
@@ -45,6 +46,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.MINUS]: Precedence.SUM,
     [TokenType.ASTERISK]: Precedence.PRODUCT,
     [TokenType.SLASH]: Precedence.PRODUCT,
+    [TokenType.EXP]: Precedence.PRODUCT,
     [TokenType.AND]: Precedence.LOGICAL,
     [TokenType.OR]: Precedence.LOGICAL,
     [TokenType.NOT]: Precedence.LOGICAL,
@@ -101,6 +103,7 @@ export class Parser {
             TokenType.ASTERISK,
             this.parseInfixExpression.bind(this)
         );
+        this.registerInfix(TokenType.EXP, this.parseInfixExpression.bind(this));
         this.registerInfix(
             TokenType.ASSIGN,
             this.parseInfixExpression.bind(this)

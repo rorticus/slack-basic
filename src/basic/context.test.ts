@@ -81,6 +81,11 @@ describe("context tests", () => {
             `);
             expect(context.api.print).toHaveBeenCalledWith("hello world");
         });
+
+        it("evaluates the exponent operator", async () => {
+            const { context } = await run(`PRINT 2^3`);
+            expect(context.api.print).toHaveBeenCalledWith("8");
+        });
     });
 
     describe("stored programs", () => {

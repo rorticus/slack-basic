@@ -9,6 +9,7 @@ describe("Token Tests", () => {
         IF A < 4.5 THEN
             GOSUB DOTHING
         END
+        ^
         REM hello world
         <>
         `;
@@ -28,6 +29,7 @@ describe("Token Tests", () => {
             [TokenType.GOSUB, "GOSUB"],
             [TokenType.IDENT, "DOTHING"],
             [TokenType.END, "END"],
+            [TokenType.EXP, "^"],
             [TokenType.REM, "REM hello world"],
             [TokenType.NOT_EQ, "<>"],
             [TokenType.EOF, ""],
