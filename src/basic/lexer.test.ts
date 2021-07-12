@@ -12,6 +12,7 @@ describe("Token Tests", () => {
         ^
         REM hello world
         <>
+        ?
         `;
 
         const expectedTypes = [
@@ -32,6 +33,7 @@ describe("Token Tests", () => {
             [TokenType.EXP, "^"],
             [TokenType.REM, "REM hello world"],
             [TokenType.NOT_EQ, "<>"],
+            [TokenType.PRINT, "?"],
             [TokenType.EOF, ""],
         ];
 

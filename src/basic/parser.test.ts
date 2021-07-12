@@ -162,6 +162,18 @@ describe("Parser tests", () => {
                 testStringLiteral(printStatement.args[2], "world");
             });
 
+            it("parses print statements with multiple arguments separated by commas and semicolons", () => {
+                const { statement } = parse('PRINT "hello", SPACE$; "world"');
+                expect(statement.type).toEqual(StatementType.PRINT);
+
+                const printStatement = statement as PrintStatement;
+
+                expect(printStatement.args).toHaveLength(3);
+                testStringLiteral(printStatement.args[0], "hello");
+                testIdentifier(printStatement.args[1], "SPACE$");
+                testStringLiteral(printStatement.args[2], "world");
+            });
+
             it("parses print statements with expressions", () => {
                 const { statement } = parse('PRINT "2 + 2 = " 2 + 2');
                 expect(statement.type).toEqual(StatementType.PRINT);

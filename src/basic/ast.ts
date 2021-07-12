@@ -323,7 +323,7 @@ export class PrintStatement implements Statement {
     }
 
     toString(): string {
-        return `PRINT ${this.args.map((a) => a.toString()).join(" ")}`;
+        return `${this.tokenLiteral()} ${this.args.map((a) => a.toString()).join(" ")}`;
     }
 }
 

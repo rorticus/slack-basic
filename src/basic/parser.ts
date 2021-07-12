@@ -312,7 +312,16 @@ export class Parser {
             !this.peekTokenIs(TokenType.COLON) &&
             !this.peekTokenIs(TokenType.EOF)
         ) {
+            if (
+                this.peekTokenIs(TokenType.COMMA) ||
+                this.peekTokenIs(TokenType.SEMICOLON)
+            ) {
+                this.nextToken();
+                continue;
+            }
+
             this.nextToken();
+
             args.push(this.parseExpression(Precedence.LOWEST));
         }
 

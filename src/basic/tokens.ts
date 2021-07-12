@@ -21,6 +21,7 @@ export enum TokenType {
 
     COLON = ":",
     COMMA = ",",
+    SEMICOLON = ";",
 
     LPAREN = "(",
     RPAREN = ")",

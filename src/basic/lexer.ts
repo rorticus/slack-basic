@@ -239,6 +239,12 @@ export class Lexer {
             case "^":
                 tok = newToken(TokenType.EXP, this.ch, this.line, this.column);
                 break;
+            case "?":
+                tok = newToken(TokenType.PRINT, this.ch, this.line, this.column);
+                break;
+            case ";":
+                tok = newToken(TokenType.SEMICOLON, this.ch, this.line, this.column);
+                break;
             default:
                 if (isLetter(this.ch)) {
                     const line = this.line;
