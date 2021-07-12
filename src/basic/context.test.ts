@@ -266,6 +266,20 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("2");
             expect(context.api.print).toHaveBeenCalledWith("3");
             expect(context.api.print).toHaveBeenCalledWith("4");
+            expect(context.api.print).toHaveBeenCalledWith("5");
+
+            expect(context.forStack).toHaveLength(0);
+        });
+
+        it("runs for loops backwards", async () => {
+            const { context } = await run(`FOR I = 5 TO 0 STEP -1 : PRINT I : NEXT`);
+
+            expect(context.api.print).toHaveBeenCalledWith("5");
+            expect(context.api.print).toHaveBeenCalledWith("4");
+            expect(context.api.print).toHaveBeenCalledWith("3");
+            expect(context.api.print).toHaveBeenCalledWith("2");
+            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith("0");
 
             expect(context.forStack).toHaveLength(0);
         });

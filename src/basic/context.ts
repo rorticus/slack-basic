@@ -682,7 +682,12 @@ export class Context {
 
             if (
                 isTruthy(
-                    this.evalNumberInfix(iteratorValue, "<", toValue, false)
+                    this.evalNumberInfix(
+                        iteratorValue,
+                        step >= 0 ? "<=" : ">=",
+                        toValue,
+                        false
+                    )
                 )
             ) {
                 return [true, NULL];
