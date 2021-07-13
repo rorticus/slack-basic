@@ -1,6 +1,7 @@
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import {
+    CallExpression,
     CompoundStatement,
     Expression,
     FloatLiteral,
@@ -378,6 +379,14 @@ describe("Parser tests", () => {
                 expect((statement as GosubStatement).gosubLineNumber).toEqual(
                     1000
                 );
+            });
+        });
+
+        describe("call statements", () => {
+            it("parses call statements", () => {
+                const { statement } = parse("A = ABS(1)");
+                expect(statement.type).toEqual(StatementType.LET);
+                expect((statement as LetStatement).value instanceof CallExpression).toBeTruthy();
             });
         });
     });

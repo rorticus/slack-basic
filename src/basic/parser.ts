@@ -21,6 +21,7 @@ import {
     RunStatement,
     Statement,
     StringLiteral,
+    CallExpression,
 } from "./ast";
 
 export type PrefixParser = () => Expression | null;
@@ -34,6 +35,7 @@ export enum Precedence {
     SUM,
     PRODUCT,
     PREFIX,
+    CALL,
     INDEX,
 }
 
@@ -50,6 +52,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.AND]: Precedence.LOGICAL,
     [TokenType.OR]: Precedence.LOGICAL,
     [TokenType.NOT]: Precedence.LOGICAL,
+    [TokenType.LPAREN]: Precedence.CALL,
 };
 
 export class Parser {
@@ -116,6 +119,10 @@ export class Parser {
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.AND, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.OR, this.parseInfixExpression.bind(this));
+        this.registerInfix(
+            TokenType.LPAREN,
+            this.parseCallExpression.bind(this)
+        );
 
         // read the two tokens to fill our buffer
         this.nextToken();
@@ -588,5 +595,45 @@ export class Parser {
         }
 
         return new GosubStatement(token, (target as IntegerLiteral).value);
+    }
+
+    parseCallExpression(fn: Expression | null): CallExpression {
+        return new CallExpression(
+            this.curToken,
+            fn!,
+            this.parseExpressionList(TokenType.RPAREN)
+        );
+    }
+
+    parseExpressionList(end: TokenType): Expression[] {
+        const args: Expression[] = [];
+
+        if (this.peekTokenIs(end)) {
+            this.nextToken();
+            return args;
+        }
+
+        this.nextToken();
+
+        const arg = this.parseExpression(Precedence.LOWEST);
+
+        if (arg) {
+            args.push(arg);
+        }
+
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+            const arg = this.parseExpression(Precedence.LOWEST);
+            if (arg) {
+                args.push(arg);
+            }
+        }
+
+        if (!this.expectPeek(end)) {
+            return [];
+        }
+
+        return args;
     }
 }

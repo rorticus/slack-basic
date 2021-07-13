@@ -1,5 +1,6 @@
 import { Stack } from "./stack";
 import {
+    CallExpression,
     CompoundStatement,
     Expression,
     FloatLiteral,
@@ -16,24 +17,22 @@ import {
     NextStatement,
     PrefixExpression,
     PrintStatement,
-    ReturnStatement,
     Statement,
     StatementType,
     StringLiteral,
 } from "./ast";
 import {
+    BuiltInFunctionValue,
     ErrorValue,
     FloatValue,
     IntValue,
+    isError,
     NullValue,
     ObjectType,
     StringValue,
     ValueObject,
 } from "./object";
-
-function isError(obj: ValueObject): obj is ErrorValue {
-    return obj.type() === ObjectType.ERROR_OBJ;
-}
+import builtins from "./builtins";
 
 export const NULL = new NullValue();
 
@@ -289,6 +288,8 @@ export class Context {
             return this.evalPrefixExpression(expression, isInCondition);
         } else if (expression instanceof Identifier) {
             return this.evalIdentifier(expression);
+        } else if (expression instanceof CallExpression) {
+            return this.evalCallExpression(expression, isInCondition);
         }
 
         return new ErrorValue(`unknown expression ${expression.toString()}`);
@@ -488,6 +489,10 @@ export class Context {
         const result = this.globalStack.get(expr.value);
 
         if (!result) {
+            if (builtins[expr.value]) {
+                return builtins[expr.value];
+            }
+
             switch (expr.type) {
                 case IdentifierType.INT:
                     return new IntValue(0);
@@ -746,5 +751,41 @@ export class Context {
         this.nextStatement = where || null;
 
         return NULL;
+    }
+
+    private evalExpressions(expr: Expression[], isInCondition: boolean) {
+        let results: ValueObject[] = [];
+
+        for (let i = 0; i < expr.length; i++) {
+            const result = this.evalExpression(expr[i], isInCondition);
+            if (isError(result)) {
+                return [result];
+            }
+            results.push(result);
+        }
+
+        return results;
+    }
+
+    private evalCallExpression(
+        expression: CallExpression,
+        isInCondition: boolean
+    ) {
+        const fn = this.evalExpression(expression.fn);
+        if (isError(fn)) {
+            return fn;
+        }
+
+        const args = this.evalExpressions(expression.args, isInCondition);
+        if (args.length === 1 && isError(args[0])) {
+            return args[0];
+        }
+
+        if (fn.type() === ObjectType.BUILTIN_OBJ) {
+            // call it
+            return (fn as BuiltInFunctionValue).fn(args);
+        } else {
+            return new ErrorValue(`cannot call non function ${fn.type()}`);
+        }
     }
 }

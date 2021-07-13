@@ -1,5 +1,3 @@
-import {FALSE, NULL} from "../monkey/object";
-
 export enum ObjectType {
     INTEGER_OBJ = "INTEGER",
     FLOAT_OBJ = "FLOAT",
@@ -7,12 +5,15 @@ export enum ObjectType {
     ERROR_OBJ = "ERROR",
     STRING_OBJ = "STRING",
     NULL_OBJ = "NULL",
+    BUILTIN_OBJ = "BUILTIN"
 }
 
 export interface ValueObject {
     type(): ObjectType;
     inspect(): string;
 }
+
+export type BuiltInFunction = (args: ValueObject[]) => ValueObject;
 
 export class NullValue implements ValueObject {
     inspect(): string {
@@ -122,4 +123,24 @@ export class ErrorValue implements ValueObject {
     toString() {
         return `ERROR: ${this.message}`;
     }
+}
+
+export class BuiltInFunctionValue implements ValueObject {
+    fn: BuiltInFunction;
+
+    constructor(fn: BuiltInFunction) {
+        this.fn = fn;
+    }
+
+    type(): ObjectType {
+        return ObjectType.BUILTIN_OBJ;
+    }
+
+    inspect(): string {
+        return "builtin function";
+    }
+}
+
+export function isError(obj: ValueObject): obj is ErrorValue {
+    return obj.type() === ObjectType.ERROR_OBJ;
 }

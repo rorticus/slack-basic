@@ -272,7 +272,9 @@ describe("context tests", () => {
         });
 
         it("runs for loops backwards", async () => {
-            const { context } = await run(`FOR I = 5 TO 0 STEP -1 : PRINT I : NEXT`);
+            const { context } = await run(
+                `FOR I = 5 TO 0 STEP -1 : PRINT I : NEXT`
+            );
 
             expect(context.api.print).toHaveBeenCalledWith("5");
             expect(context.api.print).toHaveBeenCalledWith("4");
@@ -378,6 +380,15 @@ describe("context tests", () => {
             `);
 
             testForError(result, "cannot return on empty stack");
+        });
+    });
+
+    describe("built-ins", () => {
+        describe("abs", () => {
+            it("calls abs", async () => {
+                const { result } = await run(`A = ABS(-1)`);
+                expect(result?.inspect()).toEqual("1");
+            });
         });
     });
 });

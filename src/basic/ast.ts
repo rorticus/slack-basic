@@ -1,4 +1,5 @@
 import { Token } from "./tokens";
+import {ErrorValue, ObjectType, ValueObject} from "./object";
 
 export interface Node {
     tokenLiteral(): string;
@@ -461,5 +462,27 @@ export class RemStatement implements Statement {
 
     toString(): string {
         return this.token.literal;
+    }
+}
+
+export class CallExpression implements Expression {
+    token: Token;
+    fn: Expression;
+    args: Expression[];
+
+    constructor(token: Token, fn: Expression, args: Expression[]) {
+        this.token = token;
+        this.fn = fn;
+        this.args = args;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `${this.fn.toString()}(${this.args
+            .map((arg) => arg.toString())
+            .join(", ")})`;
     }
 }
