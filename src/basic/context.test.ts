@@ -395,5 +395,10 @@ describe("context tests", () => {
             const { result } = await run(`A = ASC("ABC")`);
             expect(result?.inspect()).toEqual("65");
         });
+
+        it("calls atn", async () => {
+            const { result } = await run(`A = ATN(1)`);
+            expect(result?.inspect()).toEqual(Math.atan(1).toString());
+        });
     });
 });

@@ -77,4 +77,12 @@ export default {
 
         return new IntValue(s.value.charCodeAt(0));
     }),
+    ATN: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const n = getSingleNumericArgument(args);
+        if (isError(n)) {
+            return n;
+        }
+
+        return new FloatValue(Math.atan(n.value));
+    }),
 } as Record<string, BuiltInFunctionValue>;
