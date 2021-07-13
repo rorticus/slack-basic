@@ -390,5 +390,10 @@ describe("context tests", () => {
                 expect(result?.inspect()).toEqual("1");
             });
         });
+
+        it("calls asc", async () => {
+            const { result } = await run(`A = ASC("ABC")`);
+            expect(result?.inspect()).toEqual("65");
+        });
     });
 });
