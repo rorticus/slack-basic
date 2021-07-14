@@ -3,6 +3,7 @@ import { Parser } from "./parser";
 import {
     CallExpression,
     CompoundStatement,
+    DataStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -386,7 +387,22 @@ describe("Parser tests", () => {
             it("parses call statements", () => {
                 const { statement } = parse("A = ABS(1)");
                 expect(statement.type).toEqual(StatementType.LET);
-                expect((statement as LetStatement).value instanceof CallExpression).toBeTruthy();
+                expect(
+                    (statement as LetStatement).value instanceof CallExpression
+                ).toBeTruthy();
+            });
+        });
+
+        describe("data statements", () => {
+            it("parses data statements", () => {
+                const { statement } = parse('DATA 1, TWO, "THREE"');
+
+                expect(statement.type).toEqual(StatementType.DATA);
+                const d = statement as DataStatement;
+                expect(d.datas).toHaveLength(3);
+                testIntegerLiteral(d.datas[0], 1);
+                testIdentifier(d.datas[1], "TWO");
+                testStringLiteral(d.datas[2], "THREE");
             });
         });
     });

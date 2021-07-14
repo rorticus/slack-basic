@@ -7,20 +7,21 @@ export interface Node {
 }
 
 export enum StatementType {
-    LET = "LET",
-    IF = "IF",
-    END = "END",
+    CLR = "CLR",
     COMPOUND = "COMPOUND",
-    PRINT = "PRINT",
-    RUN = "RUN",
-    INPUT = "INPUT",
-    GOTO = "GOTO",
+    DATA = "DATA",
+    END = "END",
     FOR = "FOR",
-    NEXT = "NEXT",
     GOSUB = "GOSUB",
-    RETURN = "RETURN",
+    GOTO = "GOTO",
+    IF = "IF",
+    INPUT = "INPUT",
+    LET = "LET",
+    NEXT = "NEXT",
+    PRINT = "PRINT",
     REM = "REM",
-    CLR = "CLR"
+    RETURN = "RETURN",
+    RUN = "RUN",
 }
 
 export enum IdentifierType {
@@ -496,6 +497,27 @@ export class ClrStatement implements Statement {
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return this.token.literal;
+    }
+}
+
+export class DataStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.DATA;
+    next: Statement | null = null;
+    datas: Expression[];
+
+    constructor(token: Token, datas: Expression[]) {
+        this.token = token;
+        this.datas = datas;
     }
 
     tokenLiteral(): string {

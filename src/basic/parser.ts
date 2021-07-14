@@ -1,7 +1,10 @@
 import Lexer from "./lexer";
 import { Token, TokenType } from "./tokens";
 import {
+    CallExpression,
+    ClrStatement,
     CompoundStatement,
+    DataStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -21,7 +24,6 @@ import {
     RunStatement,
     Statement,
     StringLiteral,
-    CallExpression, ClrStatement,
 } from "./ast";
 
 export type PrefixParser = () => Expression | null;
@@ -238,6 +240,9 @@ export class Parser {
                     break;
                 case TokenType.CLR:
                     statements.push(new ClrStatement(this.curToken));
+                    break;
+                case TokenType.DATA:
+                    statements.push(this.parseDataStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -638,5 +643,43 @@ export class Parser {
         }
 
         return args;
+    }
+
+    parseDataStatement() {
+        const token = this.curToken;
+        const datas: Expression[] = [];
+
+        while (
+            !this.peekTokenIs(TokenType.EOF) &&
+            !this.peekTokenIs(TokenType.COLON)
+        ) {
+            if (
+                this.peekTokenIs(TokenType.COMMA) ||
+                this.peekTokenIs(TokenType.SEMICOLON)
+            ) {
+                this.nextToken();
+                continue;
+            }
+
+            this.nextToken();
+
+            const d = this.parseExpression(Precedence.LOWEST);
+            if (d) {
+                if (
+                    !(d instanceof IntegerLiteral) &&
+                    !(d instanceof FloatLiteral) &&
+                    !(d instanceof StringLiteral) &&
+                    !(d instanceof Identifier)
+                ) {
+                    this.errors.push(
+                        "invalid data value, must be an number, string, or non-reserved keyword."
+                    );
+                    return null;
+                }
+                datas.push(d);
+            }
+        }
+
+        return new DataStatement(token, datas);
     }
 }

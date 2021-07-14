@@ -2,6 +2,7 @@ import { Stack } from "./stack";
 import {
     CallExpression,
     CompoundStatement,
+    DataStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -97,6 +98,7 @@ export class Context {
     state: ContextState;
     api: ContextApi;
     forStack: ForStatement[];
+    dataStack: ValueObject[];
 
     private nextStatement: Statement | null;
     private returnStack: (Statement | null)[] = [];
@@ -108,12 +110,14 @@ export class Context {
         this.state = ContextState.IDLE;
         this.api = api;
         this.forStack = [];
+        this.dataStack = [];
     }
 
     clr() {
         this.globalStack.clear();
         this.forStack = [];
         this.returnStack = [];
+        this.dataStack = [];
     }
 
     reset() {
@@ -187,11 +191,35 @@ export class Context {
                 return this.runReturnStatement();
             case StatementType.REM:
                 return NULL;
+            case StatementType.DATA:
+                if (this.state === ContextState.IDLE) {
+                    this.preprocessDataStatement(statement as DataStatement);
+                }
+                return NULL;
             case StatementType.CLR:
                 return this.runClrStatement();
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
+    }
+
+    private forEachStatement<T extends Statement>(
+        type: StatementType,
+        callback: (statement: T) => void
+    ) {
+        function walk(statement: Statement) {
+            if (statement.type === StatementType.COMPOUND) {
+                (statement as CompoundStatement).statements.forEach(walk);
+            } else {
+                if (statement.type === type) {
+                    callback(statement as T);
+                }
+            }
+        }
+
+        for (let i = 0; i < this.lines.length; i++) {
+            walk(this.lines[i]);
+        }
     }
 
     async runProgram(): Promise<ValueObject> {
@@ -201,6 +229,14 @@ export class Context {
 
         this.reset();
         this.state = ContextState.RUNNING;
+
+        // find all the data statements and preload data
+        this.forEachStatement(
+            StatementType.DATA,
+            (statement: DataStatement) => {
+                this.preprocessDataStatement(statement);
+            }
+        );
 
         try {
             let statement: Statement | null = this.lines[0];
@@ -798,5 +834,15 @@ export class Context {
     private async runClrStatement() {
         this.clr();
         return NULL;
+    }
+
+    private preprocessDataStatement(statement: DataStatement) {
+        for (let i = 0; i < statement.datas.length; i++) {
+            const d = this.evalExpression(statement.datas[i], false);
+
+            if (!isError(d)) {
+                this.dataStack.push(d);
+            }
+        }
     }
 }
