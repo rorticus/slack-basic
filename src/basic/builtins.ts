@@ -94,4 +94,31 @@ export default {
 
         return new StringValue(String.fromCharCode(n.value));
     }),
+
+    COS: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const n = getSingleNumericArgument(args);
+        if (isError(n)) {
+            return n;
+        }
+
+        return new FloatValue(Math.cos(n.value));
+    }),
+
+    SIN: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const n = getSingleNumericArgument(args);
+        if (isError(n)) {
+            return n;
+        }
+
+        return new FloatValue(Math.sin(n.value));
+    }),
+
+    TAN: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const n = getSingleNumericArgument(args);
+        if (isError(n)) {
+            return n;
+        }
+
+        return new FloatValue(Math.tan(n.value));
+    }),
 } as Record<string, BuiltInFunctionValue>;
