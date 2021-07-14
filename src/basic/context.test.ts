@@ -102,6 +102,15 @@ describe("context tests", () => {
 
             expect(context.api.print).toHaveBeenCalledWith("the answer is 4");
         });
+
+        it("ends execution on an error", async () => {
+            const { context } = await run(`
+        10 LET A = "23"
+        30 PRINT "should not get here"
+        `);
+
+            expect(context.api.print).not.toHaveBeenCalled();
+        });
     });
 
     describe("input", () => {
@@ -445,7 +454,9 @@ describe("context tests", () => {
             PRINT A% " - " B " - " C$ " - " PI%
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("1 - 2.5 - three - 3");
+            expect(context.api.print).toHaveBeenCalledWith(
+                "1 - 2.5 - three - 3"
+            );
         });
 
         it("errors if there is no data on the data stack", async () => {
@@ -463,7 +474,10 @@ describe("context tests", () => {
             READ A%
             `);
 
-            testForError(result, "type mismatch. cannot set STRING to identifier of type INT");
+            testForError(
+                result,
+                "type mismatch. cannot set STRING to identifier of type INT"
+            );
         });
 
         it("errors if there is a type mismatch assigning a string to a float", async () => {
@@ -472,7 +486,10 @@ describe("context tests", () => {
             READ A
             `);
 
-            testForError(result, "type mismatch. cannot set STRING to identifier of type FLOAT");
+            testForError(
+                result,
+                "type mismatch. cannot set STRING to identifier of type FLOAT"
+            );
         });
 
         it("errors if there is a type mismatch assigning a int to a string", async () => {
@@ -481,7 +498,10 @@ describe("context tests", () => {
             READ A$
             `);
 
-            testForError(result, "type mismatch. cannot set INTEGER to identifier of type STRING");
+            testForError(
+                result,
+                "type mismatch. cannot set INTEGER to identifier of type STRING"
+            );
         });
     });
 });
