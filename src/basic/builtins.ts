@@ -85,4 +85,13 @@ export default {
 
         return new FloatValue(Math.atan(n.value));
     }),
+
+    CHR$: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const n = getSingleNumericArgument(args);
+        if (isError(n)) {
+            return n;
+        }
+
+        return new StringValue(String.fromCharCode(n.value));
+    }),
 } as Record<string, BuiltInFunctionValue>;

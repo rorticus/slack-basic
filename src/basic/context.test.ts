@@ -400,5 +400,10 @@ describe("context tests", () => {
             const { result } = await run(`A = ATN(1)`);
             expect(result?.inspect()).toEqual(Math.atan(1).toString());
         });
+
+        it("calls chr$", async () => {
+            const { result } = await run(`A$ = CHR$(${"A".charCodeAt(0)})`);
+            expect(result?.inspect()).toEqual("\"A\"");
+        });
     });
 });
