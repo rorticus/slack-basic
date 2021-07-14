@@ -1,5 +1,5 @@
 import { Token } from "./tokens";
-import {ErrorValue, ObjectType, ValueObject} from "./object";
+import { ErrorValue, ObjectType, ValueObject } from "./object";
 
 export interface Node {
     tokenLiteral(): string;
@@ -19,6 +19,7 @@ export enum StatementType {
     LET = "LET",
     NEXT = "NEXT",
     PRINT = "PRINT",
+    READ = "READ",
     REM = "REM",
     RETURN = "RETURN",
     RUN = "RUN",
@@ -326,7 +327,9 @@ export class PrintStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.tokenLiteral()} ${this.args.map((a) => a.toString()).join(" ")}`;
+        return `${this.tokenLiteral()} ${this.args
+            .map((a) => a.toString())
+            .join(" ")}`;
     }
 }
 
@@ -518,6 +521,27 @@ export class DataStatement implements Statement {
     constructor(token: Token, datas: Expression[]) {
         this.token = token;
         this.datas = datas;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return this.token.literal;
+    }
+}
+
+export class ReadStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.READ;
+    next: Statement | null = null;
+    outputs: Identifier[];
+
+    constructor(token: Token, outputs: Identifier[]) {
+        this.token = token;
+        this.outputs = outputs;
     }
 
     tokenLiteral(): string {

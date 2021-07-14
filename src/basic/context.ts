@@ -18,6 +18,7 @@ import {
     NextStatement,
     PrefixExpression,
     PrintStatement,
+    ReadStatement,
     Statement,
     StatementType,
     StringLiteral,
@@ -100,6 +101,7 @@ export class Context {
     forStack: ForStatement[];
     dataStack: ValueObject[];
 
+    private dataStackIndex = 0;
     private nextStatement: Statement | null;
     private returnStack: (Statement | null)[] = [];
 
@@ -118,6 +120,7 @@ export class Context {
         this.forStack = [];
         this.returnStack = [];
         this.dataStack = [];
+        this.dataStackIndex = 0;
     }
 
     reset() {
@@ -198,6 +201,8 @@ export class Context {
                 return NULL;
             case StatementType.CLR:
                 return this.runClrStatement();
+            case StatementType.READ:
+                return this.runReadStatement(statement as ReadStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -844,5 +849,47 @@ export class Context {
                 this.dataStack.push(d);
             }
         }
+    }
+
+    private runReadStatement(statement: ReadStatement) {
+        for (let i = 0; i < statement.outputs.length; i++) {
+            if (this.dataStackIndex >= this.dataStack.length) {
+                return new ErrorValue("no more data to read");
+            }
+
+            const output = statement.outputs[i];
+            const v = this.dataStack[this.dataStackIndex++];
+
+            if (
+                (output.type === IdentifierType.INT ||
+                    output.type === IdentifierType.FLOAT) &&
+                (v.type() === ObjectType.FLOAT_OBJ || v.type() === ObjectType.INTEGER_OBJ)
+            ) {
+                if (output.type === IdentifierType.FLOAT) {
+                    this.globalStack.set(
+                        output.value,
+                        new FloatValue((v as FloatValue | IntValue).value)
+                    );
+                } else if (output.type === IdentifierType.INT) {
+                    this.globalStack.set(
+                        output.value,
+                        new IntValue((v as FloatValue | IntValue).value)
+                    );
+                }
+            } else if (
+                output.type === IdentifierType.STRING &&
+                v.type() === ObjectType.STRING_OBJ
+            ) {
+                this.globalStack.set(output.value, v);
+            } else {
+                return new ErrorValue(
+                    `type mismatch. cannot set ${v.type()} to identifier of type ${
+                        output.type
+                    }`
+                );
+            }
+        }
+
+        return NULL;
     }
 }

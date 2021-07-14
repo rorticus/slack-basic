@@ -433,7 +433,55 @@ describe("context tests", () => {
 
         it("calls chr$", async () => {
             const { result } = await run(`A$ = CHR$(${"A".charCodeAt(0)})`);
-            expect(result?.inspect()).toEqual("\"A\"");
+            expect(result?.inspect()).toEqual('"A"');
+        });
+    });
+
+    describe("data/.read/restore", () => {
+        it("reads from data statements", async () => {
+            const { context } = await run(`
+            DATA 1, 2.5, 3.14 "three"
+            READ A%, B, PI%, C$
+            PRINT A% " - " B " - " C$ " - " PI%
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("1 - 2.5 - three - 3");
+        });
+
+        it("errors if there is no data on the data stack", async () => {
+            const { result } = await run(`
+            DATA 1
+            READ A%, B
+            `);
+
+            testForError(result, "no more data to read");
+        });
+
+        it("errors if there is a type mismatch assigning a string to an int", async () => {
+            const { result } = await run(`
+            DATA "test"
+            READ A%
+            `);
+
+            testForError(result, "type mismatch. cannot set STRING to identifier of type INT");
+        });
+
+        it("errors if there is a type mismatch assigning a string to a float", async () => {
+            const { result } = await run(`
+            DATA "test"
+            READ A
+            `);
+
+            testForError(result, "type mismatch. cannot set STRING to identifier of type FLOAT");
+        });
+
+        it("errors if there is a type mismatch assigning a int to a string", async () => {
+            const { result } = await run(`
+            DATA 1
+            READ A$
+            `);
+
+            testForError(result, "type mismatch. cannot set INTEGER to identifier of type STRING");
         });
     });
 });

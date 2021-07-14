@@ -16,7 +16,7 @@ import {
     IntegerLiteral,
     LetStatement,
     NextStatement,
-    PrintStatement,
+    PrintStatement, ReadStatement,
     StatementType,
     StringLiteral,
 } from "./ast";
@@ -403,6 +403,16 @@ describe("Parser tests", () => {
                 testIntegerLiteral(d.datas[0], 1);
                 testIdentifier(d.datas[1], "TWO");
                 testStringLiteral(d.datas[2], "THREE");
+            });
+
+            it("parses read statements", () => {
+                const { statement } = parse('READ A, B$');
+
+                expect(statement.type).toEqual(StatementType.READ);
+                const d = statement as ReadStatement;
+                expect(d.outputs).toHaveLength(2);
+                testIdentifier(d.outputs[0], "A");
+                testIdentifier(d.outputs[1], "B$");
             });
         });
     });

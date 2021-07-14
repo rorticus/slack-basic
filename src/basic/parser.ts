@@ -19,6 +19,7 @@ import {
     NextStatement,
     PrefixExpression,
     PrintStatement,
+    ReadStatement,
     RemStatement,
     ReturnStatement,
     RunStatement,
@@ -243,6 +244,9 @@ export class Parser {
                     break;
                 case TokenType.DATA:
                     statements.push(this.parseDataStatement());
+                    break;
+                case TokenType.READ:
+                    statements.push(this.parseReadStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -681,5 +685,32 @@ export class Parser {
         }
 
         return new DataStatement(token, datas);
+    }
+
+    parseReadStatement() {
+        const token = this.curToken;
+        const outputs: Identifier[] = [];
+
+        while (
+            !this.peekTokenIs(TokenType.EOF) &&
+            !this.peekTokenIs(TokenType.COLON)
+        ) {
+            this.nextToken();
+
+            const d = this.parseExpression(Precedence.LOWEST);
+
+            if (!d || !(d instanceof Identifier)) {
+                this.errors.push(`can only READ into identifiers, not ${d}`);
+                return null;
+            }
+
+            outputs.push(d);
+
+            if (this.peekTokenIs(TokenType.COMMA)) {
+                this.nextToken();
+            }
+        }
+
+        return new ReadStatement(token, outputs);
     }
 }
