@@ -26,6 +26,7 @@ export enum TokenType {
     LPAREN = "(",
     RPAREN = ")",
 
+    CLR = "CLR",
     LET = "LET",
     IF = "IF",
     DIM = "DIM",
@@ -80,6 +81,7 @@ const keywords: { [key: string]: TokenType } = {
     RUN: TokenType.RUN,
     INPUT: TokenType.INPUT,
     STEP: TokenType.STEP,
+    CLR: TokenType.CLR
 };
 
 export function newToken(

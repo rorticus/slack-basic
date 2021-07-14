@@ -110,11 +110,15 @@ export class Context {
         this.forStack = [];
     }
 
-    reset() {
-        this.state = ContextState.IDLE;
+    clr() {
         this.globalStack.clear();
         this.forStack = [];
         this.returnStack = [];
+    }
+
+    reset() {
+        this.state = ContextState.IDLE;
+        this.clr();
 
         if (this.lines.length > 0) {
             for (let i = 0; i < this.lines.length - 1; i++) {
@@ -183,6 +187,8 @@ export class Context {
                 return this.runReturnStatement();
             case StatementType.REM:
                 return NULL;
+            case StatementType.CLR:
+                return this.runClrStatement();
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -787,5 +793,10 @@ export class Context {
         } else {
             return new ErrorValue(`cannot call non function ${fn.type()}`);
         }
+    }
+
+    private async runClrStatement() {
+        this.clr();
+        return NULL;
     }
 }

@@ -383,6 +383,36 @@ describe("context tests", () => {
         });
     });
 
+    describe("clr statements", () => {
+        it("clears all variables on clr", async () => {
+            const { context } = await run(`
+            10 LET A = 1
+            20 LET B$ = "hello"
+            30 CLR
+            40 PRINT A, " and ", B$
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("0 and ");
+        });
+
+        it("clears for loops", async () => {
+            const { result } = await run(`FOR I = 0 TO 5 : CLR : NEXT`);
+            testForError(result, "cannot iterate on unknown variable");
+        });
+
+        it("clears gosubs", async () => {
+            const { result } = await run(`
+            10 GOSUB 20
+            20 CLR
+            30 RETURN
+            RUN
+            `);
+
+            testForError(result, "cannot return on empty stack");
+        });
+    });
+
     describe("built-ins", () => {
         describe("abs", () => {
             it("calls abs", async () => {

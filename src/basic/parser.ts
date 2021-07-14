@@ -21,7 +21,7 @@ import {
     RunStatement,
     Statement,
     StringLiteral,
-    CallExpression,
+    CallExpression, ClrStatement,
 } from "./ast";
 
 export type PrefixParser = () => Expression | null;
@@ -235,6 +235,9 @@ export class Parser {
                     break;
                 case TokenType.GOSUB:
                     statements.push(this.parseGosubStatement());
+                    break;
+                case TokenType.CLR:
+                    statements.push(new ClrStatement(this.curToken));
                     break;
                 default:
                     // statements with no labels default to LET statements

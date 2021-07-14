@@ -19,7 +19,8 @@ export enum StatementType {
     NEXT = "NEXT",
     GOSUB = "GOSUB",
     RETURN = "RETURN",
-    REM = "REM"
+    REM = "REM",
+    CLR = "CLR"
 }
 
 export enum IdentifierType {
@@ -484,5 +485,24 @@ export class CallExpression implements Expression {
         return `${this.fn.toString()}(${this.args
             .map((arg) => arg.toString())
             .join(", ")})`;
+    }
+}
+
+export class ClrStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.CLR;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return this.token.literal;
     }
 }
