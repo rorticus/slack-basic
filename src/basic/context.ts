@@ -203,6 +203,9 @@ export class Context {
                 return this.runClrStatement();
             case StatementType.READ:
                 return this.runReadStatement(statement as ReadStatement);
+            case StatementType.RESTORE:
+                this.dataStackIndex = 0;
+                return NULL;
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);

@@ -21,6 +21,7 @@ import {
     PrintStatement,
     ReadStatement,
     RemStatement,
+    RestoreStatement,
     ReturnStatement,
     RunStatement,
     Statement,
@@ -247,6 +248,9 @@ export class Parser {
                     break;
                 case TokenType.READ:
                     statements.push(this.parseReadStatement());
+                    break;
+                case TokenType.RESTORE:
+                    statements.push(new RestoreStatement(this.curToken));
                     break;
                 default:
                     // statements with no labels default to LET statements

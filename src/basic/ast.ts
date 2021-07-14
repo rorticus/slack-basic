@@ -20,6 +20,7 @@ export enum StatementType {
     NEXT = "NEXT",
     PRINT = "PRINT",
     READ = "READ",
+    RESTORE = "RESTORE",
     REM = "REM",
     RETURN = "RETURN",
     RUN = "RUN",
@@ -542,6 +543,25 @@ export class ReadStatement implements Statement {
     constructor(token: Token, outputs: Identifier[]) {
         this.token = token;
         this.outputs = outputs;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return this.token.literal;
+    }
+}
+
+export class RestoreStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.RESTORE;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
     }
 
     tokenLiteral(): string {

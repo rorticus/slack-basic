@@ -503,5 +503,17 @@ describe("context tests", () => {
                 "type mismatch. cannot set INTEGER to identifier of type STRING"
             );
         });
+
+        it("runs RESTORE statements", async () => {
+            const { context } = await run(`
+            DATA "1"
+            READ A$
+            RESTORE
+            READ B$
+            PRINT A$ " - " B$
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("1 - 1");
+        });
     });
 });
