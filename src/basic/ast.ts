@@ -10,6 +10,7 @@ export enum StatementType {
     CLR = "CLR",
     COMPOUND = "COMPOUND",
     DATA = "DATA",
+    DEF = "DEF",
     END = "END",
     FOR = "FOR",
     GOSUB = "GOSUB",
@@ -529,7 +530,9 @@ export class DataStatement implements Statement {
     }
 
     toString(): string {
-        return this.token.literal;
+        return `${this.token.literal} ${this.datas
+            .map((d) => d.toString())
+            .join(", ")}`;
     }
 }
 
@@ -550,7 +553,9 @@ export class ReadStatement implements Statement {
     }
 
     toString(): string {
-        return this.token.literal;
+        return `${this.token.literal} ${this.outputs
+            .map((o) => o.value)
+            .join(", ")}`;
     }
 }
 
@@ -570,5 +575,55 @@ export class RestoreStatement implements Statement {
 
     toString(): string {
         return this.token.literal;
+    }
+}
+
+export class DefStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.DEF;
+    next: Statement | null = null;
+    name: Identifier;
+    argument: Identifier | null;
+    body: Expression;
+
+    constructor(
+        token: Token,
+        name: Identifier,
+        argument: Identifier | null,
+        body: Expression
+    ) {
+        this.token = token;
+        this.name = name;
+        this.argument = argument;
+        this.body = body;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `${this.token.literal} ${this.name.toString()}(${
+            this.argument ? this.argument.toString() : ""
+        }) = ${this.body.toString()}`;
+    }
+}
+
+export class DefFnCallExpression implements Expression {
+    token: Token;
+    callExpr: CallExpression;
+
+    constructor(token: Token, callExpr: CallExpression) {
+        this.token = token;
+        this.callExpr = callExpr;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `FN ${this.callExpr.toString()}`;
     }
 }

@@ -516,4 +516,17 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("1 - 1");
         });
     });
+
+    describe("def/fn statements", () => {
+        it("defines functions", async () => {
+            const { context } = await run(`
+            10 DEF FN FTEST1(X) = X*3
+            20 A = 5
+            30 PRINT FN FTEST1(A)
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("15");
+        });
+    });
 });

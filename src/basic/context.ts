@@ -3,6 +3,7 @@ import {
     CallExpression,
     CompoundStatement,
     DataStatement,
+    DefStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -27,6 +28,7 @@ import {
     BuiltInFunctionValue,
     ErrorValue,
     FloatValue,
+    FunctionValue,
     IntValue,
     isError,
     NullValue,
@@ -35,6 +37,7 @@ import {
     ValueObject,
 } from "./object";
 import builtins from "./builtins";
+import { FunctionExpression } from "../monkey/ast";
 
 export const NULL = new NullValue();
 
@@ -206,6 +209,9 @@ export class Context {
             case StatementType.RESTORE:
                 this.dataStackIndex = 0;
                 return NULL;
+            case StatementType.DEF:
+                return this.runDefStatement(statement as DefStatement);
+                break;
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -492,6 +498,66 @@ export class Context {
             return new ErrorValue(
                 `prefix expressions require a right hand side`
             );
+        }
+
+        if (expression.operator === "FN") {
+            // special
+            if (!(expression.right instanceof CallExpression)) {
+                return new ErrorValue(
+                    `cannot call a function on a non call expression`
+                );
+            }
+
+
+            const target = this.evalExpression(
+                expression.right.fn
+            ) as FunctionValue;
+
+            if (target.type() !== ObjectType.FUNCTION_OBJ) {
+                return new ErrorValue(
+                    `cannot call a function on a non function type ${
+                        target ? target.type() : "NULL"
+                    }`
+                );
+            }
+
+            const args = this.evalExpressions(expression.right.args, false);
+            if (args.length === 1 && isError(args[0])) {
+                return args[0];
+            }
+
+            if (args.length > 1) {
+                return new ErrorValue(
+                    `cannot call a function with more than one argument`
+                );
+            }
+
+            if (
+                args.length > 0 &&
+                args[0].type() !== ObjectType.FLOAT_OBJ &&
+                args[0].type() !== ObjectType.INTEGER_OBJ
+            ) {
+                return new ErrorValue(
+                    `cannot call a function with a nun numeric argument`
+                );
+            }
+
+            const fnStack = new Stack(this.globalStack);
+            if (target.argument) {
+                if (args.length === 0) {
+                    return new ErrorValue(
+                        `expected argument for ${target.argument}`
+                    );
+                }
+
+                fnStack.set(target.argument.value, args[0]);
+            }
+
+            this.globalStack = fnStack;
+            const result = this.evalExpression(target.body, false);
+            this.globalStack = fnStack.outer!;
+
+            return result;
         }
 
         const value = this.evalExpression(expression.right);
@@ -866,7 +932,8 @@ export class Context {
             if (
                 (output.type === IdentifierType.INT ||
                     output.type === IdentifierType.FLOAT) &&
-                (v.type() === ObjectType.FLOAT_OBJ || v.type() === ObjectType.INTEGER_OBJ)
+                (v.type() === ObjectType.FLOAT_OBJ ||
+                    v.type() === ObjectType.INTEGER_OBJ)
             ) {
                 if (output.type === IdentifierType.FLOAT) {
                     this.globalStack.set(
@@ -892,6 +959,15 @@ export class Context {
                 );
             }
         }
+
+        return NULL;
+    }
+
+    private runDefStatement(statement: DefStatement) {
+        this.globalStack.set(
+            statement.name.value,
+            new FunctionValue(statement.argument, statement.body)
+        );
 
         return NULL;
     }

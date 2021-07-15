@@ -2,7 +2,7 @@ import { ValueObject } from "./object";
 
 export class Stack {
     private store: Map<string, ValueObject>;
-    private readonly outer: Stack | null;
+    readonly outer: Stack | null;
 
     constructor(outer: Stack | null = null) {
         this.store = new Map<string, ValueObject>();

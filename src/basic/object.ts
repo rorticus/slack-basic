@@ -1,3 +1,5 @@
+import { Expression, Identifier } from "./ast";
+
 export enum ObjectType {
     INTEGER_OBJ = "INTEGER",
     FLOAT_OBJ = "FLOAT",
@@ -5,7 +7,8 @@ export enum ObjectType {
     ERROR_OBJ = "ERROR",
     STRING_OBJ = "STRING",
     NULL_OBJ = "NULL",
-    BUILTIN_OBJ = "BUILTIN"
+    BUILTIN_OBJ = "BUILTIN",
+    FUNCTION_OBJ = "FUNCTION",
 }
 
 export interface ValueObject {
@@ -138,6 +141,32 @@ export class BuiltInFunctionValue implements ValueObject {
 
     inspect(): string {
         return "builtin function";
+    }
+}
+
+export class FunctionValue implements ValueObject {
+    argument: Identifier | null;
+    body: Expression;
+
+    constructor(argument: Identifier | null, body: Expression) {
+        this.argument = argument;
+        this.body = body;
+    }
+
+    inspect(): string {
+        return `FN(${
+            this.argument ? this.argument.toString() : ""
+        }) = ${this.body.toString()}`;
+    }
+
+    type(): ObjectType {
+        return ObjectType.FUNCTION_OBJ;
+    }
+
+    toString() {
+        return `FN(${
+            this.argument ? this.argument.toString() : ""
+        }) = ${this.body.toString()}`;
     }
 }
 

@@ -4,6 +4,8 @@ import {
     CallExpression,
     CompoundStatement,
     DataStatement,
+    DefFnCallExpression,
+    DefStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -16,7 +18,9 @@ import {
     IntegerLiteral,
     LetStatement,
     NextStatement,
-    PrintStatement, ReadStatement,
+    PrefixExpression,
+    PrintStatement,
+    ReadStatement,
     StatementType,
     StringLiteral,
 } from "./ast";
@@ -406,7 +410,7 @@ describe("Parser tests", () => {
             });
 
             it("parses read statements", () => {
-                const { statement } = parse('READ A, B$');
+                const { statement } = parse("READ A, B$");
 
                 expect(statement.type).toEqual(StatementType.READ);
                 const d = statement as ReadStatement;
@@ -414,6 +418,43 @@ describe("Parser tests", () => {
                 testIdentifier(d.outputs[0], "A");
                 testIdentifier(d.outputs[1], "B$");
             });
+        });
+
+        it("parses def statements with arguments", () => {
+            const { statement } = parse("DEF FN SQR(X) = 1 * 1");
+            expect(statement.type).toEqual(StatementType.DEF);
+
+            const defFn = statement as DefStatement;
+            testIdentifier(defFn.name, "SQR");
+            testIdentifier(defFn.argument, "X");
+            testInfix(defFn.body, 1, "*", 1);
+        });
+
+        it("parses def statements without arguments", () => {
+            const { statement } = parse("DEF FN SQR() = 1 * 1");
+            expect(statement.type).toEqual(StatementType.DEF);
+
+            const defFn = statement as DefStatement;
+            testIdentifier(defFn.name, "SQR");
+            expect(defFn.argument).toBeNull();
+            testInfix(defFn.body, 1, "*", 1);
+        });
+
+        it("parses FN calls", () => {
+            const { statement } = parse("PRINT FN SQR(1 + 2)");
+            expect(statement.type).toEqual(StatementType.PRINT);
+
+            const right = (statement as PrintStatement).args[0] as PrefixExpression;
+            expect(right instanceof PrefixExpression).toBeTruthy();
+
+            expect(right.operator).toEqual("FN");
+            expect(right.right instanceof CallExpression).toBeTruthy();
+
+            const v = right.right as CallExpression;
+
+            testIdentifier(v.fn, "SQR");
+            expect(v.args).toHaveLength(1);
+            testInfix(v.args[0], 1, "+", 2);
         });
     });
 });

@@ -5,6 +5,7 @@ import {
     ClrStatement,
     CompoundStatement,
     DataStatement,
+    DefStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -92,6 +93,10 @@ export class Parser {
         );
         this.registerPrefix(
             TokenType.NOT,
+            this.parsePrefixExpression.bind(this)
+        );
+        this.registerPrefix(
+            TokenType.FN,
             this.parsePrefixExpression.bind(this)
         );
         this.registerInfix(
@@ -251,6 +256,9 @@ export class Parser {
                     break;
                 case TokenType.RESTORE:
                     statements.push(new RestoreStatement(this.curToken));
+                    break;
+                case TokenType.DEF:
+                    statements.push(this.parseDefStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -716,5 +724,49 @@ export class Parser {
         }
 
         return new ReadStatement(token, outputs);
+    }
+
+    parseDefStatement() {
+        const token = this.curToken;
+
+        if (!this.expectPeek(TokenType.FN)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const name = this.parseIdentifier();
+        if (name === null) {
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.LPAREN)) {
+            return null;
+        }
+
+        let argument: Identifier | null = null;
+
+        if (this.peekTokenIs(TokenType.IDENT)) {
+            this.nextToken();
+
+            argument = this.parseIdentifier();
+        }
+
+        if (!this.expectPeek(TokenType.RPAREN)) {
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.ASSIGN)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const body = this.parseExpression(Precedence.LOWEST);
+        if (body === null) {
+            return null;
+        }
+
+        return new DefStatement(token, name, argument, body);
     }
 }

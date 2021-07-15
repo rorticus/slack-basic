@@ -72,6 +72,10 @@ export class Lexer {
             this.readChar();
         }
 
+        while (isLetter(this.ch) || isDigit(this.ch)) {
+            this.readChar();
+        }
+
         if (this.ch === "$" || this.ch === "%") {
             this.readChar();
         }
@@ -240,10 +244,20 @@ export class Lexer {
                 tok = newToken(TokenType.EXP, this.ch, this.line, this.column);
                 break;
             case "?":
-                tok = newToken(TokenType.PRINT, this.ch, this.line, this.column);
+                tok = newToken(
+                    TokenType.PRINT,
+                    this.ch,
+                    this.line,
+                    this.column
+                );
                 break;
             case ";":
-                tok = newToken(TokenType.SEMICOLON, this.ch, this.line, this.column);
+                tok = newToken(
+                    TokenType.SEMICOLON,
+                    this.ch,
+                    this.line,
+                    this.column
+                );
                 break;
             default:
                 if (isLetter(this.ch)) {
