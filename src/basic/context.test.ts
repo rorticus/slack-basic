@@ -1,8 +1,15 @@
 import { Context, ContextApi } from "./context";
 import Lexer from "./lexer";
 import { Parser } from "./parser";
-import { LetStatement, StatementType } from "./ast";
-import { ErrorValue, ObjectType, ValueObject } from "./object";
+import { IdentifierType, LetStatement, StatementType } from "./ast";
+import {
+    ArrayValue,
+    ErrorValue,
+    FloatValue,
+    IntValue,
+    ObjectType, StringValue,
+    ValueObject,
+} from "./object";
 
 describe("context tests", () => {
     async function run(code: string, overrides: Partial<ContextApi> = {}) {
@@ -539,6 +546,71 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledWith("15, 3");
+        });
+    });
+
+    describe("dim statements", () => {
+        it("initializes float arrays", async () => {
+            const { context } = await run(`DIM B(10)`);
+
+            const v = context.globalStack.get("B") as ArrayValue;
+
+            expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
+            expect(v.dimensions).toHaveLength(1);
+            expect(v.dimensions[0]).toEqual(11);
+            expect(v.data).toHaveLength(11);
+            expect(v.identifierType).toEqual(IdentifierType.FLOAT);
+
+            for (let i = 0; i < v.data.length; i++) {
+                expect(v.data[i].type()).toEqual(ObjectType.FLOAT_OBJ);
+                expect((v.data[i] as FloatValue).value).toEqual(0);
+            }
+        });
+
+        it("initializes integer arrays", async () => {
+            const { context } = await run(`DIM B%(10)`);
+
+            const v = context.globalStack.get("B%") as ArrayValue;
+
+            expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
+            expect(v.dimensions).toHaveLength(1);
+            expect(v.dimensions[0]).toEqual(11);
+            expect(v.data).toHaveLength(11);
+            expect(v.identifierType).toEqual(IdentifierType.INT);
+
+            for (let i = 0; i < v.data.length; i++) {
+                expect(v.data[i].type()).toEqual(ObjectType.INTEGER_OBJ);
+                expect((v.data[i] as IntValue).value).toEqual(0);
+            }
+        });
+
+        it("initializes string arrays", async () => {
+            const { context } = await run(`DIM B$(10)`);
+
+            const v = context.globalStack.get("B$") as ArrayValue;
+
+            expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
+            expect(v.dimensions).toHaveLength(1);
+            expect(v.dimensions[0]).toEqual(11);
+            expect(v.data).toHaveLength(11);
+            expect(v.identifierType).toEqual(IdentifierType.STRING);
+
+            for (let i = 0; i < v.data.length; i++) {
+                expect(v.data[i].type()).toEqual(ObjectType.STRING_OBJ);
+                expect((v.data[i] as StringValue).value).toEqual("");
+            }
+        });
+
+        it("initializes multidimensional arrays", async () => {
+            const { context } = await run(`DIM B(5, 5)`);
+
+            const v = context.globalStack.get("B") as ArrayValue;
+
+            expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
+            expect(v.dimensions).toHaveLength(2);
+            expect(v.dimensions[0]).toEqual(6);
+            expect(v.dimensions[1]).toEqual(6);
+            expect(v.data).toHaveLength(36);
         });
     });
 });

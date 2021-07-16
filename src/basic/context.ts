@@ -4,6 +4,7 @@ import {
     CompoundStatement,
     DataStatement,
     DefStatement,
+    DimStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -25,6 +26,7 @@ import {
     StringLiteral,
 } from "./ast";
 import {
+    ArrayValue,
     BuiltInFunctionValue,
     ErrorValue,
     FloatValue,
@@ -211,7 +213,8 @@ export class Context {
                 return NULL;
             case StatementType.DEF:
                 return this.runDefStatement(statement as DefStatement);
-                break;
+            case StatementType.DIM:
+                return this.runDimStatement(statement as DimStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -507,7 +510,6 @@ export class Context {
                     `cannot call a function on a non call expression`
                 );
             }
-
 
             const target = this.evalExpression(
                 expression.right.fn
@@ -968,6 +970,34 @@ export class Context {
             statement.name.value,
             new FunctionValue(statement.argument, statement.body)
         );
+
+        return NULL;
+    }
+
+    private runDimStatement(statement: DimStatement) {
+        for (let i = 0; i < statement.variables.length; i++) {
+            const v = statement.variables[i];
+            let dimensions: number[] = [];
+
+            for (let j = 0; j < v.dimensions.length; j++) {
+                const result = this.evalExpression(v.dimensions[j], false);
+                if (isError(result)) {
+                    return result;
+                }
+
+                if (result.type() === ObjectType.INTEGER_OBJ) {
+                    dimensions.push((result as IntValue).value + 1);
+                } else if (result.type() === ObjectType.FLOAT_OBJ) {
+                    dimensions.push(Math.floor((result as FloatValue).value) + 1);
+                } else {
+                    return new ErrorValue(
+                        `invalid dimension type, ${result.type()}`
+                    );
+                }
+            }
+
+            this.globalStack.set(v.name.value, new ArrayValue(v.name.type, dimensions));
+        }
 
         return NULL;
     }

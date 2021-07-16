@@ -1,4 +1,4 @@
-import { Expression, Identifier } from "./ast";
+import { Expression, Identifier, IdentifierType } from "./ast";
 
 export enum ObjectType {
     INTEGER_OBJ = "INTEGER",
@@ -9,6 +9,7 @@ export enum ObjectType {
     NULL_OBJ = "NULL",
     BUILTIN_OBJ = "BUILTIN",
     FUNCTION_OBJ = "FUNCTION",
+    ARRAY_OBJ = "ARRAY",
 }
 
 export interface ValueObject {
@@ -167,6 +168,49 @@ export class FunctionValue implements ValueObject {
         return `FN(${
             this.argument ? this.argument.toString() : ""
         }) = ${this.body.toString()}`;
+    }
+}
+
+export class ArrayValue implements ValueObject {
+    dimensions: number[];
+    data: ValueObject[];
+    identifierType: IdentifierType;
+
+    constructor(type: IdentifierType, dimensions: number[]) {
+        this.identifierType = type;
+
+        const [firstDim, ...restDims] = dimensions;
+
+        const totalSize = restDims.reduce((total, n) => total * n, firstDim);
+        this.data = new Array(totalSize);
+        this.dimensions = dimensions;
+
+        let t: ValueObject;
+        if (type === IdentifierType.INT) {
+            t = new IntValue(0);
+        } else if (type === IdentifierType.FLOAT) {
+            t = new FloatValue(0);
+        } else if (type === IdentifierType.STRING) {
+            t = new StringValue("");
+        } else {
+            t = new IntValue(0);
+        }
+
+        for (let i = 0; i < totalSize; i++) {
+            this.data[i] = t;
+        }
+    }
+
+    inspect(): string {
+        return `[${this.data.map((d) => d.inspect()).join(", ")}]`;
+    }
+
+    type(): ObjectType {
+        return ObjectType.ARRAY_OBJ;
+    }
+
+    toString() {
+        return `ARRAY(${this.dimensions.join(", ")})`;
     }
 }
 
