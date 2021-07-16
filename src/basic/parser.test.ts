@@ -6,6 +6,7 @@ import {
     DataStatement,
     DefFnCallExpression,
     DefStatement,
+    DimStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -444,7 +445,8 @@ describe("Parser tests", () => {
             const { statement } = parse("PRINT FN SQR(1 + 2)");
             expect(statement.type).toEqual(StatementType.PRINT);
 
-            const right = (statement as PrintStatement).args[0] as PrefixExpression;
+            const right = (statement as PrintStatement)
+                .args[0] as PrefixExpression;
             expect(right instanceof PrefixExpression).toBeTruthy();
 
             expect(right.operator).toEqual("FN");
@@ -455,6 +457,23 @@ describe("Parser tests", () => {
             testIdentifier(v.fn, "SQR");
             expect(v.args).toHaveLength(1);
             testInfix(v.args[0], 1, "+", 2);
+        });
+
+        it("parses DIM calls", () => {
+            const { statement } = parse("DIM A(1), B(2, 3)");
+
+            expect(statement.type).toEqual(StatementType.DIM);
+            const d = statement as DimStatement;
+
+            expect(d.variables).toHaveLength(2);
+            testIdentifier(d.variables[0].name, "A");
+            expect(d.variables[0].dimensions).toHaveLength(1);
+            testIntegerLiteral(d.variables[0].dimensions[0], 1);
+
+            testIdentifier(d.variables[1].name, "B");
+            expect(d.variables[1].dimensions).toHaveLength(2);
+            testIntegerLiteral(d.variables[1].dimensions[0], 2);
+            testIntegerLiteral(d.variables[1].dimensions[1], 3);
         });
     });
 });

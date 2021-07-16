@@ -528,5 +528,17 @@ describe("context tests", () => {
 
             expect(context.api.print).toHaveBeenCalledWith("15");
         });
+
+        it("uses a local stack to run functions", async () => {
+            const { context } = await run(`
+            5  X = 3
+            10 DEF FN FTEST1(X) = X*3
+            20 A = 5
+            30 PRINT FN FTEST1(A) ", " X
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("15, 3");
+        });
     });
 });

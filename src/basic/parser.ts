@@ -6,6 +6,8 @@ import {
     CompoundStatement,
     DataStatement,
     DefStatement,
+    DimStatement,
+    DimVariable,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -259,6 +261,9 @@ export class Parser {
                     break;
                 case TokenType.DEF:
                     statements.push(this.parseDefStatement());
+                    break;
+                case TokenType.DIM:
+                    statements.push(this.parseDimStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -768,5 +773,78 @@ export class Parser {
         }
 
         return new DefStatement(token, name, argument, body);
+    }
+
+    parseDimStatement() {
+        const vars: DimVariable[] = [];
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const parseDimVariable = () => {
+            const dimensions: Expression[] = [];
+
+            const ident = this.parseIdentifier();
+            if (!ident) {
+                return null;
+            }
+
+            if (!this.expectPeek(TokenType.LPAREN)) {
+                return null;
+            }
+
+            this.nextToken();
+
+            const firstDim = this.parseExpression(Precedence.LOWEST);
+            if (!firstDim) {
+                this.errors.push(`expecting at least one dimension`);
+                return null;
+            }
+
+            dimensions.push(firstDim);
+
+            while (this.peekTokenIs(TokenType.COMMA)) {
+                this.nextToken();
+                this.nextToken();
+
+                const dim = this.parseExpression(Precedence.LOWEST);
+                if (!dim) {
+                    this.errors.push(`expecting dimension after comma`);
+                    return null;
+                }
+
+                dimensions.push(dim);
+            }
+
+            if (!this.expectPeek(TokenType.RPAREN)) {
+                return null;
+            }
+
+            return {
+                name: ident,
+                dimensions,
+            };
+        };
+
+        // parse the first one
+        const first = parseDimVariable();
+
+        if (!first) {
+            this.errors.push(`expecting at least one dimension variable`);
+            return null;
+        }
+
+        vars.push(first);
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            const v = parseDimVariable();
+            if (v) {
+                vars.push(v);
+            }
+        }
+
+        return new DimStatement(token, vars);
     }
 }

@@ -11,6 +11,7 @@ export enum StatementType {
     COMPOUND = "COMPOUND",
     DATA = "DATA",
     DEF = "DEF",
+    DIM = "DIM",
     END = "END",
     FOR = "FOR",
     GOSUB = "GOSUB",
@@ -625,5 +626,38 @@ export class DefFnCallExpression implements Expression {
 
     toString(): string {
         return `FN ${this.callExpr.toString()}`;
+    }
+}
+
+export interface DimVariable {
+    name: Identifier;
+    dimensions: Expression[];
+}
+
+export class DimStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.DIM;
+    next: Statement | null = null;
+    variables: DimVariable[];
+
+    constructor(token: Token, variables: DimVariable[]) {
+        this.token = token;
+        this.variables = variables;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `${this.token.literal} ${this.variables
+            .map(
+                (v) =>
+                    `${v.name}(${v.dimensions
+                        .map((e) => e.toString())
+                        .join(", ")})`
+            )
+            .join(", ")}`;
     }
 }
