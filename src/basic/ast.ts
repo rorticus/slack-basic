@@ -266,16 +266,25 @@ export class IfStatement implements Statement {
     }
 }
 
+export interface LetAssignment {
+    name: Identifier;
+    indices: Expression[];
+}
+
 export class LetStatement implements Statement {
     token: Token;
-    names: Identifier[];
+    names: LetAssignment[];
     value: Expression | null;
     lineNumber = 0;
     next: Statement | null = null;
 
     type = StatementType.LET;
 
-    constructor(token: Token, names: Identifier[], value: Expression | null) {
+    constructor(
+        token: Token,
+        names: LetAssignment[],
+        value: Expression | null
+    ) {
         this.token = token;
         this.names = names;
         this.value = value;
@@ -287,7 +296,7 @@ export class LetStatement implements Statement {
 
     toString(): string {
         return `${this.tokenLiteral()} ${this.names
-            .map((n) => n.toString())
+            .map((n) => n.name.toString())
             .join(", ")} = ${this.value ? this.value.toString() : ""};`;
     }
 }

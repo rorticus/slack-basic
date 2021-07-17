@@ -18,6 +18,7 @@ import {
     InfixExpression,
     InputStatement,
     IntegerLiteral,
+    LetAssignment,
     LetStatement,
     NextStatement,
     PrefixExpression,
@@ -309,14 +310,39 @@ export class Parser {
             return null;
         }
 
-        const names: Identifier[] = [];
+        const parseLetAssignment = () => {
+            const ident = this.parseIdentifier();
 
-        names.push(this.parseIdentifier());
+            if (!ident) {
+                return null;
+            }
+
+            // this is an index expression
+            if (this.peekTokenIs(TokenType.LPAREN)) {
+                this.nextToken();
+
+                const indices = this.parseExpressionList(TokenType.RPAREN);
+
+                return {
+                    name: ident,
+                    indices,
+                };
+            }
+
+            return { name: ident, indices: [] };
+        };
+
+        const names: LetAssignment[] = [];
+
+        const first = parseLetAssignment();
+        if (first) {
+            names.push(first);
+        }
 
         while (this.peekTokenIs(TokenType.COMMA)) {
             this.nextToken();
             this.nextToken();
-            const name = this.parseIdentifier();
+            const name = parseLetAssignment();
             if (name) {
                 names.push(name);
             }

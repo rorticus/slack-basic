@@ -39,7 +39,6 @@ import {
     ValueObject,
 } from "./object";
 import builtins from "./builtins";
-import { FunctionExpression } from "../monkey/ast";
 
 export const NULL = new NullValue();
 
@@ -314,7 +313,8 @@ export class Context {
         };
 
         for (let i = 0; i < statement.names.length; i++) {
-            const identifier = statement.names[i];
+            const identifier = statement.names[i].name;
+            const indices = statement.names[i].indices;
 
             const validObjectTypes = validConversions[identifier.type] ?? [];
             if (validObjectTypes.indexOf(value.type()) < 0) {
@@ -322,6 +322,45 @@ export class Context {
                     `type mismatch, ${identifier.toString()} (${
                         identifier.type
                     }) = ${value.inspect()}`
+                );
+            }
+
+            if (indices.length > 0) {
+                let arr = this.globalStack.get(identifier.value);
+                if (!arr) {
+                    // create it!
+                    return NULL;
+                }
+
+                if (arr.type() !== ObjectType.ARRAY_OBJ) {
+                    return new ErrorValue(
+                        `cannot use array access on a ${arr.type()}`
+                    );
+                }
+
+                const indexArgs = this.evalExpressions(indices, false);
+                if (indexArgs.length === 1 && isError(indexArgs[0])) {
+                    return indexArgs[0];
+                }
+
+                for (let j = 0; j < indexArgs.length; j++) {
+                    if (
+                        indexArgs[j].type() !== ObjectType.FLOAT_OBJ &&
+                        indexArgs[j].type() !== ObjectType.INTEGER_OBJ
+                    ) {
+                        return new ErrorValue(
+                            `cannot use type ${indexArgs[
+                                j
+                            ].type()} as array index`
+                        );
+                    }
+                }
+
+                return (arr as ArrayValue).set(
+                    indexArgs.map(
+                        (idx) => (idx as IntValue | FloatValue).value
+                    ),
+                    value
                 );
             }
 
@@ -902,6 +941,21 @@ export class Context {
         if (fn.type() === ObjectType.BUILTIN_OBJ) {
             // call it
             return (fn as BuiltInFunctionValue).fn(args);
+        } else if (fn.type() === ObjectType.ARRAY_OBJ) {
+            for (let i = 0; i < args.length; i++) {
+                if (
+                    args[i].type() !== ObjectType.INTEGER_OBJ &&
+                    args[i].type() !== ObjectType.FLOAT_OBJ
+                ) {
+                    return new ErrorValue(
+                        `cannot use type ${args[i].type()} as array access type`
+                    );
+                }
+            }
+
+            return (fn as ArrayValue).get(
+                args.map((a) => (a as IntValue | FloatValue).value)
+            );
         } else {
             return new ErrorValue(`cannot call non function ${fn.type()}`);
         }
@@ -988,7 +1042,9 @@ export class Context {
                 if (result.type() === ObjectType.INTEGER_OBJ) {
                     dimensions.push((result as IntValue).value + 1);
                 } else if (result.type() === ObjectType.FLOAT_OBJ) {
-                    dimensions.push(Math.floor((result as FloatValue).value) + 1);
+                    dimensions.push(
+                        Math.floor((result as FloatValue).value) + 1
+                    );
                 } else {
                     return new ErrorValue(
                         `invalid dimension type, ${result.type()}`
@@ -996,7 +1052,10 @@ export class Context {
                 }
             }
 
-            this.globalStack.set(v.name.value, new ArrayValue(v.name.type, dimensions));
+            this.globalStack.set(
+                v.name.value,
+                new ArrayValue(v.name.type, dimensions)
+            );
         }
 
         return NULL;

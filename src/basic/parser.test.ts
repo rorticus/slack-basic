@@ -103,7 +103,21 @@ describe("Parser tests", () => {
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0], "A");
+                testIdentifier(letStatement.names[0].name, "A");
+                expect(letStatement.names[0].indices).toHaveLength(0);
+
+                testIntegerLiteral(letStatement.value, 3);
+            });
+
+            it("parses let statements with array access", () => {
+                const { statement } = parse("LET A(0) = 3");
+
+                expect(statement.type).toEqual(StatementType.LET);
+
+                const letStatement = statement as LetStatement;
+                expect(letStatement.names).toHaveLength(1);
+                testIdentifier(letStatement.names[0].name, "A");
+                expect(letStatement.names[0].indices).toHaveLength(1);
 
                 testIntegerLiteral(letStatement.value, 3);
             });
@@ -115,8 +129,8 @@ describe("Parser tests", () => {
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(2);
-                testIdentifier(letStatement.names[0], "A");
-                testIdentifier(letStatement.names[1], "B");
+                testIdentifier(letStatement.names[0].name, "A");
+                testIdentifier(letStatement.names[1].name, "B");
 
                 testIntegerLiteral(letStatement.value, 3);
             });
@@ -128,7 +142,7 @@ describe("Parser tests", () => {
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0], "A");
+                testIdentifier(letStatement.names[0].name, "A");
 
                 testIntegerLiteral(letStatement.value, 3);
             });

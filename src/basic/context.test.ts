@@ -7,7 +7,9 @@ import {
     ErrorValue,
     FloatValue,
     IntValue,
-    ObjectType, StringValue,
+    isError,
+    ObjectType,
+    StringValue,
     ValueObject,
 } from "./object";
 
@@ -21,6 +23,7 @@ describe("context tests", () => {
 
         const lines = code.split("\n");
         let result: ValueObject | undefined;
+        const errors = [];
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
 
@@ -30,9 +33,12 @@ describe("context tests", () => {
             const statement = parser.parseStatement();
             if (statement) {
                 result = await context.runImmediateStatement(statement!);
+                if (isError(result)) {
+                    errors.push(result.message);
+                }
             }
         }
-        return { context, result };
+        return { context, result, errors };
     }
 
     function testForError(result: ValueObject | undefined, expected: string) {
@@ -71,7 +77,9 @@ describe("context tests", () => {
             expect(context.lines[0].lineNumber).toBe(100);
             expect(context.lines[0].type).toEqual(StatementType.LET);
             expect((context.lines[0] as LetStatement).names).toHaveLength(1);
-            expect((context.lines[0] as LetStatement).names[0].value).toBe("B");
+            expect((context.lines[0] as LetStatement).names[0].name.value).toBe(
+                "B"
+            );
         });
     });
 
@@ -611,6 +619,16 @@ describe("context tests", () => {
             expect(v.dimensions[0]).toEqual(6);
             expect(v.dimensions[1]).toEqual(6);
             expect(v.data).toHaveLength(36);
+        });
+
+        it("accesses array values", async () => {
+            const { context } = await run(`
+            DIM B(2)
+            B(0) = 1 : B(1) = 2 : B(2) = 3 
+            PRINT B(0) ", " B(1) ", " B(2)
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("1, 2, 3");
         });
     });
 });

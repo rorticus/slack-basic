@@ -201,6 +201,64 @@ export class ArrayValue implements ValueObject {
         }
     }
 
+    private calculateIndex(indices: number[]) {
+        if (indices.length !== this.dimensions.length) {
+            return new ErrorValue(`not enough indices`);
+        }
+
+        let dataIndex = 0;
+        for (let i = 0; i < indices.length - 1; i++) {
+            if (indices[i] < 0 || indices[i] >= this.dimensions[i]) {
+                return new ErrorValue(
+                    `array index out of bounds, ${indices[i]}`
+                );
+            }
+
+            let product = indices[i];
+            for (let j = i; j < this.dimensions.length; j++) {
+                product *= this.dimensions[j];
+            }
+
+            dataIndex += product;
+        }
+
+        dataIndex += indices[indices.length - 1];
+
+        return dataIndex;
+    }
+
+    get(indices: number[]) {
+        const dataIndex = this.calculateIndex(indices);
+
+        if (!(typeof dataIndex === "number")) {
+            return dataIndex;
+        }
+
+        return this.data[dataIndex];
+    }
+
+    set(indices: number[], value: ValueObject) {
+        const dataIndex = this.calculateIndex(indices);
+
+        if (!(typeof dataIndex === "number")) {
+            return dataIndex;
+        }
+
+        if (
+            ((this.identifierType === IdentifierType.INT ||
+                this.identifierType === IdentifierType.FLOAT) &&
+                (value.type() === ObjectType.INTEGER_OBJ ||
+                    value.type() === ObjectType.FLOAT_OBJ)) ||
+            (this.identifierType === IdentifierType.STRING &&
+                value.type() === ObjectType.STRING_OBJ)
+        ) {
+            this.data[dataIndex] = value;
+            return value;
+        }
+
+        return new ErrorValue(`type mismatch`);
+    }
+
     inspect(): string {
         return `[${this.data.map((d) => d.inspect()).join(", ")}]`;
     }
