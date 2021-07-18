@@ -682,39 +682,52 @@ export class Context {
         expr: InputStatement
     ): Promise<ValueObject> {
         try {
-            const result = await this.api.input();
-            let intermediate: number;
+            if (expr.message) {
+                const v = this.evalExpression(expr.message);
+                if (isError(v)) {
+                    return v;
+                }
 
-            switch (expr.destination.type) {
-                case IdentifierType.STRING:
-                    this.globalStack.set(
-                        expr.destination.value,
-                        new StringValue(result)
-                    );
-                    break;
+                await this.api.print(v.toString());
+            }
 
-                case IdentifierType.INT:
-                    intermediate = parseInt(result, 10);
-                    if (isNaN(intermediate)) {
-                        return new ErrorValue(
-                            `invalid integer value: ${result}`
+            for (let i = 0; i < expr.destination.length; i++) {
+                const result = await this.api.input();
+                let intermediate: number;
+
+                switch (expr.destination[i].type) {
+                    case IdentifierType.STRING:
+                        this.globalStack.set(
+                            expr.destination[i].value,
+                            new StringValue(result)
                         );
-                    }
-                    this.globalStack.set(
-                        expr.destination.value,
-                        new IntValue(intermediate)
-                    );
-                    break;
-                case IdentifierType.FLOAT:
-                    intermediate = parseFloat(result);
-                    if (isNaN(intermediate)) {
-                        return new ErrorValue(`invalid float value: ${result}`);
-                    }
-                    this.globalStack.set(
-                        expr.destination.value,
-                        new FloatValue(intermediate)
-                    );
-                    break;
+                        break;
+
+                    case IdentifierType.INT:
+                        intermediate = parseInt(result, 10);
+                        if (isNaN(intermediate)) {
+                            return new ErrorValue(
+                                `invalid integer value: ${result}`
+                            );
+                        }
+                        this.globalStack.set(
+                            expr.destination[i].value,
+                            new IntValue(intermediate)
+                        );
+                        break;
+                    case IdentifierType.FLOAT:
+                        intermediate = parseFloat(result);
+                        if (isNaN(intermediate)) {
+                            return new ErrorValue(
+                                `invalid float value: ${result}`
+                            );
+                        }
+                        this.globalStack.set(
+                            expr.destination[i].value,
+                            new FloatValue(intermediate)
+                        );
+                        break;
+                }
             }
         } catch (e) {
             return new ErrorValue(`error with input: ${e.message}`);

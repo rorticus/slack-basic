@@ -400,15 +400,35 @@ export class Parser {
 
     parseInputStatement(): Statement | null {
         const token = this.curToken;
+        let message: Expression | null = null;
+        const destinations: Identifier[] = [];
 
-        if (!this.peekTokenIs(TokenType.IDENT)) {
+        if (this.peekTokenIs(TokenType.STRING)) {
+            // there is a message!
+            this.nextToken();
+            message = this.parseStringLiteral();
+
+            if (!this.expectPeek(TokenType.SEMICOLON)) {
+                return null;
+            }
+        }
+
+        if(!this.peekTokenIs(TokenType.IDENT)) {
+            this.errors.push(`expected identifier`);
             return null;
         }
 
-        // consume input
         this.nextToken();
+        destinations.push(this.parseIdentifier());
 
-        return new InputStatement(token, this.parseIdentifier());
+        while(this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            destinations.push(this.parseIdentifier());
+        }
+
+        return new InputStatement(token, message, destinations);
     }
 
     parseExpression(precedence: Precedence): Expression | null {

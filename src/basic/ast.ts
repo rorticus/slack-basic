@@ -348,14 +348,20 @@ export class PrintStatement implements Statement {
 
 export class InputStatement implements Statement {
     token: Token;
-    destination: Identifier;
+    destination: Identifier[];
     type = StatementType.INPUT;
     lineNumber: number | undefined;
     next: Statement | null = null;
+    message: Expression | null;
 
-    constructor(token: Token, destination: Identifier) {
+    constructor(
+        token: Token,
+        message: Expression | null,
+        destination: Identifier[]
+    ) {
         this.token = token;
         this.destination = destination;
+        this.message = message;
     }
 
     tokenLiteral(): string {
@@ -363,7 +369,9 @@ export class InputStatement implements Statement {
     }
 
     toString(): string {
-        return `INPUT ${this.destination.value}`;
+        return `INPUT ${
+            this.message ? this.message.toString() : ""
+        } ${this.destination.join(", ")}`;
     }
 }
 

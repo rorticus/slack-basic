@@ -164,6 +164,22 @@ describe("context tests", () => {
 
             expect(print).toHaveBeenCalledWith("test");
         });
+
+        it("accepts multiple inputs", async () => {
+            const print = jest.fn();
+
+            const input = jest
+                .fn()
+                .mockResolvedValueOnce("1")
+                .mockResolvedValueOnce("2");
+
+            await run(`INPUT A$, B$ : PRINT "results are " A$ " " B$`, {
+                input,
+                print,
+            });
+
+            expect(print).toHaveBeenCalledWith("results are 1 2");
+        });
     });
 
     describe("compound statements", () => {

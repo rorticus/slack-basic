@@ -241,9 +241,43 @@ describe("Parser tests", () => {
             it("parses input statements", () => {
                 const { statement } = parse("INPUT A$");
                 expect(statement.type).toEqual(StatementType.INPUT);
-                expect((statement as InputStatement).destination.value).toEqual(
-                    "A$"
+                expect((statement as InputStatement).destination).toHaveLength(
+                    1
                 );
+                expect(
+                    (statement as InputStatement).destination[0].value
+                ).toEqual("A$");
+            });
+
+            it("parses input statements with messages", () => {
+                const { statement } = parse(`INPUT "test"; A$`);
+                expect(statement.type).toEqual(StatementType.INPUT);
+
+                const inputStatement = statement as InputStatement;
+                expect(inputStatement.message).not.toBeNull();
+                expect(inputStatement.destination).toHaveLength(1);
+                expect(inputStatement.destination[0].value).toEqual("A$");
+            });
+
+            it("parses input statements with multiple destinations", () => {
+                const { statement } = parse(`INPUT A$, B`);
+                expect(statement.type).toEqual(StatementType.INPUT);
+
+                const inputStatement = statement as InputStatement;
+                expect(inputStatement.destination).toHaveLength(2);
+                expect(inputStatement.destination[0].value).toEqual("A$");
+                expect(inputStatement.destination[1].value).toEqual("B");
+            });
+
+            it("parses input statements with a message and multiple destinations", () => {
+                const { statement } = parse(`INPUT "message"; A$, B`);
+                expect(statement.type).toEqual(StatementType.INPUT);
+
+                const inputStatement = statement as InputStatement;
+                expect(inputStatement.message).not.toBeNull();
+                expect(inputStatement.destination).toHaveLength(2);
+                expect(inputStatement.destination[0].value).toEqual("A$");
+                expect(inputStatement.destination[1].value).toEqual("B");
             });
         });
 
