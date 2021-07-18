@@ -22,6 +22,7 @@ import {
     IntegerLiteral,
     LetAssignment,
     LetStatement,
+    ListStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -274,6 +275,9 @@ export class Parser {
                 case TokenType.CONT:
                     statements.push(new ContStatement(this.curToken));
                     break;
+                case TokenType.LIST:
+                    statements.push(this.parseListStatement());
+                    break;
                 default:
                     // statements with no labels default to LET statements
                     statements.push(this.parseLetStatement());
@@ -413,7 +417,7 @@ export class Parser {
             }
         }
 
-        if(!this.peekTokenIs(TokenType.IDENT)) {
+        if (!this.peekTokenIs(TokenType.IDENT)) {
             this.errors.push(`expected identifier`);
             return null;
         }
@@ -421,7 +425,7 @@ export class Parser {
         this.nextToken();
         destinations.push(this.parseIdentifier());
 
-        while(this.peekTokenIs(TokenType.COMMA)) {
+        while (this.peekTokenIs(TokenType.COMMA)) {
             this.nextToken();
             this.nextToken();
 
@@ -900,5 +904,38 @@ export class Parser {
         }
 
         return new DimStatement(token, vars);
+    }
+
+    parseListStatement() {
+        const token = this.curToken;
+        let startLine: Expression | null = null;
+        let endLine: Expression | null = null;
+
+        if (this.peekTokenIs(TokenType.INT)) {
+            // has at least one line
+            this.nextToken();
+            startLine = this.parseIntegerLiteral();
+
+            if (this.peekTokenIs(TokenType.MINUS)) {
+                this.nextToken();
+
+                if (this.peekTokenIs(TokenType.INT)) {
+                    this.nextToken();
+                    endLine = this.parseIntegerLiteral();
+                }
+            } else {
+                endLine = startLine;
+            }
+        } else if (this.peekTokenIs(TokenType.MINUS)) {
+            // just has an end line
+            this.nextToken();
+            if (!this.expectPeek(TokenType.INT)) {
+                return null;
+            }
+
+            endLine = this.parseIntegerLiteral();
+        }
+
+        return new ListStatement(token, startLine, endLine);
     }
 }

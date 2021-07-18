@@ -18,6 +18,7 @@ import {
     InputStatement,
     IntegerLiteral,
     LetStatement,
+    ListStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -213,6 +214,8 @@ export class Context {
                 return this.runEndStatement(statement as EndStatement);
             case StatementType.CONT:
                 return this.runUntilDoneOrStopped(this.continueStatement);
+            case StatementType.LIST:
+                return this.runListStatement(statement as ListStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -1087,6 +1090,52 @@ export class Context {
         this.continueStatement = statement.next;
 
         this.state = ContextState.IDLE;
+        return NULL;
+    }
+
+    async runListStatement(statement: ListStatement) {
+        let lineStart = 0;
+        let lineEnd = this.lines[this.lines.length - 1]?.lineNumber ?? 0;
+
+        if (statement.startLine !== null) {
+            const start = this.evalExpression(statement.startLine);
+            if (isError(start)) {
+                return start;
+            }
+
+            if (start.type() !== ObjectType.INTEGER_OBJ) {
+                return new ErrorValue(
+                    `type mismatch, expected int, got ${start.type()}`
+                );
+            }
+
+            lineStart = (start as IntValue).value;
+        }
+
+        if (statement.endLine !== null) {
+            const end = this.evalExpression(statement.endLine);
+            if (isError(end)) {
+                return end;
+            }
+
+            if (end.type() !== ObjectType.INTEGER_OBJ) {
+                return new ErrorValue(
+                    `type mismatch, expected int, got ${end.type()}`
+                );
+            }
+
+            lineEnd = (end as IntValue).value;
+        }
+
+        for (let i = 0; i < this.lines.length; i++) {
+            if (
+                (this.lines[i].lineNumber ?? 0) >= lineStart &&
+                (this.lines[i].lineNumber ?? 0) <= lineEnd
+            ) {
+                await this.api.print(this.lines[i].toString());
+            }
+        }
+
         return NULL;
     }
 }

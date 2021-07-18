@@ -4,7 +4,6 @@ import {
     CallExpression,
     CompoundStatement,
     DataStatement,
-    DefFnCallExpression,
     DefStatement,
     DimStatement,
     Expression,
@@ -18,6 +17,7 @@ import {
     InputStatement,
     IntegerLiteral,
     LetStatement,
+    ListStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -522,6 +522,58 @@ describe("Parser tests", () => {
             expect(d.variables[1].dimensions).toHaveLength(2);
             testIntegerLiteral(d.variables[1].dimensions[0], 2);
             testIntegerLiteral(d.variables[1].dimensions[1], 3);
+        });
+    });
+
+    describe("list statements", () => {
+        it("parses list statements with no parameters", () => {
+            const { statement } = parse("LIST");
+
+            expect(statement.type).toEqual(StatementType.LIST);
+            const listStatement = statement as ListStatement;
+
+            expect(listStatement.startLine).toBeNull();
+            expect(listStatement.endLine).toBeNull();
+        });
+
+        it("parses list statements with a range", () => {
+            const { statement } = parse("LIST 10-20");
+
+            expect(statement.type).toEqual(StatementType.LIST);
+            const listStatement = statement as ListStatement;
+
+            testIntegerLiteral(listStatement.startLine, 10);
+            testIntegerLiteral(listStatement.endLine, 20);
+        });
+
+        it("parses list statements with a single line", () => {
+            const { statement } = parse("LIST 10");
+
+            expect(statement.type).toEqual(StatementType.LIST);
+            const listStatement = statement as ListStatement;
+
+            testIntegerLiteral(listStatement.startLine, 10);
+            testIntegerLiteral(listStatement.endLine, 10);
+        });
+
+        it("parses list statements with a missing end range", () => {
+            const { statement } = parse("LIST 10-");
+
+            expect(statement.type).toEqual(StatementType.LIST);
+            const listStatement = statement as ListStatement;
+
+            testIntegerLiteral(listStatement.startLine, 10);
+            expect(listStatement.endLine).toBeNull();
+        });
+
+        it("parses list statements with a missing start range", () => {
+            const { statement } = parse("LIST -10");
+
+            expect(statement.type).toEqual(StatementType.LIST);
+            const listStatement = statement as ListStatement;
+
+            expect(listStatement.startLine).toBeNull();
+            testIntegerLiteral(listStatement.endLine, 10);
         });
     });
 });

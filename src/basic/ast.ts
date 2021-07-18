@@ -1,5 +1,4 @@
 import { Token } from "./tokens";
-import { ErrorValue, ObjectType, ValueObject } from "./object";
 
 export interface Node {
     tokenLiteral(): string;
@@ -20,6 +19,7 @@ export enum StatementType {
     IF = "IF",
     INPUT = "INPUT",
     LET = "LET",
+    LIST = "LIST",
     NEXT = "NEXT",
     PRINT = "PRINT",
     READ = "READ",
@@ -43,24 +43,36 @@ export interface Statement extends Node {
 
 export interface Expression extends Node {}
 
-export class Program implements Node {
-    statements: Statement[] = [];
+function combineParts(
+    ...parts: (
+        | number
+        | string
+        | null
+        | undefined
+        | (string | number | null | undefined)[]
+    )[]
+) {
+    const printable: string[] = [];
 
-    tokenLiteral(): string {
-        if (this.statements.length > 0) {
-            return this.statements[0].tokenLiteral();
+    for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+
+        if (!p) {
+            continue;
         }
 
-        return "";
+        if (typeof p === "number" || typeof p === "string") {
+            printable.push(p.toString());
+        } else if (p instanceof Array) {
+            for (let j = 0; j < p.length; j++) {
+                if (p[j]) {
+                    printable.push(p[j]!.toString());
+                }
+            }
+        }
     }
 
-    toString() {
-        let str = "";
-
-        this.statements.forEach((statement) => (str += `${statement}\n`));
-
-        return str;
-    }
+    return printable.join(" ");
 }
 
 export class Identifier implements Expression {
@@ -203,7 +215,9 @@ export class PrefixExpression implements Expression {
     }
 
     toString(): string {
-        return `(${this.operator}${this.right ? this.right.toString() : ""})`;
+        return `(${
+            this.operator === "FN" ? `${this.operator} ` : this.operator
+        }${this.right ? this.right.toString() : ""})`;
     }
 }
 
@@ -296,9 +310,23 @@ export class LetStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.tokenLiteral()} ${this.names
-            .map((n) => n.name.toString())
-            .join(", ")} = ${this.value ? this.value.toString() : ""};`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral() === "LET" ? "LET" : "",
+            this.names
+                .map((n) => {
+                    if (n.indices.length > 0) {
+                        return `${n.name}(${n.indices
+                            .map((i) => i.toString())
+                            .join(", ")})`;
+                    } else {
+                        return n.name.toString();
+                    }
+                })
+                .join(", "),
+            "=",
+            this.value ? this.value.toString() : ""
+        );
     }
 }
 
@@ -319,7 +347,10 @@ export class CompoundStatement implements Statement {
     }
 
     toString(): string {
-        return this.statements.map((s) => s.toString()).join(" : ");
+        return combineParts(
+            this.lineNumber,
+            this.statements.map((s) => s.toString()).join(" : ")
+        );
     }
 }
 
@@ -340,9 +371,11 @@ export class PrintStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.tokenLiteral()} ${this.args
-            .map((a) => a.toString())
-            .join(" ")}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.args.map((a) => a.toString())
+        );
     }
 }
 
@@ -369,9 +402,12 @@ export class InputStatement implements Statement {
     }
 
     toString(): string {
-        return `INPUT ${
-            this.message ? this.message.toString() : ""
-        } ${this.destination.join(", ")}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.message ? this.message.toString() + ";" : null,
+            this.destination.join(", ")
+        );
     }
 }
 
@@ -401,7 +437,17 @@ export class ForStatement implements Statement {
     }
 
     toString(): string {
-        return `FOR ${this.iterator}=${this.from} TO ${this.to} STEP ${this.step}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.iterator?.toString(),
+            "=",
+            this.from?.toString(),
+            "TO",
+            this.to?.toString(),
+            this.step && "STEP",
+            this.step && this.step.toString()
+        );
     }
 
     tokenLiteral(): string {
@@ -423,7 +469,11 @@ export class NextStatement implements Statement {
     }
 
     toString(): string {
-        return `NEXT ${this.values.map((v) => v.toString()).join(", ")}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.values.map((v) => v.toString()).join(", ")
+        );
     }
 
     tokenLiteral(): string {
@@ -449,7 +499,11 @@ export class GosubStatement implements Statement {
     }
 
     toString(): string {
-        return `GOSUB ${this.gosubLineNumber}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.gosubLineNumber
+        );
     }
 }
 
@@ -468,7 +522,7 @@ export class ReturnStatement implements Statement {
     }
 
     toString(): string {
-        return `RETURN`;
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }
 
@@ -487,7 +541,7 @@ export class RemStatement implements Statement {
     }
 
     toString(): string {
-        return this.token.literal;
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }
 
@@ -528,7 +582,7 @@ export class ClrStatement implements Statement {
     }
 
     toString(): string {
-        return this.token.literal;
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }
 
@@ -549,9 +603,11 @@ export class DataStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal} ${this.datas
-            .map((d) => d.toString())
-            .join(", ")}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.datas.map((d) => d.toString()).join(", ")
+        );
     }
 }
 
@@ -572,9 +628,11 @@ export class ReadStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal} ${this.outputs
-            .map((o) => o.value)
-            .join(", ")}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.outputs.map((o) => o.value).join(", ")
+        );
     }
 }
 
@@ -593,7 +651,7 @@ export class RestoreStatement implements Statement {
     }
 
     toString(): string {
-        return this.token.literal;
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }
 
@@ -623,27 +681,16 @@ export class DefStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal} ${this.name.toString()}(${
-            this.argument ? this.argument.toString() : ""
-        }) = ${this.body.toString()}`;
-    }
-}
-
-export class DefFnCallExpression implements Expression {
-    token: Token;
-    callExpr: CallExpression;
-
-    constructor(token: Token, callExpr: CallExpression) {
-        this.token = token;
-        this.callExpr = callExpr;
-    }
-
-    tokenLiteral(): string {
-        return this.token.literal;
-    }
-
-    toString(): string {
-        return `FN ${this.callExpr.toString()}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            "FN",
+            `${this.name.toString()}(${
+                this.argument ? this.argument.toString() : ""
+            })`,
+            "=",
+            this.body.toString()
+        );
     }
 }
 
@@ -669,14 +716,18 @@ export class DimStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal} ${this.variables
-            .map(
-                (v) =>
-                    `${v.name}(${v.dimensions
-                        .map((e) => e.toString())
-                        .join(", ")})`
-            )
-            .join(", ")}`;
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.variables
+                .map(
+                    (v) =>
+                        `${v.name}(${v.dimensions
+                            .map((e) => e.toString())
+                            .join(", ")})`
+                )
+                .join(", ")
+        );
     }
 }
 
@@ -695,7 +746,7 @@ export class EndStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal}`;
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }
 
@@ -714,6 +765,33 @@ export class ContStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal}`;
+        return combineParts(this.lineNumber, this.tokenLiteral());
+    }
+}
+
+export class ListStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.LIST;
+    next: Statement | null = null;
+    startLine: Expression | null;
+    endLine: Expression | null;
+
+    constructor(
+        token: Token,
+        startLine: Expression | null,
+        endLine: Expression | null
+    ) {
+        this.token = token;
+        this.startLine = startLine;
+        this.endLine = endLine;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }
