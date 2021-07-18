@@ -134,7 +134,7 @@ export default {
         }
 
         return new IntValue(str.value.length);
-    });
+    }),
     SIN: singleNumberFunction(Math.sin),
     TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;
