@@ -127,6 +127,14 @@ export default {
 
         return new StringValue(str.value.substr(0, cnt.value));
     }),
+    LEN: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const str = getSingleStringArgument(args);
+        if(isError(str)) {
+            return str;
+        }
+
+        return new IntValue(str.value.length);
+    });
     SIN: singleNumberFunction(Math.sin),
     TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;
