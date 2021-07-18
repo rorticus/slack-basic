@@ -24,6 +24,7 @@ describe("context tests", () => {
             new Context({
                 print: jest.fn().mockResolvedValue(undefined),
                 input: jest.fn().mockResolvedValue(""),
+                load: jest.fn().mockResolvedValue([]),
                 ...overrides,
             });
 
@@ -739,7 +740,9 @@ describe("context tests", () => {
             );
             expect(context.api.print).toHaveBeenCalledWith(`80 NEXT`);
             expect(context.api.print).toHaveBeenCalledWith(`90 REM blah blah`);
-            expect(context.api.print).toHaveBeenCalledWith(`100 DIM AR(16, 16) : AR(12, 2) = 4`);
+            expect(context.api.print).toHaveBeenCalledWith(
+                `100 DIM AR(16, 16) : AR(12, 2) = 4`
+            );
         });
     });
 });

@@ -18,6 +18,7 @@ import {
     IntegerLiteral,
     LetStatement,
     ListStatement,
+    LoadStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -574,6 +575,17 @@ describe("Parser tests", () => {
 
             expect(listStatement.startLine).toBeNull();
             testIntegerLiteral(listStatement.endLine, 10);
+        });
+    });
+
+    describe("load statements", () => {
+        it("parses load statements", () => {
+            const { statement } = parse(`LOAD "test"`);
+
+            expect(statement.type).toEqual(StatementType.LOAD);
+            const loadStatement = statement as LoadStatement;
+
+            testStringLiteral(loadStatement.filename, "test");
         });
     });
 });

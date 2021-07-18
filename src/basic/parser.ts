@@ -23,6 +23,7 @@ import {
     LetAssignment,
     LetStatement,
     ListStatement,
+    LoadStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -277,6 +278,9 @@ export class Parser {
                     break;
                 case TokenType.LIST:
                     statements.push(this.parseListStatement());
+                    break;
+                case TokenType.LOAD:
+                    statements.push(this.parseLoadStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -937,5 +941,20 @@ export class Parser {
         }
 
         return new ListStatement(token, startLine, endLine);
+    }
+
+    parseLoadStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const filename = this.parseExpression(Precedence.LOWEST);
+
+        if (filename) {
+            return new LoadStatement(token, filename);
+        } else {
+            this.errors.push("expected filename");
+            return null;
+        }
     }
 }

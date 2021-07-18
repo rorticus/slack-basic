@@ -20,6 +20,7 @@ export enum StatementType {
     INPUT = "INPUT",
     LET = "LET",
     LIST = "LIST",
+    LOAD = "LOAD",
     NEXT = "NEXT",
     PRINT = "PRINT",
     READ = "READ",
@@ -793,5 +794,30 @@ export class ListStatement implements Statement {
 
     toString(): string {
         return combineParts(this.lineNumber, this.tokenLiteral());
+    }
+}
+
+export class LoadStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.LOAD;
+    next: Statement | null = null;
+    filename: Expression;
+
+    constructor(token: Token, filename: Expression) {
+        this.token = token;
+        this.filename = filename;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.filename.toString()
+        );
     }
 }

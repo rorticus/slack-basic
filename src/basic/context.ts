@@ -52,6 +52,7 @@ export enum ContextState {
 export interface ContextApi {
     print(str: string): Promise<void>;
     input(): Promise<string>;
+    load(filename: string): Promise<string>;
 }
 
 export function isTruthy(value: ValueObject) {
