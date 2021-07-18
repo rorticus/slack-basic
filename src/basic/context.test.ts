@@ -481,6 +481,11 @@ describe("context tests", () => {
             const { result } = await run(`A$ = CHR$(${"A".charCodeAt(0)})`);
             expect(result?.inspect()).toEqual('"A"');
         });
+
+        it("trims strings with left$", async () => {
+            const { result } = await run(`A$ = LEFT$("hello world", 5)`);
+            expect(result?.inspect()).toEqual('"hello"');
+        });
     });
 
     describe("data/.read/restore", () => {

@@ -3,11 +3,13 @@ import {
     ErrorValue,
     FloatValue,
     IntValue,
+    isError,
+    isNumeric,
+    isString,
     ObjectType,
     StringValue,
     ValueObject,
 } from "./object";
-import { isError } from "./object";
 
 function getSingleNumericArgument(
     values: ValueObject[]
@@ -91,6 +93,40 @@ export default {
     COS: singleNumberFunction(Math.cos),
     EXP: singleNumberFunction(Math.exp),
     INT: singleNumberFunction((n) => new IntValue(n)),
+    LEFT$: new BuiltInFunctionValue((args: ValueObject[]) => {
+        if (args.length !== 2) {
+            return new ErrorValue("expected 2 arguments");
+        }
+
+        const str = args[0];
+        const cnt = args[1];
+
+        if (!isString(str)) {
+            return new ErrorValue(
+                `type mismatch, expected string got ${str.type()}`
+            );
+        }
+
+        if (!isNumeric(cnt)) {
+            return new ErrorValue(
+                `type mismatch, expected number got ${cnt.type()}`
+            );
+        }
+
+        if (cnt.value < 0) {
+            return new ErrorValue(`illegal quantity error, ${cnt.type()}`);
+        }
+
+        if (cnt.value === 0) {
+            return new StringValue("");
+        }
+
+        if (cnt.value >= str.value.length) {
+            return str;
+        }
+
+        return new StringValue(str.value.substr(0, cnt.value));
+    }),
     SIN: singleNumberFunction(Math.sin),
     TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;

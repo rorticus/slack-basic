@@ -275,3 +275,14 @@ export class ArrayValue implements ValueObject {
 export function isError(obj: ValueObject): obj is ErrorValue {
     return obj.type() === ObjectType.ERROR_OBJ;
 }
+
+export function isNumeric(obj: ValueObject): obj is IntValue | FloatValue {
+    return (
+        obj.type() === ObjectType.FLOAT_OBJ ||
+        obj.type() === ObjectType.INTEGER_OBJ
+    );
+}
+
+export function isString(obj: ValueObject): obj is StringValue {
+    return obj.type() === ObjectType.STRING_OBJ;
+}
