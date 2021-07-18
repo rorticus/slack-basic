@@ -121,4 +121,13 @@ export default {
 
         return new FloatValue(Math.tan(n.value));
     }),
+
+    EXP: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const n = getSingleNumericArgument(args);
+        if (isError(n)) {
+            return n;
+        }
+
+        return new FloatValue(Math.exp(n.value));
+    }),
 } as Record<string, BuiltInFunctionValue>;
