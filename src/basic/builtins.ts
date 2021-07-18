@@ -60,15 +60,24 @@ function getSingleStringArgument(
     return v as StringValue;
 }
 
-export default {
-    ABS: new BuiltInFunctionValue((args: ValueObject[]) => {
+function singleNumberFunction(callback: (num: number) => number | ValueObject) {
+    return new BuiltInFunctionValue((args: ValueObject[]) => {
         const n = getSingleNumericArgument(args);
         if (isError(n)) {
             return n;
         }
 
-        return new FloatValue(Math.abs(n.value));
-    }),
+        let result = callback(n.value);
+        if (typeof result === "number") {
+            return new FloatValue(result);
+        }
+
+        return result;
+    });
+}
+
+export default {
+    ABS: singleNumberFunction(Math.abs),
     ASC: new BuiltInFunctionValue((args: ValueObject[]) => {
         const s = getSingleStringArgument(args);
         if (isError(s)) {
@@ -77,57 +86,11 @@ export default {
 
         return new IntValue(s.value.charCodeAt(0));
     }),
-    ATN: new BuiltInFunctionValue((args: ValueObject[]) => {
-        const n = getSingleNumericArgument(args);
-        if (isError(n)) {
-            return n;
-        }
-
-        return new FloatValue(Math.atan(n.value));
-    }),
-
-    CHR$: new BuiltInFunctionValue((args: ValueObject[]) => {
-        const n = getSingleNumericArgument(args);
-        if (isError(n)) {
-            return n;
-        }
-
-        return new StringValue(String.fromCharCode(n.value));
-    }),
-
-    COS: new BuiltInFunctionValue((args: ValueObject[]) => {
-        const n = getSingleNumericArgument(args);
-        if (isError(n)) {
-            return n;
-        }
-
-        return new FloatValue(Math.cos(n.value));
-    }),
-
-    SIN: new BuiltInFunctionValue((args: ValueObject[]) => {
-        const n = getSingleNumericArgument(args);
-        if (isError(n)) {
-            return n;
-        }
-
-        return new FloatValue(Math.sin(n.value));
-    }),
-
-    TAN: new BuiltInFunctionValue((args: ValueObject[]) => {
-        const n = getSingleNumericArgument(args);
-        if (isError(n)) {
-            return n;
-        }
-
-        return new FloatValue(Math.tan(n.value));
-    }),
-
-    EXP: new BuiltInFunctionValue((args: ValueObject[]) => {
-        const n = getSingleNumericArgument(args);
-        if (isError(n)) {
-            return n;
-        }
-
-        return new FloatValue(Math.exp(n.value));
-    }),
+    ATN: singleNumberFunction(Math.atan),
+    CHR$: singleNumberFunction((n) => new StringValue(String.fromCharCode(n))),
+    COS: singleNumberFunction(Math.cos),
+    EXP: singleNumberFunction(Math.exp),
+    INT: singleNumberFunction((n) => new IntValue(n)),
+    SIN: singleNumberFunction(Math.sin),
+    TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;
