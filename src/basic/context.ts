@@ -5,6 +5,7 @@ import {
     DataStatement,
     DefStatement,
     DimStatement,
+    EndStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -108,6 +109,7 @@ export class Context {
     private dataStackIndex = 0;
     private nextStatement: Statement | null;
     private returnStack: (Statement | null)[] = [];
+    private continueStatement: Statement | null;
 
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
@@ -117,6 +119,7 @@ export class Context {
         this.api = api;
         this.forStack = [];
         this.dataStack = [];
+        this.continueStatement = null;
     }
 
     clr() {
@@ -125,6 +128,7 @@ export class Context {
         this.returnStack = [];
         this.dataStack = [];
         this.dataStackIndex = 0;
+        this.continueStatement = null;
     }
 
     reset() {
@@ -156,19 +160,12 @@ export class Context {
                 (l1.lineNumber ?? 0) < (l2.lineNumber ?? 0) ? -1 : 1
             );
 
+            this.continueStatement = null;
+
             return NULL;
         } else {
             linkNextStatement(statement, null);
-
-            let root: Statement | null = statement;
-            let result: ValueObject = NULL;
-            while (root) {
-                this.nextStatement = root.next;
-                result = await this.runStatement(root);
-                root = this.nextStatement;
-            }
-
-            return result;
+            return this.runUntilDoneOrStopped(statement);
         }
     }
 
@@ -199,9 +196,7 @@ export class Context {
             case StatementType.REM:
                 return NULL;
             case StatementType.DATA:
-                if (this.state === ContextState.IDLE) {
-                    this.preprocessDataStatement(statement as DataStatement);
-                }
+                this.preprocessDataStatement(statement as DataStatement);
                 return NULL;
             case StatementType.CLR:
                 return this.runClrStatement();
@@ -214,6 +209,10 @@ export class Context {
                 return this.runDefStatement(statement as DefStatement);
             case StatementType.DIM:
                 return this.runDimStatement(statement as DimStatement);
+            case StatementType.END:
+                return this.runEndStatement(statement as EndStatement);
+            case StatementType.CONT:
+                return this.runUntilDoneOrStopped(this.continueStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -238,13 +237,12 @@ export class Context {
         }
     }
 
-    async runProgram(): Promise<ValueObject> {
+    private prepareRunProgram() {
         if (this.lines.length == 0) {
             return new ErrorValue(`cannot run program, no program!`);
         }
 
         this.reset();
-        this.state = ContextState.RUNNING;
 
         // find all the data statements and preload data
         this.forEachStatement(
@@ -253,25 +251,42 @@ export class Context {
                 this.preprocessDataStatement(statement);
             }
         );
+    }
+
+    async runUntilDoneOrStopped(root: Statement | null): Promise<ValueObject> {
+        let statement: Statement | null = root;
+
+        this.state = ContextState.RUNNING;
+        let lastResult: ValueObject = NULL;
 
         try {
-            let statement: Statement | null = this.lines[0];
-
-            while (statement) {
+            while (statement && this.state === ContextState.RUNNING) {
                 this.nextStatement = statement.next ?? null;
 
-                const result = await this.runStatement(statement);
-                if (result.type() === ObjectType.ERROR_OBJ) {
-                    return result;
+                lastResult = await this.runStatement(statement);
+
+                if (lastResult.type() === ObjectType.ERROR_OBJ) {
+                    return lastResult;
                 }
 
                 statement = this.nextStatement;
             }
+        } catch (e) {
+            console.error(e);
         } finally {
             this.state = ContextState.IDLE;
         }
 
-        return NULL;
+        return lastResult;
+    }
+
+    async runProgram(): Promise<ValueObject> {
+        const value = this.prepareRunProgram();
+        if (value) {
+            return value;
+        }
+
+        return this.runUntilDoneOrStopped(this.lines[0]);
     }
 
     private async runPrintStatement(
@@ -709,12 +724,6 @@ export class Context {
     }
 
     private goto(lineNumber: number): ValueObject {
-        if (this.state !== ContextState.RUNNING) {
-            return new ErrorValue(
-                `cannot execute goto if program is not running`
-            );
-        }
-
         const lineIndex = this.lines.findIndex(
             (l) => l.lineNumber === lineNumber
         );
@@ -1058,6 +1067,13 @@ export class Context {
             );
         }
 
+        return NULL;
+    }
+
+    runEndStatement(statement: EndStatement) {
+        this.continueStatement = statement.next;
+
+        this.state = ContextState.IDLE;
         return NULL;
     }
 }

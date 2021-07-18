@@ -9,6 +9,7 @@ export interface Node {
 export enum StatementType {
     CLR = "CLR",
     COMPOUND = "COMPOUND",
+    CONT = "CONT",
     DATA = "DATA",
     DEF = "DEF",
     DIM = "DIM",
@@ -668,5 +669,43 @@ export class DimStatement implements Statement {
                         .join(", ")})`
             )
             .join(", ")}`;
+    }
+}
+
+export class EndStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.END;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `${this.token.literal}`;
+    }
+}
+
+export class ContStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.CONT;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `${this.token.literal}`;
     }
 }

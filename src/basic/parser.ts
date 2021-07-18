@@ -4,10 +4,12 @@ import {
     CallExpression,
     ClrStatement,
     CompoundStatement,
+    ContStatement,
     DataStatement,
     DefStatement,
     DimStatement,
     DimVariable,
+    EndStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -265,6 +267,12 @@ export class Parser {
                     break;
                 case TokenType.DIM:
                     statements.push(this.parseDimStatement());
+                    break;
+                case TokenType.END:
+                    statements.push(new EndStatement(this.curToken));
+                    break;
+                case TokenType.CONT:
+                    statements.push(new ContStatement(this.curToken));
                     break;
                 default:
                     // statements with no labels default to LET statements

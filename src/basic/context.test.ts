@@ -14,12 +14,18 @@ import {
 } from "./object";
 
 describe("context tests", () => {
-    async function run(code: string, overrides: Partial<ContextApi> = {}) {
-        const context = new Context({
-            print: jest.fn().mockResolvedValue(undefined),
-            input: jest.fn().mockResolvedValue(""),
-            ...overrides,
-        });
+    async function run(
+        code: string,
+        overrides: Partial<ContextApi> = {},
+        existingContext: Context | null = null
+    ) {
+        const context =
+            existingContext ||
+            new Context({
+                print: jest.fn().mockResolvedValue(undefined),
+                input: jest.fn().mockResolvedValue(""),
+                ...overrides,
+            });
 
         const lines = code.split("\n");
         let result: ValueObject | undefined;
@@ -629,6 +635,47 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledWith("1, 2, 3");
+        });
+    });
+
+    describe("end statements", () => {
+        it("stops multiline program execution", async () => {
+            const { context } = await run(`
+            10 PRINT 1
+            20 END
+            30 PRINT 2
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(1);
+            expect(context.api.print).toHaveBeenCalledWith("1");
+        });
+
+        it("stops compound program execution", async () => {
+            const { context } = await run(`
+            PRINT 1 : END : PRINT 2
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(1);
+            expect(context.api.print).toHaveBeenCalledWith("1");
+        });
+
+        it("continues execution on CONT", async () => {
+            const { context } = await run(`
+            10 PRINT "PART 1"
+            20 END : PRINT "AFTER 'END'"
+            30 PRINT "PART 2"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(1);
+            expect(context.api.print).toHaveBeenCalledWith("PART 1");
+
+            await run("CONT", {}, context);
+
+            expect(context.api.print).toHaveBeenCalledTimes(3);
+            expect(context.api.print).toHaveBeenNthCalledWith(2, "AFTER 'END'");
+            expect(context.api.print).toHaveBeenNthCalledWith(3, "PART 2");
         });
     });
 });
