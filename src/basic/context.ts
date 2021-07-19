@@ -21,6 +21,7 @@ import {
     ListStatement,
     LoadStatement,
     NextStatement,
+    OnStatement,
     PrefixExpression,
     PrintStatement,
     ReadStatement,
@@ -36,6 +37,7 @@ import {
     FunctionValue,
     IntValue,
     isError,
+    isNumeric,
     isString,
     NullValue,
     ObjectType,
@@ -43,6 +45,7 @@ import {
     ValueObject,
 } from "./object";
 import builtins from "./builtins";
+import { TokenType } from "./tokens";
 
 export const NULL = new NullValue();
 
@@ -223,6 +226,8 @@ export class Context {
                 return this.runLoadStatement(statement as LoadStatement);
             case StatementType.NEW:
                 return this.runNewStatement();
+            case StatementType.ON:
+                return this.runOnStatement(statement as OnStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -923,11 +928,15 @@ export class Context {
         return NULL;
     }
 
+    private gosub(statement: Statement, lineNumber: number) {
+        this.returnStack.push(statement.next);
+        return this.goto(lineNumber);
+    }
+
     private async runGosubStatement(
         statement: GosubStatement
     ): Promise<ValueObject> {
-        this.returnStack.push(statement.next);
-        return this.goto(statement.gosubLineNumber);
+        return this.gosub(statement, statement.gosubLineNumber);
     }
 
     private async runReturnStatement(): Promise<ValueObject> {
@@ -1173,6 +1182,34 @@ export class Context {
     runNewStatement() {
         this.lines = [];
         this.clr();
+
+        return NULL;
+    }
+
+    runOnStatement(statement: OnStatement) {
+        const condition = this.evalExpression(statement.condition);
+
+        if (!isNumeric(condition)) {
+            return new ErrorValue("expected a number type");
+        }
+
+        const idx = Math.floor(condition.value) - 1;
+
+        if (idx < 0 || idx >= statement.destinations.length) {
+            return new ErrorValue("undefined statement");
+        }
+
+        const lineNumber = this.evalExpression(statement.destinations[idx]);
+
+        if (!isNumeric(lineNumber)) {
+            return new ErrorValue("expected a line number");
+        }
+
+        if (statement.operation.type === TokenType.GOTO) {
+            return this.goto(lineNumber.value);
+        } else if (statement.operation.type === TokenType.GOSUB) {
+            return this.gosub(statement, lineNumber.value);
+        }
 
         return NULL;
     }

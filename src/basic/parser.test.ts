@@ -20,12 +20,14 @@ import {
     ListStatement,
     LoadStatement,
     NextStatement,
+    OnStatement,
     PrefixExpression,
     PrintStatement,
     ReadStatement,
     StatementType,
     StringLiteral,
 } from "./ast";
+import { TokenType } from "./tokens";
 
 describe("Parser tests", () => {
     function parse(source: string, checkForErrors = true) {
@@ -586,6 +588,31 @@ describe("Parser tests", () => {
             const loadStatement = statement as LoadStatement;
 
             testStringLiteral(loadStatement.filename, "test");
+        });
+    });
+
+    describe("on statements", () => {
+        it("parses on..goto statements", () => {
+            const { statement } = parse("ON 1 GOTO 10");
+            expect(statement.type).toEqual(StatementType.ON);
+            const onStatement = statement as OnStatement;
+
+            testIntegerLiteral(onStatement.condition, 1);
+            expect(onStatement.operation.type).toEqual(TokenType.GOTO);
+            expect(onStatement.destinations).toHaveLength(1);
+            testIntegerLiteral(onStatement.destinations[0], 10);
+        });
+
+        it("parses on..gosub statements", () => {
+            const { statement } = parse("ON A GOSUB 10, 20");
+            expect(statement.type).toEqual(StatementType.ON);
+            const onStatement = statement as OnStatement;
+
+            testIdentifier(onStatement.condition, "A");
+            expect(onStatement.operation.type).toEqual(TokenType.GOSUB);
+            expect(onStatement.destinations).toHaveLength(2);
+            testIntegerLiteral(onStatement.destinations[0], 10);
+            testIntegerLiteral(onStatement.destinations[1], 20);
         });
     });
 });

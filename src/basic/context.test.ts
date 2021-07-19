@@ -781,4 +781,44 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith(`10 PRINT "loaded"`);
         });
     });
+
+    describe("on statements", () => {
+        it("runs on..goto statements", async () => {
+            const { context } = await run(`
+            10   A = 1
+            20   ON A GOTO 1000,2000,3000
+            999  END
+            1000 PRINT "1. jump"
+            1001 A=A+1: GOTO 20
+            2000 PRINT "2. jump"
+            2001 A=A+1: GOTO 20
+            3000 PRINT "3. jump"
+            3001 A=A+1: GOTO 20
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(3);
+            expect(context.api.print).toHaveBeenCalledWith("1. jump");
+            expect(context.api.print).toHaveBeenCalledWith("2. jump");
+            expect(context.api.print).toHaveBeenCalledWith("3. jump");
+        });
+
+        it("runs on..gosub statements", async () => {
+            const { context } = await run(`
+            10   A = 1
+            20   ON A GOSUB 1000,2000,3000
+            999  END
+            1000 PRINT "1. Subroutine"
+            1001 A=A+1: RETURN
+            2000 PRINT "2. Subroutine"
+            2001 A=A+1: RETURN
+            3000 PRINT "3. Subroutine"
+            3001 A=A+1: RETURN
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(1);
+            expect(context.api.print).toHaveBeenCalledWith("1. Subroutine");
+        });
+    });
 });

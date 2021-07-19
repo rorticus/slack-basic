@@ -26,6 +26,7 @@ import {
     LoadStatement,
     NewStatement,
     NextStatement,
+    OnStatement,
     PrefixExpression,
     PrintStatement,
     ReadStatement,
@@ -285,6 +286,9 @@ export class Parser {
                     break;
                 case TokenType.NEW:
                     statements.push(new NewStatement(this.curToken));
+                    break;
+                case TokenType.ON:
+                    statements.push(this.parseOnStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -960,5 +964,52 @@ export class Parser {
             this.errors.push("expected filename");
             return null;
         }
+    }
+
+    parseOnStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const condition = this.parseExpression(Precedence.LOWEST);
+        if (!condition) {
+            return null;
+        }
+
+        if (
+            !this.peekTokenIs(TokenType.GOSUB) &&
+            !this.peekTokenIs(TokenType.GOTO)
+        ) {
+            this.errors.push(`expecting gosub or goto`);
+            return null;
+        }
+
+        this.nextToken();
+
+        const operation = this.curToken;
+
+        this.nextToken();
+
+        const destinations = [];
+
+        const first = this.parseExpression(Precedence.LOWEST);
+
+        if (!first) {
+            this.errors.push("expected at least one line number");
+            return null;
+        }
+
+        destinations.push(first);
+        while (this.peekTokenIs(TokenType.COMMA)) {
+            this.nextToken();
+            this.nextToken();
+
+            const next = this.parseExpression(Precedence.LOWEST);
+            if (next) {
+                destinations.push(next);
+            }
+        }
+
+        return new OnStatement(token, condition, operation, destinations);
     }
 }

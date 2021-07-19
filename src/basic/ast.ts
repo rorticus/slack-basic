@@ -1,4 +1,4 @@
-import { Token } from "./tokens";
+import { Token, TokenType } from "./tokens";
 
 export interface Node {
     tokenLiteral(): string;
@@ -21,6 +21,7 @@ export enum StatementType {
     LET = "LET",
     LIST = "LIST",
     LOAD = "LOAD",
+    ON = "ON",
     NEW = "NEW",
     NEXT = "NEXT",
     PRINT = "PRINT",
@@ -829,9 +830,7 @@ export class NewStatement implements Statement {
     type = StatementType.NEW;
     next: Statement | null = null;
 
-    constructor(
-        token: Token
-    ) {
+    constructor(token: Token) {
         this.token = token;
     }
 
@@ -841,5 +840,41 @@ export class NewStatement implements Statement {
 
     toString(): string {
         return combineParts(this.lineNumber, this.tokenLiteral());
+    }
+}
+
+export class OnStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.ON;
+    next: Statement | null = null;
+    condition: Expression;
+    operation: Token;
+    destinations: Expression[];
+
+    constructor(
+        token: Token,
+        condition: Expression,
+        operation: Token,
+        destinations: Expression[]
+    ) {
+        this.token = token;
+        this.condition = condition;
+        this.operation = operation;
+        this.destinations = destinations;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.condition.toString(),
+            this.operation.literal,
+            this.destinations.map((d) => d.toString()).join(", ")
+        );
     }
 }
