@@ -19,6 +19,7 @@ import {
     IntegerLiteral,
     LetStatement,
     ListStatement,
+    LoadStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -35,6 +36,7 @@ import {
     FunctionValue,
     IntValue,
     isError,
+    isString,
     NullValue,
     ObjectType,
     StringValue,
@@ -52,7 +54,7 @@ export enum ContextState {
 export interface ContextApi {
     print(str: string): Promise<void>;
     input(): Promise<string>;
-    load(filename: string): Promise<string>;
+    load(filename: string): Promise<Statement[]>;
 }
 
 export function isTruthy(value: ValueObject) {
@@ -217,6 +219,8 @@ export class Context {
                 return this.runUntilDoneOrStopped(this.continueStatement);
             case StatementType.LIST:
                 return this.runListStatement(statement as ListStatement);
+            case StatementType.LOAD:
+                return this.runLoadStatement(statement as LoadStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -1134,6 +1138,30 @@ export class Context {
                 (this.lines[i].lineNumber ?? 0) <= lineEnd
             ) {
                 await this.api.print(this.lines[i].toString());
+            }
+        }
+
+        return NULL;
+    }
+
+    async runLoadStatement(statement: LoadStatement) {
+        const filename = this.evalExpression(statement.filename);
+
+        if (!isString(filename)) {
+            return new ErrorValue(
+                `type mismatch. expecting string, received ${filename.type()}`
+            );
+        }
+
+        const newStatements = await this.api.load(filename.value);
+
+        this.state = ContextState.IDLE;
+        this.clr();
+
+        for (let i = 0; i < newStatements.length; i++) {
+            const result = await this.runImmediateStatement(newStatements[i]);
+            if (isError(result)) {
+                return result;
             }
         }
 

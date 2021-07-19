@@ -745,4 +745,26 @@ describe("context tests", () => {
             );
         });
     });
+
+    describe("load statements", () => {
+        it("calls the load api", async () => {
+            const load = jest
+                .fn()
+                .mockResolvedValue([
+                    new Parser(new Lexer(`10 PRINT "loaded`)).parseStatement(),
+                ]);
+
+            const { context } = await run(
+                `
+            10 PRINT "hello"
+            LOAD "test"
+            LIST
+            `,
+                { load }
+            );
+
+            expect(load).toHaveBeenCalledWith("test");
+            expect(context.api.print).toHaveBeenCalledWith(`10 PRINT "loaded"`);
+        });
+    });
 });
