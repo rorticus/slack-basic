@@ -144,7 +144,7 @@ export class Context {
                 linkNextStatement(this.lines[i], this.lines[i + 1]);
             }
 
-            this.lines[this.lines.length - 1].next = null;
+            linkNextStatement(this.lines[this.lines.length - 1], null);
         }
     }
 

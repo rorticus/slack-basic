@@ -487,6 +487,20 @@ describe("context tests", () => {
             const { result } = await run(`A$ = LEFT$("hello world", 5)`);
             expect(result?.inspect()).toEqual('"hello"');
         });
+
+        it("cuts strings with mid$", async () => {
+            const { context } = await run(`
+            10 A$="SATURDAY MORNING"
+            20 B$=MID$(A$,6,3): PRINT B$
+            30 B$=MID$(A$,1,8): PRINT B$
+            40 B$=MID$(A$,10): PRINT B$
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenNthCalledWith(1, "DAY");
+            expect(context.api.print).toHaveBeenNthCalledWith(2, "SATURDAY");
+            expect(context.api.print).toHaveBeenNthCalledWith(3, "MORNING");
+        });
     });
 
     describe("data/.read/restore", () => {
