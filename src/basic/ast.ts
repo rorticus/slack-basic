@@ -30,6 +30,7 @@ export enum StatementType {
     REM = "REM",
     RETURN = "RETURN",
     RUN = "RUN",
+    SAVE = "SAVE"
 }
 
 export enum IdentifierType {
@@ -803,6 +804,31 @@ export class LoadStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
     type = StatementType.LOAD;
+    next: Statement | null = null;
+    filename: Expression;
+
+    constructor(token: Token, filename: Expression) {
+        this.token = token;
+        this.filename = filename;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            this.filename.toString()
+        );
+    }
+}
+
+export class SaveStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.SAVE;
     next: Statement | null = null;
     filename: Expression;
 

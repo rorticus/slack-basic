@@ -34,6 +34,7 @@ import {
     RestoreStatement,
     ReturnStatement,
     RunStatement,
+    SaveStatement,
     Statement,
     StringLiteral,
 } from "./ast";
@@ -283,6 +284,9 @@ export class Parser {
                     break;
                 case TokenType.LOAD:
                     statements.push(this.parseLoadStatement());
+                    break;
+                case TokenType.SAVE:
+                    statements.push(this.parseSaveStatement());
                     break;
                 case TokenType.NEW:
                     statements.push(new NewStatement(this.curToken));
@@ -960,6 +964,21 @@ export class Parser {
 
         if (filename) {
             return new LoadStatement(token, filename);
+        } else {
+            this.errors.push("expected filename");
+            return null;
+        }
+    }
+
+    parseSaveStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const filename = this.parseExpression(Precedence.LOWEST);
+
+        if (filename) {
+            return new SaveStatement(token, filename);
         } else {
             this.errors.push("expected filename");
             return null;

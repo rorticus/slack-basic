@@ -24,7 +24,7 @@ import {
     OnStatement,
     PrefixExpression,
     PrintStatement,
-    ReadStatement,
+    ReadStatement, SaveStatement,
     Statement,
     StatementType,
     StringLiteral,
@@ -58,6 +58,7 @@ export interface ContextApi {
     print(str: string): Promise<void>;
     input(): Promise<string>;
     load(filename: string): Promise<Statement[]>;
+    save(statements: Statement[]): Promise<void>;
 }
 
 export function isTruthy(value: ValueObject) {
@@ -231,6 +232,8 @@ export class Context {
                 return this.runListStatement(statement as ListStatement);
             case StatementType.LOAD:
                 return this.runLoadStatement(statement as LoadStatement);
+            case StatementType.SAVE:
+                return this.runSaveStatement(statement as SaveStatement);
             case StatementType.NEW:
                 return this.runNewStatement();
             case StatementType.ON:
@@ -1184,6 +1187,23 @@ export class Context {
         }
 
         return NULL;
+    }
+
+    async runSaveStatement(statement: SaveStatement) {
+        const filename = this.evalExpression(statement.filename);
+
+        if (!isString(filename)) {
+            return new ErrorValue(
+                `type mismatch. expecting string, received ${filename.type()}`
+            );
+        }
+
+        try {
+            await this.api.save(this.lines);
+            return NULL;
+        } catch (e) {
+            return new ErrorValue(e.message);
+        }
     }
 
     runNewStatement() {

@@ -14,6 +14,9 @@ async function repl() {
         load: () => {
             throw "not implemented";
         },
+        save: () => {
+            throw "note implemented";
+        },
     });
 
     while (1) {

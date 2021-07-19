@@ -25,6 +25,7 @@ describe("context tests", () => {
                 print: jest.fn().mockResolvedValue(undefined),
                 input: jest.fn().mockResolvedValue(""),
                 load: jest.fn().mockResolvedValue([]),
+                save: jest.fn().mockResolvedValue(undefined),
                 ...overrides,
             });
 
