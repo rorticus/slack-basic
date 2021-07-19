@@ -71,6 +71,10 @@ function singleNumberFunction(callback: (num: number) => number | ValueObject) {
 
         let result = callback(n.value);
         if (typeof result === "number") {
+            if (isNaN(result)) {
+                return new ErrorValue("ILLEGAL QUANTITY");
+            }
+
             return new FloatValue(result);
         }
 
@@ -232,5 +236,6 @@ export default {
     }),
     SIN: singleNumberFunction(Math.sin),
     SPC: singleNumberFunction((n) => new StringValue(" ".repeat(n))),
+    SQR: singleNumberFunction(Math.sqrt),
     TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;
