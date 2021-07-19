@@ -221,6 +221,8 @@ export class Context {
                 return this.runListStatement(statement as ListStatement);
             case StatementType.LOAD:
                 return this.runLoadStatement(statement as LoadStatement);
+            case StatementType.NEW:
+                return this.runNewStatement();
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -1164,6 +1166,13 @@ export class Context {
                 return result;
             }
         }
+
+        return NULL;
+    }
+
+    runNewStatement() {
+        this.lines = [];
+        this.clr();
 
         return NULL;
     }

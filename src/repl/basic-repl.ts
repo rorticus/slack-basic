@@ -11,6 +11,9 @@ async function repl() {
     const context = new Context({
         print: async (str) => console.log(str),
         input: () => Promise.resolve(readlineSync.question()),
+        load: () => {
+            throw "not implemented";
+        },
     });
 
     while (1) {

@@ -21,6 +21,7 @@ export enum StatementType {
     LET = "LET",
     LIST = "LIST",
     LOAD = "LOAD",
+    NEW = "NEW",
     NEXT = "NEXT",
     PRINT = "PRINT",
     READ = "READ",
@@ -819,5 +820,26 @@ export class LoadStatement implements Statement {
             this.tokenLiteral(),
             this.filename.toString()
         );
+    }
+}
+
+export class NewStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.NEW;
+    next: Statement | null = null;
+
+    constructor(
+        token: Token
+    ) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }

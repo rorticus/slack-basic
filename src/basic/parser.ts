@@ -24,6 +24,7 @@ import {
     LetStatement,
     ListStatement,
     LoadStatement,
+    NewStatement,
     NextStatement,
     PrefixExpression,
     PrintStatement,
@@ -281,6 +282,9 @@ export class Parser {
                     break;
                 case TokenType.LOAD:
                     statements.push(this.parseLoadStatement());
+                    break;
+                case TokenType.NEW:
+                    statements.push(new NewStatement(this.curToken));
                     break;
                 default:
                     // statements with no labels default to LET statements
