@@ -501,6 +501,16 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenNthCalledWith(2, "SATURDAY");
             expect(context.api.print).toHaveBeenNthCalledWith(3, "MORNING");
         });
+
+        it("cuts strings with right$", async () => {
+            const { context } = await run(`
+            10 A$="SATURDAY MORNING"
+            20 B$=RIGHT$(A$,7): PRINT B$
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith("MORNING");
+        })
     });
 
     describe("data/.read/restore", () => {

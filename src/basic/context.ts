@@ -120,6 +120,7 @@ export class Context {
 
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
+
         this.lines = [];
         this.nextStatement = null;
         this.state = ContextState.IDLE;
@@ -127,6 +128,12 @@ export class Context {
         this.forStack = [];
         this.dataStack = [];
         this.continueStatement = null;
+
+        this.initializeGlobals();
+    }
+
+    private initializeGlobals() {
+        this.globalStack.set("PI", new FloatValue(Math.PI));
     }
 
     clr() {
