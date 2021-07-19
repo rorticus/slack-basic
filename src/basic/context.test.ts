@@ -510,7 +510,7 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledWith("MORNING");
-        })
+        });
     });
 
     describe("data/.read/restore", () => {

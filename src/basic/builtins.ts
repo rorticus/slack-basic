@@ -220,6 +220,7 @@ export default {
 
         return new StringValue(str.value.substr(str.value.length - cnt.value));
     }),
+    RND: new BuiltInFunctionValue(() => new FloatValue(Math.random())),
     SIN: singleNumberFunction(Math.sin),
     TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;
