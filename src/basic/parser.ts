@@ -36,6 +36,7 @@ import {
     RunStatement,
     SaveStatement,
     Statement,
+    StopStatement,
     StringLiteral,
 } from "./ast";
 
@@ -293,6 +294,9 @@ export class Parser {
                     break;
                 case TokenType.ON:
                     statements.push(this.parseOnStatement());
+                    break;
+                case TokenType.STOP:
+                    statements.push(new StopStatement(this.curToken));
                     break;
                 default:
                     // statements with no labels default to LET statements

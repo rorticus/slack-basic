@@ -30,7 +30,8 @@ export enum StatementType {
     REM = "REM",
     RETURN = "RETURN",
     RUN = "RUN",
-    SAVE = "SAVE"
+    SAVE = "SAVE",
+    STOP = "STOP",
 }
 
 export enum IdentifierType {
@@ -902,5 +903,24 @@ export class OnStatement implements Statement {
             this.operation.literal,
             this.destinations.map((d) => d.toString()).join(", ")
         );
+    }
+}
+
+export class StopStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.STOP;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(this.lineNumber, this.tokenLiteral());
     }
 }

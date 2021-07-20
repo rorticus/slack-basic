@@ -832,4 +832,25 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("1. Subroutine");
         });
     });
+
+    describe("stop statements", () => {
+        it("stops and continues on CONT", async () => {
+            const { context } = await run(`
+            10 PRINT "1"
+            20 STOP
+            30 PRINT "2"
+            40 PRINT "3"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(1);
+            expect(context.api.print).toHaveBeenCalledWith("1");
+
+            await run("GOTO 30", undefined, context);
+
+            expect(context.api.print).toHaveBeenCalledTimes(3);
+            expect(context.api.print).toHaveBeenCalledWith("2");
+            expect(context.api.print).toHaveBeenCalledWith("3");
+        });
+    });
 });

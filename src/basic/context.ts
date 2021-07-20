@@ -24,9 +24,11 @@ import {
     OnStatement,
     PrefixExpression,
     PrintStatement,
-    ReadStatement, SaveStatement,
+    ReadStatement,
+    SaveStatement,
     Statement,
     StatementType,
+    StopStatement,
     StringLiteral,
 } from "./ast";
 import {
@@ -238,6 +240,8 @@ export class Context {
                 return this.runNewStatement();
             case StatementType.ON:
                 return this.runOnStatement(statement as OnStatement);
+            case StatementType.STOP:
+                return this.runStopStatement(statement as StopStatement);
         }
 
         return new ErrorValue(`invalid statement ${statement.type}`);
@@ -772,6 +776,11 @@ export class Context {
             );
         }
 
+        if (this.continueStatement) {
+            // we were running but got stopped, resume!
+            this.state = ContextState.RUNNING;
+        }
+
         this.nextStatement = this.lines[lineIndex];
 
         return NULL;
@@ -1238,6 +1247,13 @@ export class Context {
             return this.gosub(statement, lineNumber.value);
         }
 
+        return NULL;
+    }
+
+    runStopStatement(statement: EndStatement) {
+        this.continueStatement = statement.next;
+
+        this.state = ContextState.IDLE;
         return NULL;
     }
 }
