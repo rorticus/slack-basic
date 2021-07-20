@@ -237,5 +237,6 @@ export default {
     SIN: singleNumberFunction(Math.sin),
     SPC: singleNumberFunction((n) => new StringValue(" ".repeat(n))),
     SQR: singleNumberFunction(Math.sqrt),
+    STR$: singleNumberFunction(n => new StringValue(`${n}`)),
     TAN: singleNumberFunction(Math.tan),
 } as Record<string, BuiltInFunctionValue>;
