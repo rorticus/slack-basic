@@ -237,6 +237,14 @@ export default {
     SIN: singleNumberFunction(Math.sin),
     SPC: singleNumberFunction((n) => new StringValue(" ".repeat(n))),
     SQR: singleNumberFunction(Math.sqrt),
-    STR$: singleNumberFunction(n => new StringValue(`${n}`)),
+    STR$: singleNumberFunction((n) => new StringValue(`${n}`)),
     TAN: singleNumberFunction(Math.tan),
+    VAL: new BuiltInFunctionValue((args: ValueObject[]) => {
+        const s = getSingleStringArgument(args);
+        if (isError(s)) {
+            return s;
+        }
+
+        return new FloatValue(parseFloat(s.value));
+    }),
 } as Record<string, BuiltInFunctionValue>;
