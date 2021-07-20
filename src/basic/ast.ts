@@ -46,7 +46,9 @@ export interface Statement extends Node {
     next: Statement | null;
 }
 
-export interface Expression extends Node {}
+export interface Expression extends Node {
+    statement: Statement | undefined;
+}
 
 function combineParts(
     ...parts: (
@@ -84,6 +86,7 @@ export class Identifier implements Expression {
     token: Token;
     value: string;
     type: IdentifierType;
+    statement: Statement | undefined;
 
     constructor(token: Token) {
         this.token = token;
@@ -113,6 +116,7 @@ export class Identifier implements Expression {
 export class IntegerLiteral implements Expression {
     token: Token;
     value: number;
+    statement: Statement | undefined;
 
     constructor(token: Token, value: number) {
         this.token = token;
@@ -131,6 +135,7 @@ export class IntegerLiteral implements Expression {
 export class FloatLiteral implements Expression {
     token: Token;
     value: number;
+    statement: Statement | undefined;
 
     constructor(token: Token, value: number) {
         this.token = token;
@@ -149,6 +154,7 @@ export class FloatLiteral implements Expression {
 export class StringLiteral implements Expression {
     token: Token;
     value: string;
+    statement: Statement | undefined;
 
     constructor(token: Token, value: string) {
         this.token = token;
@@ -208,6 +214,7 @@ export class PrefixExpression implements Expression {
     token: Token;
     operator: string;
     right: Expression | null;
+    statement: Statement | undefined;
 
     constructor(token: Token, operator: string, right: Expression | null) {
         this.token = token;
@@ -231,6 +238,7 @@ export class InfixExpression implements Expression {
     left: Expression;
     operator: string;
     right: Expression | null;
+    statement: Statement | undefined;
 
     constructor(
         token: Token,
@@ -268,6 +276,10 @@ export class IfStatement implements Statement {
     constructor(token: Token, condition: Expression | null) {
         this.token = token;
         this.condition = condition;
+
+        if (this.condition) {
+            this.condition.statement = this;
+        }
     }
 
     tokenLiteral(): string {
@@ -308,6 +320,15 @@ export class LetStatement implements Statement {
         this.token = token;
         this.names = names;
         this.value = value;
+
+        if (this.value) {
+            this.value.statement = this;
+        }
+
+        names.forEach((n) => {
+            n.name.statement = this;
+            n.indices.forEach((i) => (i.statement = this));
+        });
     }
 
     tokenLiteral(): string {
@@ -369,6 +390,8 @@ export class PrintStatement implements Statement {
     constructor(token: Token, args: Expression[]) {
         this.token = token;
         this.args = args;
+
+        args.forEach((a) => (a.statement = this));
     }
 
     tokenLiteral(): string {
@@ -400,6 +423,11 @@ export class InputStatement implements Statement {
         this.token = token;
         this.destination = destination;
         this.message = message;
+
+        if (this.message) {
+            this.message.statement = this;
+        }
+        destination.forEach((d) => (d.statement = this));
     }
 
     tokenLiteral(): string {
@@ -439,6 +467,19 @@ export class ForStatement implements Statement {
         this.from = from;
         this.to = to;
         this.step = step;
+
+        if (this.iterator) {
+            this.iterator.statement = this;
+        }
+        if (this.from) {
+            this.from.statement = this;
+        }
+        if (this.to) {
+            this.to.statement = this;
+        }
+        if (this.step) {
+            this.step.statement = this;
+        }
     }
 
     toString(): string {
@@ -471,6 +512,8 @@ export class NextStatement implements Statement {
     constructor(token: Token, values: Identifier[]) {
         this.token = token;
         this.values = values;
+
+        values.forEach((v) => (v.statement = this));
     }
 
     toString(): string {
@@ -554,6 +597,7 @@ export class CallExpression implements Expression {
     token: Token;
     fn: Expression;
     args: Expression[];
+    statement: Statement | undefined;
 
     constructor(token: Token, fn: Expression, args: Expression[]) {
         this.token = token;
@@ -601,6 +645,8 @@ export class DataStatement implements Statement {
     constructor(token: Token, datas: Expression[]) {
         this.token = token;
         this.datas = datas;
+
+        this.datas.forEach((d) => (d.statement = this));
     }
 
     tokenLiteral(): string {
@@ -626,6 +672,8 @@ export class ReadStatement implements Statement {
     constructor(token: Token, outputs: Identifier[]) {
         this.token = token;
         this.outputs = outputs;
+
+        this.outputs.forEach((o) => (o.statement = this));
     }
 
     tokenLiteral(): string {
@@ -679,6 +727,14 @@ export class DefStatement implements Statement {
         this.name = name;
         this.argument = argument;
         this.body = body;
+
+        this.name.statement = this;
+
+        if (this.argument) {
+            this.argument.statement = this;
+        }
+
+        this.body.statement = this;
     }
 
     tokenLiteral(): string {
@@ -714,6 +770,11 @@ export class DimStatement implements Statement {
     constructor(token: Token, variables: DimVariable[]) {
         this.token = token;
         this.variables = variables;
+
+        variables.forEach((v) => {
+            v.name.statement = this;
+            v.dimensions.forEach((d) => (d.statement = this));
+        });
     }
 
     tokenLiteral(): string {
@@ -790,6 +851,14 @@ export class ListStatement implements Statement {
         this.token = token;
         this.startLine = startLine;
         this.endLine = endLine;
+
+        if (this.startLine) {
+            this.startLine.statement = this;
+        }
+
+        if (this.endLine) {
+            this.endLine.statement = this;
+        }
     }
 
     tokenLiteral(): string {
@@ -811,6 +880,8 @@ export class LoadStatement implements Statement {
     constructor(token: Token, filename: Expression) {
         this.token = token;
         this.filename = filename;
+
+        this.filename.statement = this;
     }
 
     tokenLiteral(): string {
@@ -836,6 +907,8 @@ export class SaveStatement implements Statement {
     constructor(token: Token, filename: Expression) {
         this.token = token;
         this.filename = filename;
+
+        this.filename.statement = this;
     }
 
     tokenLiteral(): string {
@@ -889,6 +962,9 @@ export class OnStatement implements Statement {
         this.condition = condition;
         this.operation = operation;
         this.destinations = destinations;
+
+        this.condition.statement = this;
+        this.destinations.forEach((d) => (d.statement = this));
     }
 
     tokenLiteral(): string {

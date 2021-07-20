@@ -48,7 +48,7 @@ import {
     ValueObject,
 } from "./object";
 import builtins from "./builtins";
-import { TokenType } from "./tokens";
+import { Token, TokenType } from "./tokens";
 
 export const NULL = new NullValue();
 
@@ -62,6 +62,21 @@ export interface ContextApi {
     input(): Promise<string>;
     load(filename: string): Promise<Statement[]>;
     save(statements: Statement[]): Promise<void>;
+}
+
+function newError(
+    message: string,
+    extra: Statement | Expression | undefined = undefined
+) {
+    if (extra) {
+        if((extra as any).statement) {
+            return new ErrorValue(`${message} - (${(extra as any).statement.toString()} [${extra.toString()}])`);
+        } else {
+            return new ErrorValue(`${message} - (${extra.toString()})`);
+        }
+    }
+
+    return new ErrorValue(message);
 }
 
 export function isTruthy(value: ValueObject) {
@@ -180,7 +195,7 @@ export class Context {
 
     async runImmediateStatement(statement: Statement): Promise<ValueObject> {
         if (this.state === ContextState.RUNNING) {
-            return new ErrorValue(`busy`);
+            return newError(`busy`);
         }
 
         if (statement.lineNumber) {
@@ -216,7 +231,10 @@ export class Context {
             case StatementType.COMPOUND:
                 return NULL;
             case StatementType.GOTO:
-                return this.goto((statement as GotoStatement).destination);
+                return this.goto(
+                    (statement as GotoStatement).destination,
+                    statement
+                );
             case StatementType.IF:
                 return this.runIfStatement(statement as IfStatement);
             case StatementType.FOR:
@@ -226,7 +244,7 @@ export class Context {
             case StatementType.GOSUB:
                 return this.runGosubStatement(statement as GosubStatement);
             case StatementType.RETURN:
-                return this.runReturnStatement();
+                return this.runReturnStatement(statement);
             case StatementType.REM:
                 return NULL;
             case StatementType.DATA:
@@ -261,7 +279,7 @@ export class Context {
                 return this.runStopStatement(statement as StopStatement);
         }
 
-        return new ErrorValue(`invalid statement ${statement.type}`);
+        return newError(`invalid statement ${statement.type}`, statement);
     }
 
     private forEachStatement<T extends Statement>(
@@ -285,7 +303,7 @@ export class Context {
 
     private prepareRunProgram() {
         if (this.lines.length == 0) {
-            return new ErrorValue(`cannot run program, no program!`);
+            return newError(`cannot run program, no program!`);
         }
 
         this.reset();
@@ -353,7 +371,7 @@ export class Context {
 
     private runLetStatement(statement: LetStatement): ValueObject {
         if (!statement.value) {
-            return new ErrorValue(`let value does not exist`);
+            return newError(`let value does not exist`, statement);
         }
 
         const value = this.evalExpression(statement.value);
@@ -379,10 +397,11 @@ export class Context {
 
             const validObjectTypes = validConversions[identifier.type] ?? [];
             if (validObjectTypes.indexOf(value.type()) < 0) {
-                return new ErrorValue(
+                return newError(
                     `type mismatch, ${identifier.toString()} (${
                         identifier.type
-                    }) = ${value.inspect()}`
+                    }) = ${value.inspect()}`,
+                    statement
                 );
             }
 
@@ -394,8 +413,9 @@ export class Context {
                 }
 
                 if (arr.type() !== ObjectType.ARRAY_OBJ) {
-                    return new ErrorValue(
-                        `cannot use array access on a ${arr.type()}`
+                    return newError(
+                        `cannot use array access on a ${arr.type()}`,
+                        statement
                     );
                 }
 
@@ -409,10 +429,11 @@ export class Context {
                         indexArgs[j].type() !== ObjectType.FLOAT_OBJ &&
                         indexArgs[j].type() !== ObjectType.INTEGER_OBJ
                     ) {
-                        return new ErrorValue(
+                        return newError(
                             `cannot use type ${indexArgs[
                                 j
-                            ].type()} as array index`
+                            ].type()} as array index`,
+                            statement
                         );
                     }
                 }
@@ -451,7 +472,7 @@ export class Context {
             return this.evalCallExpression(expression, isInCondition);
         }
 
-        return new ErrorValue(`unknown expression ${expression.toString()}`);
+        return newError(`unknown expression`, expression);
     }
 
     private evalStringLiteral(expr: StringLiteral) {
@@ -507,17 +528,21 @@ export class Context {
             const handler = infixTypes[left.type()]?.[right.type()];
 
             if (!handler) {
-                return new ErrorValue(
+                return newError(
                     `type mismatch, ${left.type()} ${
                         expression.operator
-                    } ${right.type()}`
+                    } ${right.type()}`,
+                    expression
                 );
             }
 
             return handler(left, expression.operator, right, isInCondition);
         }
 
-        return new ErrorValue(`operator must have both a left and right side`);
+        return newError(
+            `operator must have both a left and right side`,
+            expression
+        );
     }
 
     private evalNumberInfix(
@@ -570,7 +595,7 @@ export class Context {
                 }
         }
 
-        return new ErrorValue(`invalid operator ${operator}`);
+        return newError(`invalid operator ${operator}`);
     }
 
     private evalStringInfix(
@@ -598,16 +623,18 @@ export class Context {
         isInCondition: boolean
     ): ValueObject {
         if (!expression.right) {
-            return new ErrorValue(
-                `prefix expressions require a right hand side`
+            return newError(
+                `prefix expressions require a right hand side`,
+                expression
             );
         }
 
         if (expression.operator === "FN") {
             // special
             if (!(expression.right instanceof CallExpression)) {
-                return new ErrorValue(
-                    `cannot call a function on a non call expression`
+                return newError(
+                    `cannot call a function on a non call expression`,
+                    expression
                 );
             }
 
@@ -616,10 +643,11 @@ export class Context {
             ) as FunctionValue;
 
             if (target.type() !== ObjectType.FUNCTION_OBJ) {
-                return new ErrorValue(
+                return newError(
                     `cannot call a function on a non function type ${
                         target ? target.type() : "NULL"
-                    }`
+                    }`,
+                    expression
                 );
             }
 
@@ -629,8 +657,9 @@ export class Context {
             }
 
             if (args.length > 1) {
-                return new ErrorValue(
-                    `cannot call a function with more than one argument`
+                return newError(
+                    `cannot call a function with more than one argument`,
+                    expression
                 );
             }
 
@@ -639,16 +668,18 @@ export class Context {
                 args[0].type() !== ObjectType.FLOAT_OBJ &&
                 args[0].type() !== ObjectType.INTEGER_OBJ
             ) {
-                return new ErrorValue(
-                    `cannot call a function with a nun numeric argument`
+                return newError(
+                    `cannot call a function with a nun numeric argument`,
+                    expression
                 );
             }
 
             const fnStack = new Stack(this.globalStack);
             if (target.argument) {
                 if (args.length === 0) {
-                    return new ErrorValue(
-                        `expected argument for ${target.argument}`
+                    return newError(
+                        `expected argument for ${target.argument}`,
+                        expression
                     );
                 }
 
@@ -677,7 +708,7 @@ export class Context {
                 );
         }
 
-        return new ErrorValue(`invalid prefix type ${value.type()}`);
+        return newError(`invalid prefix type ${value.type()}`, expression);
     }
 
     private evalNumberPrefix(
@@ -754,8 +785,9 @@ export class Context {
                     case IdentifierType.INT:
                         intermediate = parseInt(result, 10);
                         if (isNaN(intermediate)) {
-                            return new ErrorValue(
-                                `invalid integer value: ${result}`
+                            return newError(
+                                `invalid integer value: ${result}`,
+                                expr
                             );
                         }
                         this.globalStack.set(
@@ -766,8 +798,9 @@ export class Context {
                     case IdentifierType.FLOAT:
                         intermediate = parseFloat(result);
                         if (isNaN(intermediate)) {
-                            return new ErrorValue(
-                                `invalid float value: ${result}`
+                            return newError(
+                                `invalid float value: ${result}`,
+                                expr
                             );
                         }
                         this.globalStack.set(
@@ -778,20 +811,21 @@ export class Context {
                 }
             }
         } catch (e) {
-            return new ErrorValue(`error with input: ${e.message}`);
+            return newError(`error with input: ${e.message}`, expr);
         }
 
         return NULL;
     }
 
-    private goto(lineNumber: number): ValueObject {
+    private goto(lineNumber: number, statement: Statement): ValueObject {
         const lineIndex = this.lines.findIndex(
             (l) => l.lineNumber === lineNumber
         );
 
         if (lineIndex < 0) {
-            return new ErrorValue(
-                `cannot goto line that does not exist, ${lineNumber}`
+            return newError(
+                `cannot goto line that does not exist, ${lineNumber}`,
+                statement
             );
         }
 
@@ -807,16 +841,16 @@ export class Context {
 
     async runIfStatement(statement: IfStatement): Promise<ValueObject> {
         if (!statement.condition) {
-            return new ErrorValue(`cannot run an if with no condition`);
+            return newError(`cannot run an if with no condition`, statement);
         }
 
         const condition = this.evalExpression(statement.condition);
 
         if (isTruthy(condition)) {
             if (statement.goto !== undefined) {
-                return this.goto(statement.goto);
+                return this.goto(statement.goto, statement);
             } else if (typeof statement.then === "number") {
-                return this.goto(statement.then);
+                return this.goto(statement.then, statement);
             } else if (statement.then) {
                 return this.runStatement(statement.then);
             }
@@ -827,11 +861,17 @@ export class Context {
 
     async runForStatement(statement: ForStatement): Promise<ValueObject> {
         if (!statement.iterator) {
-            return new ErrorValue(`cannot run a for loop with no iterator`);
+            return newError(
+                `cannot run a for loop with no iterator`,
+                statement
+            );
         }
 
         if (!statement.from) {
-            return new ErrorValue(`cannot run a for statement with no from`);
+            return newError(
+                `cannot run a for statement with no from`,
+                statement
+            );
         }
 
         const start = this.evalExpression(statement.from);
@@ -853,7 +893,7 @@ export class Context {
             const forStatement = this.forStack[index];
 
             if (!forStatement) {
-                return [true, new ErrorValue(`next without for`)];
+                return [true, newError(`next without for`, statement)];
             }
 
             const variableName = forStatement.iterator?.value ?? "";
@@ -862,7 +902,7 @@ export class Context {
             if (!v) {
                 return [
                     true,
-                    new ErrorValue(`invalid variable ${variableName}`),
+                    newError(`invalid variable ${variableName}`, statement),
                 ];
             }
 
@@ -872,7 +912,7 @@ export class Context {
             ) {
                 return [
                     true,
-                    new ErrorValue(`cannot loop on non numeric variable`),
+                    newError(`cannot loop on non numeric variable`, statement),
                 ];
             }
 
@@ -891,7 +931,7 @@ export class Context {
                 ) {
                     return [
                         true,
-                        new ErrorValue(`cannot step on non numeric value`),
+                        newError(`cannot step on non numeric value`, statement),
                     ];
                 }
 
@@ -910,7 +950,7 @@ export class Context {
             this.globalStack.set(variableName, iteratorValue);
 
             if (!forStatement.to) {
-                return [false, new ErrorValue(`invalid to`)];
+                return [false, newError(`invalid to`, statement)];
             }
             const toValue = this.evalExpression(forStatement.to);
             if (isError(toValue)) {
@@ -945,7 +985,10 @@ export class Context {
         for (let i = 0; i < indicies.length; i++) {
             const index = indicies[i];
             if (index < 0) {
-                return new ErrorValue(`cannot iterate on unknown variable`);
+                return newError(
+                    `cannot iterate on unknown variable`,
+                    statement
+                );
             }
 
             const result = runStackIndex(index);
@@ -968,7 +1011,7 @@ export class Context {
 
     private gosub(statement: Statement, lineNumber: number) {
         this.returnStack.push(statement.next);
-        return this.goto(lineNumber);
+        return this.goto(lineNumber, statement);
     }
 
     private async runGosubStatement(
@@ -977,9 +1020,11 @@ export class Context {
         return this.gosub(statement, statement.gosubLineNumber);
     }
 
-    private async runReturnStatement(): Promise<ValueObject> {
+    private async runReturnStatement(
+        statement: Statement
+    ): Promise<ValueObject> {
         if (this.returnStack.length === 0) {
-            return new ErrorValue(`cannot return on empty stack`);
+            return newError(`cannot return on empty stack`, statement);
         }
 
         const where = this.returnStack.pop();
@@ -1026,8 +1071,11 @@ export class Context {
                     args[i].type() !== ObjectType.INTEGER_OBJ &&
                     args[i].type() !== ObjectType.FLOAT_OBJ
                 ) {
-                    return new ErrorValue(
-                        `cannot use type ${args[i].type()} as array access type`
+                    return newError(
+                        `cannot use type ${args[
+                            i
+                        ].type()} as array access type`,
+                        expression
                     );
                 }
             }
@@ -1036,7 +1084,10 @@ export class Context {
                 args.map((a) => (a as IntValue | FloatValue).value)
             );
         } else {
-            return new ErrorValue(`cannot call non function ${fn.type()}`);
+            return newError(
+                `cannot call non function ${fn.type()}`,
+                expression
+            );
         }
     }
 
@@ -1058,7 +1109,7 @@ export class Context {
     private runReadStatement(statement: ReadStatement) {
         for (let i = 0; i < statement.outputs.length; i++) {
             if (this.dataStackIndex >= this.dataStack.length) {
-                return new ErrorValue("no more data to read");
+                return newError("no more data to read", statement);
             }
 
             const output = statement.outputs[i];
@@ -1087,10 +1138,11 @@ export class Context {
             ) {
                 this.globalStack.set(output.value, v);
             } else {
-                return new ErrorValue(
+                return newError(
                     `type mismatch. cannot set ${v.type()} to identifier of type ${
                         output.type
-                    }`
+                    }`,
+                    statement
                 );
             }
         }
@@ -1125,8 +1177,9 @@ export class Context {
                         Math.floor((result as FloatValue).value) + 1
                     );
                 } else {
-                    return new ErrorValue(
-                        `invalid dimension type, ${result.type()}`
+                    return newError(
+                        `invalid dimension type, ${result.type()}`,
+                        statement
                     );
                 }
             }
@@ -1158,8 +1211,9 @@ export class Context {
             }
 
             if (start.type() !== ObjectType.INTEGER_OBJ) {
-                return new ErrorValue(
-                    `type mismatch, expected int, got ${start.type()}`
+                return newError(
+                    `type mismatch, expected int, got ${start.type()}`,
+                    statement
                 );
             }
 
@@ -1173,8 +1227,9 @@ export class Context {
             }
 
             if (end.type() !== ObjectType.INTEGER_OBJ) {
-                return new ErrorValue(
-                    `type mismatch, expected int, got ${end.type()}`
+                return newError(
+                    `type mismatch, expected int, got ${end.type()}`,
+                    statement
                 );
             }
 
@@ -1197,8 +1252,9 @@ export class Context {
         const filename = this.evalExpression(statement.filename);
 
         if (!isString(filename)) {
-            return new ErrorValue(
-                `type mismatch. expecting string, received ${filename.type()}`
+            return newError(
+                `type mismatch. expecting string, received ${filename.type()}`,
+                statement
             );
         }
 
@@ -1221,8 +1277,9 @@ export class Context {
         const filename = this.evalExpression(statement.filename);
 
         if (!isString(filename)) {
-            return new ErrorValue(
-                `type mismatch. expecting string, received ${filename.type()}`
+            return newError(
+                `type mismatch. expecting string, received ${filename.type()}`,
+                statement
             );
         }
 
@@ -1245,23 +1302,23 @@ export class Context {
         const condition = this.evalExpression(statement.condition);
 
         if (!isNumeric(condition)) {
-            return new ErrorValue("expected a number type");
+            return newError("expected a number type", statement);
         }
 
         const idx = Math.floor(condition.value) - 1;
 
         if (idx < 0 || idx >= statement.destinations.length) {
-            return new ErrorValue("undefined statement");
+            return newError("undefined statement", statement);
         }
 
         const lineNumber = this.evalExpression(statement.destinations[idx]);
 
         if (!isNumeric(lineNumber)) {
-            return new ErrorValue("expected a line number");
+            return newError("expected a line number", statement);
         }
 
         if (statement.operation.type === TokenType.GOTO) {
-            return this.goto(lineNumber.value);
+            return this.goto(lineNumber.value, statement);
         } else if (statement.operation.type === TokenType.GOSUB) {
             return this.gosub(statement, lineNumber.value);
         }
