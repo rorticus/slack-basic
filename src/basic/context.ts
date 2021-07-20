@@ -34,6 +34,7 @@ import {
 import {
     ArrayValue,
     BuiltInFunctionValue,
+    CalculatedObject,
     ErrorValue,
     FloatValue,
     FunctionValue,
@@ -137,6 +138,22 @@ export class Context {
 
     private initializeGlobals() {
         this.globalStack.set("PI", new FloatValue(Math.PI));
+
+        const getTimestamp = () =>
+            new IntValue(Math.round(Date.now() / 0.016666666666667));
+        const getTime = () => {
+            const d = new Date();
+            return new StringValue(
+                `${String(d.getHours()).padStart(2, "0")}${String(
+                    d.getMinutes()
+                ).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}`
+            );
+        };
+
+        this.globalStack.set("TIME", new CalculatedObject(getTimestamp));
+        this.globalStack.set("TI", new CalculatedObject(getTimestamp));
+        this.globalStack.set("TIME$", new CalculatedObject(getTime));
+        this.globalStack.set("TI$", new CalculatedObject(getTime));
     }
 
     clr() {
@@ -702,6 +719,8 @@ export class Context {
                 default:
                     return new FloatValue(0);
             }
+        } else if (result.type() === ObjectType.CALCULATED_OBJ) {
+            return (result as CalculatedObject).getValue();
         }
 
         return result;

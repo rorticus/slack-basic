@@ -853,4 +853,15 @@ describe("context tests", () => {
             expect(context.api.print).toHaveBeenCalledWith("3");
         });
     });
+
+    describe("time", () => {
+        it("reads the system time", async () => {
+            const { context } = await run("PRINT TIME");
+
+            expect(context.api.print).toHaveBeenCalled();
+            expect(
+                (context.api.print as jest.Mock).mock.calls[0][0]
+            ).not.toEqual("0");
+        });
+    });
 });

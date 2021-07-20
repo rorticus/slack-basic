@@ -10,6 +10,7 @@ export enum ObjectType {
     BUILTIN_OBJ = "BUILTIN",
     FUNCTION_OBJ = "FUNCTION",
     ARRAY_OBJ = "ARRAY",
+    CALCULATED_OBJ = "CALCULATED",
 }
 
 export interface ValueObject {
@@ -269,6 +270,30 @@ export class ArrayValue implements ValueObject {
 
     toString() {
         return `ARRAY(${this.dimensions.join(", ")})`;
+    }
+}
+
+export class CalculatedObject implements ValueObject {
+    calculator: () => ValueObject;
+
+    constructor(calculator: () => ValueObject) {
+        this.calculator = calculator;
+    }
+
+    getValue() {
+        return this.calculator();
+    }
+
+    inspect(): string {
+        return `${this.calculator()}`;
+    }
+
+    type(): ObjectType {
+        return ObjectType.CALCULATED_OBJ;
+    }
+
+    toString() {
+        return `[CALCULATED VALUE]`;
     }
 }
 
