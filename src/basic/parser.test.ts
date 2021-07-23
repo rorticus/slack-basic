@@ -11,6 +11,7 @@ import {
     ForStatement,
     GosubStatement,
     GotoStatement,
+    GraphicsStatement,
     Identifier,
     IfStatement,
     InfixExpression,
@@ -613,6 +614,17 @@ describe("Parser tests", () => {
             expect(onStatement.destinations).toHaveLength(2);
             testIntegerLiteral(onStatement.destinations[0], 10);
             testIntegerLiteral(onStatement.destinations[1], 20);
+        });
+    });
+
+    describe("graphics statements", () => {
+        it("parses graphics statements", () => {
+            const { statement } = parse("GRAPHICS 320,200");
+            expect(statement.type).toEqual(StatementType.GRAPHICS);
+            const gStatement = statement as GraphicsStatement;
+
+            testIntegerLiteral(gStatement.width, 320);
+            testIntegerLiteral(gStatement.height, 200);
         });
     });
 });

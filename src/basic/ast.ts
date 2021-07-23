@@ -16,6 +16,7 @@ export enum StatementType {
     FOR = "FOR",
     GOSUB = "GOSUB",
     GOTO = "GOTO",
+    GRAPHICS = "GRAPHICS",
     IF = "IF",
     INPUT = "INPUT",
     LET = "LET",
@@ -998,5 +999,32 @@ export class StopStatement implements Statement {
 
     toString(): string {
         return combineParts(this.lineNumber, this.tokenLiteral());
+    }
+}
+
+export class GraphicsStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.GRAPHICS;
+    next: Statement | null = null;
+    width: Expression;
+    height: Expression;
+
+    constructor(token: Token, width: Expression, height: Expression) {
+        this.token = token;
+        this.width = width;
+        this.height = height;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            `${this.width.toString()}, ${this.height.toString()}`
+        );
     }
 }

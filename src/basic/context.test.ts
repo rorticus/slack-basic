@@ -1,4 +1,4 @@
-import { Context, ContextApi } from "./context";
+import { BasicCanvas, Context, ContextApi } from "./context";
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import { IdentifierType, LetStatement, StatementType } from "./ast";
@@ -26,6 +26,25 @@ describe("context tests", () => {
                 input: jest.fn().mockResolvedValue(""),
                 load: jest.fn().mockResolvedValue([]),
                 save: jest.fn().mockResolvedValue(undefined),
+                createImage(
+                    width: number,
+                    height: number
+                ): Promise<BasicCanvas> {
+                    let data = Array(width * height);
+                    for (let i = 0; i < width * height; i++) {
+                        data[i] = 0;
+                    }
+
+                    return Promise.resolve({
+                        width,
+                        height,
+                        setPixel: (x, y, color) =>
+                            (data[y * width + x] = color),
+                        getPixel: (x, y) => data[y * width + x],
+                        clear: (color) =>
+                            data.forEach((_, index) => (data[index] = color)),
+                    });
+                },
                 ...overrides,
             });
 
@@ -215,7 +234,10 @@ describe("context tests", () => {
             RUN
             `);
 
-            testForError(result, "cannot goto line that does not exist, 50");
+            testForError(
+                result,
+                "cannot goto line that does not exist, 50 - (GOTO 50)"
+            );
         });
     });
 
@@ -427,7 +449,7 @@ describe("context tests", () => {
             RUN
             `);
 
-            testForError(result, "cannot return on empty stack");
+            testForError(result, "cannot return on empty stack - (50 RETURN)");
         });
     });
 
@@ -446,7 +468,7 @@ describe("context tests", () => {
 
         it("clears for loops", async () => {
             const { result } = await run(`FOR I = 0 TO 5 : CLR : NEXT`);
-            testForError(result, "cannot iterate on unknown variable");
+            testForError(result, "cannot iterate on unknown variable - (NEXT)");
         });
 
         it("clears gosubs", async () => {
@@ -457,7 +479,7 @@ describe("context tests", () => {
             RUN
             `);
 
-            testForError(result, "cannot return on empty stack");
+            testForError(result, "cannot return on empty stack - (30 RETURN)");
         });
     });
 
@@ -533,7 +555,7 @@ describe("context tests", () => {
             READ A%, B
             `);
 
-            testForError(result, "no more data to read");
+            testForError(result, "no more data to read - (READ A%, B)");
         });
 
         it("errors if there is a type mismatch assigning a string to an int", async () => {
@@ -544,7 +566,7 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "type mismatch. cannot set STRING to identifier of type INT"
+                "type mismatch. cannot set STRING to identifier of type INT - (READ A%)"
             );
         });
 
@@ -556,7 +578,7 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "type mismatch. cannot set STRING to identifier of type FLOAT"
+                "type mismatch. cannot set STRING to identifier of type FLOAT - (READ A)"
             );
         });
 
@@ -568,7 +590,7 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "type mismatch. cannot set INTEGER to identifier of type STRING"
+                "type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)"
             );
         });
 
@@ -862,6 +884,16 @@ describe("context tests", () => {
             expect(
                 (context.api.print as jest.Mock).mock.calls[0][0]
             ).not.toEqual("0");
+        });
+    });
+
+    describe("graphics", () => {
+        it("initializes the graphics canvas", async () => {
+            const { context } = await run("GRAPHICS 320, 200");
+
+            expect(context.image).not.toBeNull();
+            expect(context.image!.width).toEqual(320);
+            expect(context.image!.height).toEqual(200);
         });
     });
 });

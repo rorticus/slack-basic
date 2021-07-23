@@ -11,6 +11,7 @@ import {
     ForStatement,
     GosubStatement,
     GotoStatement,
+    GraphicsStatement,
     Identifier,
     IdentifierType,
     IfStatement,
@@ -57,11 +58,21 @@ export enum ContextState {
     RUNNING = "RUNNING",
 }
 
+export interface BasicCanvas {
+    width: number;
+    height: number;
+
+    clear(color: number): void;
+    setPixel(x: number, y: number, color: number): void;
+    getPixel(x: number, y: number, color: number): void;
+}
+
 export interface ContextApi {
     print(str: string): Promise<void>;
     input(): Promise<string>;
     load(filename: string): Promise<Statement[]>;
     save(statements: Statement[]): Promise<void>;
+    createImage(width: number, height: number): Promise<BasicCanvas>;
 }
 
 function newError(
@@ -69,8 +80,12 @@ function newError(
     extra: Statement | Expression | undefined = undefined
 ) {
     if (extra) {
-        if((extra as any).statement) {
-            return new ErrorValue(`${message} - (${(extra as any).statement.toString()} [${extra.toString()}])`);
+        if ((extra as any).statement) {
+            return new ErrorValue(
+                `${message} - (${(
+                    extra as any
+                ).statement.toString()} [${extra.toString()}])`
+            );
         } else {
             return new ErrorValue(`${message} - (${extra.toString()})`);
         }
@@ -131,6 +146,7 @@ export class Context {
     api: ContextApi;
     forStack: ForStatement[];
     dataStack: ValueObject[];
+    image: BasicCanvas | null = null;
 
     private dataStackIndex = 0;
     private nextStatement: Statement | null;
@@ -178,6 +194,7 @@ export class Context {
         this.dataStack = [];
         this.dataStackIndex = 0;
         this.continueStatement = null;
+        this.image = null;
     }
 
     reset() {
@@ -277,6 +294,10 @@ export class Context {
                 return this.runOnStatement(statement as OnStatement);
             case StatementType.STOP:
                 return this.runStopStatement(statement as StopStatement);
+            case StatementType.GRAPHICS:
+                return this.runGraphicsStatement(
+                    statement as GraphicsStatement
+                );
         }
 
         return newError(`invalid statement ${statement.type}`, statement);
@@ -1330,6 +1351,36 @@ export class Context {
         this.continueStatement = statement.next;
 
         this.state = ContextState.IDLE;
+        return NULL;
+    }
+
+    async runGraphicsStatement(statement: GraphicsStatement) {
+        const width = this.evalExpression(statement.width, false);
+        if (isError(width)) {
+            return width;
+        }
+
+        if (!isNumeric(width)) {
+            return newError(`expecting number, got ${width.type()}`, statement);
+        }
+
+        const height = this.evalExpression(statement.height, false);
+        if (isError(height)) {
+            return height;
+        }
+
+        if (!isNumeric(height)) {
+            return newError(
+                `expecting number, got ${height.type()}`,
+                statement
+            );
+        }
+
+        this.image = await this.api.createImage(
+            Math.floor(width.value),
+            Math.floor(height.value)
+        );
+
         return NULL;
     }
 }

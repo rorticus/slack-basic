@@ -1,6 +1,6 @@
 import Lexer from "../basic/lexer";
 import { Parser } from "../basic/parser";
-import { Context } from "../basic/context";
+import { BasicCanvas, Context } from "../basic/context";
 import readlineSync from "readline-sync";
 import { ObjectType } from "../basic/object";
 
@@ -16,6 +16,21 @@ async function repl() {
         },
         save: () => {
             throw "note implemented";
+        },
+        createImage(width: number, height: number): Promise<BasicCanvas> {
+            let data = Array(width * height);
+            for (let i = 0; i < width * height; i++) {
+                data[i] = 0;
+            }
+
+            return Promise.resolve({
+                width,
+                height,
+                setPixel: (x, y, color) => (data[y * width + x] = color),
+                getPixel: (x, y) => data[y * width + x],
+                clear: (color) =>
+                    data.forEach((_, index) => (data[index] = color)),
+            });
         },
     });
 

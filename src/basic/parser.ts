@@ -15,6 +15,7 @@ import {
     ForStatement,
     GosubStatement,
     GotoStatement,
+    GraphicsStatement,
     Identifier,
     IfStatement,
     InfixExpression,
@@ -297,6 +298,9 @@ export class Parser {
                     break;
                 case TokenType.STOP:
                     statements.push(new StopStatement(this.curToken));
+                    break;
+                case TokenType.GRAPHICS:
+                    statements.push(this.parseGraphicsStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -1034,5 +1038,31 @@ export class Parser {
         }
 
         return new OnStatement(token, condition, operation, destinations);
+    }
+
+    parseGraphicsStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const width = this.parseExpression(Precedence.LOWEST);
+        if (!width) {
+            this.errors.push("expected expression");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+
+        this.nextToken();
+
+        const height = this.parseExpression(Precedence.LOWEST);
+        if (!height) {
+            this.errors.push("expected expression");
+            return null;
+        }
+
+        return new GraphicsStatement(token, width, height);
     }
 }
