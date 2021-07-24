@@ -6,6 +6,7 @@ import {
     DataStatement,
     DefStatement,
     DimStatement,
+    DrawStatement,
     Expression,
     FloatLiteral,
     ForStatement,
@@ -625,6 +626,37 @@ describe("Parser tests", () => {
 
             testIntegerLiteral(gStatement.width, 320);
             testIntegerLiteral(gStatement.height, 200);
+
+            expect(statement.toString()).toEqual("GRAPHICS 320, 200");
+        });
+
+        it("parses draw statements as single points", () => {
+            const { statement } = parse("DRAW 1,2,3");
+            expect(statement.type).toEqual(StatementType.DRAW);
+            const draw = statement as DrawStatement;
+
+            testIntegerLiteral(draw.color, 1);
+            testIntegerLiteral(draw.x1, 2);
+            testIntegerLiteral(draw.y1, 3);
+
+            expect(draw.x2).toBeNull();
+            expect(draw.y2).toBeNull();
+
+            expect(draw.toString()).toEqual("DRAW 1, 2, 3");
+        });
+
+        it("parses draw statements as lines", () => {
+            const { statement } = parse("DRAW 1,2,3 TO 4, 5");
+            expect(statement.type).toEqual(StatementType.DRAW);
+            const draw = statement as DrawStatement;
+
+            testIntegerLiteral(draw.color, 1);
+            testIntegerLiteral(draw.x1, 2);
+            testIntegerLiteral(draw.y1, 3);
+            testIntegerLiteral(draw.x2, 4);
+            testIntegerLiteral(draw.y2, 5);
+
+            expect(draw.toString()).toEqual("DRAW 1, 2, 3 TO 4, 5");
         });
     });
 });

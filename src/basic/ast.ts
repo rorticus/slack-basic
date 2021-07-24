@@ -12,6 +12,7 @@ export enum StatementType {
     DATA = "DATA",
     DEF = "DEF",
     DIM = "DIM",
+    DRAW = "DRAW",
     END = "END",
     FOR = "FOR",
     GOSUB = "GOSUB",
@@ -1025,6 +1026,54 @@ export class GraphicsStatement implements Statement {
             this.lineNumber,
             this.tokenLiteral(),
             `${this.width.toString()}, ${this.height.toString()}`
+        );
+    }
+}
+
+export class DrawStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.DRAW;
+    next: Statement | null = null;
+    color: Expression;
+    x1: Expression;
+    y1: Expression;
+    x2: Expression | null;
+    y2: Expression | null;
+
+    constructor(
+        token: Token,
+        color: Expression,
+        x1: Expression,
+        y1: Expression,
+        x2: Expression | null,
+        y2: Expression | null
+    ) {
+        this.token = token;
+        this.color = color;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            [
+                this.color.toString(),
+                this.x1.toString(),
+                this.y1.toString(),
+            ].join(", "),
+            this.x2 ? TokenType.TO : null,
+            [this.x2?.toString(), this.y2?.toString()]
+                .filter((e) => e)
+                .join(", ")
         );
     }
 }

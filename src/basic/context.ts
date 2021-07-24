@@ -5,6 +5,7 @@ import {
     DataStatement,
     DefStatement,
     DimStatement,
+    DrawStatement,
     EndStatement,
     Expression,
     FloatLiteral,
@@ -64,7 +65,7 @@ export interface BasicCanvas {
 
     clear(color: number): void;
     setPixel(x: number, y: number, color: number): void;
-    getPixel(x: number, y: number, color: number): void;
+    getPixel(x: number, y: number): number;
 }
 
 export interface ContextApi {
@@ -298,6 +299,8 @@ export class Context {
                 return this.runGraphicsStatement(
                     statement as GraphicsStatement
                 );
+            case StatementType.DRAW:
+                return this.runDrawStatement(statement as DrawStatement);
         }
 
         return newError(`invalid statement ${statement.type}`, statement);
@@ -1380,6 +1383,77 @@ export class Context {
             Math.floor(width.value),
             Math.floor(height.value)
         );
+
+        return NULL;
+    }
+
+    runDrawStatement(statement: DrawStatement) {
+        if (!this.image) {
+            return newError("graphics canvas not initialized", statement);
+        }
+
+        const color = this.evalExpression(statement.color);
+        const x1 = this.evalExpression(statement.x1);
+        const y1 = this.evalExpression(statement.y1);
+
+        if (isError(color)) {
+            return color;
+        }
+
+        if (isError(x1)) {
+            return x1;
+        }
+
+        if (isError(y1)) {
+            return y1;
+        }
+
+        if (!isNumeric(color)) {
+            return newError("expecting numeric color", statement);
+        }
+
+        if (!isNumeric(x1) || !isNumeric(y1)) {
+            return newError("expecting numeric x and y coordinates", statement);
+        }
+
+        if (statement.x2 && statement.y2) {
+            const x2 = this.evalExpression(statement.x2);
+            const y2 = this.evalExpression(statement.y2);
+
+            if (isError(x2)) {
+                return x2;
+            }
+
+            if (isError(y2)) {
+                return y2;
+            }
+
+            if (!isNumeric(x2) || !isNumeric(y2)) {
+                return newError(
+                    "expecting numeric x and y coordinates",
+                    statement
+                );
+            }
+
+            // draw a line
+            const step = x1.value < x2.value ? 1 : -1;
+            const dx = x2.value - x1.value;
+            const dy = y2.value - y1.value;
+
+            for (
+                let x = Math.floor(x1.value);
+                x != Math.floor(x2.value);
+                x += step
+            ) {
+                const y = y1.value + (dy * (x - x1.value)) / dx;
+                this.image?.setPixel(x, y, color.value);
+            }
+
+            this.image?.setPixel(x2.value, y2.value, color.value);
+        } else {
+            // draw a pixel
+            this.image?.setPixel(x1.value, y1.value, color.value);
+        }
 
         return NULL;
     }

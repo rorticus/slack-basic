@@ -9,6 +9,7 @@ import {
     DefStatement,
     DimStatement,
     DimVariable,
+    DrawStatement,
     EndStatement,
     Expression,
     FloatLiteral,
@@ -301,6 +302,9 @@ export class Parser {
                     break;
                 case TokenType.GRAPHICS:
                     statements.push(this.parseGraphicsStatement());
+                    break;
+                case TokenType.DRAW:
+                    statements.push(this.parseDrawStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -1064,5 +1068,63 @@ export class Parser {
         }
 
         return new GraphicsStatement(token, width, height);
+    }
+
+    parseDrawStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const color = this.parseExpression(Precedence.LOWEST);
+        if (!color) {
+            this.errors.push("expected color");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+        this.nextToken();
+
+        const x1 = this.parseExpression(Precedence.LOWEST);
+        if (!x1) {
+            this.errors.push("expected x1");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+        this.nextToken();
+
+        const y1 = this.parseExpression(Precedence.LOWEST);
+        if (!y1) {
+            return null;
+        }
+
+        let x2: Expression | null = null;
+        let y2: Expression | null = null;
+
+        if (this.peekTokenIs(TokenType.TO)) {
+            this.nextToken();
+            this.nextToken();
+
+            x2 = this.parseExpression(Precedence.LOWEST);
+            if (!x2) {
+                this.errors.push("expected x2");
+            }
+
+            if (!this.expectPeek(TokenType.COMMA)) {
+                return null;
+            }
+            this.nextToken();
+
+            y2 = this.parseExpression(Precedence.LOWEST);
+            if (!y2) {
+                this.errors.push("expected y2");
+            }
+        }
+
+        return new DrawStatement(token, color, x1, y1, x2, y2);
     }
 }

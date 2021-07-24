@@ -26,8 +26,12 @@ async function repl() {
             return Promise.resolve({
                 width,
                 height,
-                setPixel: (x, y, color) => (data[y * width + x] = color),
-                getPixel: (x, y) => data[y * width + x],
+                setPixel: (x, y, color) => {
+                    if (x >= 0 && x < width && y >= 0 && y < height) {
+                        data[Math.floor(y) * width + Math.floor(x)] = color;
+                    }
+                },
+                getPixel: (x, y) => data[Math.floor(y) * width + Math.floor(x)],
                 clear: (color) =>
                     data.forEach((_, index) => (data[index] = color)),
             });
@@ -39,6 +43,17 @@ async function repl() {
 
         if (line === "exit") {
             break;
+        } else if (line === "image") {
+            const canvas = context.image;
+            if (canvas) {
+                for (let y = 0; y < canvas.height; y++) {
+                    let pixels: string[] = [];
+                    for (let x = 0; x < canvas.width; x++) {
+                        pixels.push(canvas.getPixel(x, y) > 0 ? "X" : " ");
+                    }
+                    console.log(pixels.join(""));
+                }
+            }
         } else {
             const lexer = new Lexer(line);
             const parser = new Parser(lexer);

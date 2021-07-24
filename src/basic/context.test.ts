@@ -39,8 +39,10 @@ describe("context tests", () => {
                         width,
                         height,
                         setPixel: (x, y, color) =>
-                            (data[y * width + x] = color),
-                        getPixel: (x, y) => data[y * width + x],
+                            (data[Math.floor(y) * width + Math.floor(x)] =
+                                color),
+                        getPixel: (x, y) =>
+                            data[Math.floor(y) * width + Math.floor(x)],
                         clear: (color) =>
                             data.forEach((_, index) => (data[index] = color)),
                     });
@@ -894,6 +896,40 @@ describe("context tests", () => {
             expect(context.image).not.toBeNull();
             expect(context.image!.width).toEqual(320);
             expect(context.image!.height).toEqual(200);
+        });
+
+        it("draws single pixels", async () => {
+            const { context } = await run(`
+            GRAPHICS 3, 3
+            DRAW RGB(255, 0, 0), 0, 0
+            `);
+
+            expect(context.image?.getPixel(0, 0)).toEqual(0xff0000);
+        });
+
+        it("draws lines", async () => {
+            const { context } = await run(`
+            GRAPHICS 3, 3
+            DRAW RGB(255, 0, 0), 0, 0 TO 2, 2
+            `);
+
+            expect(context.image?.getPixel(0, 0)).toEqual(0xff0000);
+            expect(context.image?.getPixel(1, 1)).toEqual(0xff0000);
+            expect(context.image?.getPixel(2, 2)).toEqual(0xff0000);
+        });
+
+        it("draws weird lines", async () => {
+            const { context } = await run(`
+            GRAPHICS 10, 10
+            DRAW RGB(0, 0, 1), 0, 0 TO 5, 2
+            `);
+
+            expect(context.image?.getPixel(0, 0)).toEqual(1);
+            expect(context.image?.getPixel(1, 0)).toEqual(1);
+            expect(context.image?.getPixel(2, 0)).toEqual(1);
+            expect(context.image?.getPixel(3, 1)).toEqual(1);
+            expect(context.image?.getPixel(4, 1)).toEqual(1);
+            expect(context.image?.getPixel(5, 2)).toEqual(1);
         });
     });
 });

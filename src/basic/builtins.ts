@@ -190,6 +190,29 @@ export default {
 
         return new StringValue(str.value.substr(left.value - 1, right));
     }),
+    RGB: new BuiltInFunctionValue((args: ValueObject[]) => {
+        if (args.length !== 3) {
+            return new ErrorValue("expected 3 arguments");
+        }
+
+        const r = args[0];
+        const g = args[1];
+        const b = args[2];
+
+        if (!isNumeric(r)) {
+            return new ErrorValue("expected red to be numeric");
+        }
+
+        if (!isNumeric(g)) {
+            return new ErrorValue("expected green to be numeric");
+        }
+
+        if (!isNumeric(b)) {
+            return new ErrorValue("expected blue to be numeric");
+        }
+
+        return new IntValue((r.value << 16) | (g.value << 8) | b.value);
+    }),
     RIGHT$: new BuiltInFunctionValue((args: ValueObject[]) => {
         if (args.length !== 2) {
             return new ErrorValue("expected 2 arguments");
