@@ -1,6 +1,7 @@
 import Lexer from "./lexer";
 import { Parser } from "./parser";
 import {
+    BoxStatement,
     CallExpression,
     CompoundStatement,
     DataStatement,
@@ -657,6 +658,20 @@ describe("Parser tests", () => {
             testIntegerLiteral(draw.y2, 5);
 
             expect(draw.toString()).toEqual("DRAW 1, 2, 3 TO 4, 5");
+        });
+
+        it("parses box statements", () => {
+            const { statement } = parse("BOX 0, 1, 2, 3, 4");
+            expect(statement.type).toEqual(StatementType.BOX);
+            const draw = statement as BoxStatement;
+
+            testIntegerLiteral(draw.color, 0);
+            testIntegerLiteral(draw.left, 1);
+            testIntegerLiteral(draw.top, 2);
+            testIntegerLiteral(draw.width, 3);
+            testIntegerLiteral(draw.height, 4);
+
+            expect(draw.toString()).toEqual("BOX 0, 1, 2, 3, 4");
         });
     });
 });

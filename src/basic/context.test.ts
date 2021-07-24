@@ -931,5 +931,18 @@ describe("context tests", () => {
             expect(context.image?.getPixel(4, 1)).toEqual(1);
             expect(context.image?.getPixel(5, 2)).toEqual(1);
         });
+
+        it("draws boxes", async () => {
+            const { context, errors } = await run(`
+            GRAPHICS 10, 10 
+            BOX RGB(0, 0, 1), 0, 0, 9,9
+            `);
+
+            for (let y = 0; y < 10; y++) {
+                for (let x = 0; x < 10; x++) {
+                    expect(context.image?.getPixel(x, y)).toEqual(1);
+                }
+            }
+        });
     });
 });

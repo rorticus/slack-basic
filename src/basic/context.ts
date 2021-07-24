@@ -1,5 +1,6 @@
 import { Stack } from "./stack";
 import {
+    BoxStatement,
     CallExpression,
     CompoundStatement,
     DataStatement,
@@ -301,6 +302,8 @@ export class Context {
                 );
             case StatementType.DRAW:
                 return this.runDrawStatement(statement as DrawStatement);
+            case StatementType.BOX:
+                return this.runBoxStatement(statement as BoxStatement);
         }
 
         return newError(`invalid statement ${statement.type}`, statement);
@@ -1453,6 +1456,66 @@ export class Context {
         } else {
             // draw a pixel
             this.image?.setPixel(x1.value, y1.value, color.value);
+        }
+
+        return NULL;
+    }
+
+    runBoxStatement(statement: BoxStatement) {
+        const color = this.evalExpression(statement.color);
+        const left = this.evalExpression(statement.left);
+        const top = this.evalExpression(statement.top);
+        const width = this.evalExpression(statement.width);
+        const height = this.evalExpression(statement.height);
+
+        if (isError(color)) {
+            return color;
+        }
+
+        if (!isNumeric(color)) {
+            return newError("expecting numeric color value", statement);
+        }
+
+        if (isError(left)) {
+            return left;
+        }
+
+        if (!isNumeric(left)) {
+            return newError("expecting numeric left value", statement);
+        }
+
+        if (isError(top)) {
+            return top;
+        }
+
+        if (!isNumeric(top)) {
+            return newError("expecting numeric top value", statement);
+        }
+
+        if (isError(width)) {
+            return width;
+        }
+
+        if (!isNumeric(width)) {
+            return newError("expecting numeric width value", statement);
+        }
+
+        if (isError(height)) {
+            return height;
+        }
+
+        if (!isNumeric(height)) {
+            return newError("expecting numeric height value", statement);
+        }
+
+        if (!this.image) {
+            return newError("graphics canvas not initialized", statement);
+        }
+
+        for (let x = left.value; x <= left.value + width.value; x++) {
+            for (let y = top.value; y <= top.value + height.value; y++) {
+                this.image?.setPixel(Math.floor(x), Math.floor(y), color.value);
+            }
         }
 
         return NULL;

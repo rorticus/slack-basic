@@ -1,6 +1,7 @@
 import Lexer from "./lexer";
 import { Token, TokenType } from "./tokens";
 import {
+    BoxStatement,
     CallExpression,
     ClrStatement,
     CompoundStatement,
@@ -305,6 +306,9 @@ export class Parser {
                     break;
                 case TokenType.DRAW:
                     statements.push(this.parseDrawStatement());
+                    break;
+                case TokenType.BOX:
+                    statements.push(this.parseBoxStatement());
                     break;
                 default:
                     // statements with no labels default to LET statements
@@ -1126,5 +1130,63 @@ export class Parser {
         }
 
         return new DrawStatement(token, color, x1, y1, x2, y2);
+    }
+
+    parseBoxStatement() {
+        const token = this.curToken;
+
+        this.nextToken();
+
+        const color = this.parseExpression(Precedence.LOWEST);
+        if (!color) {
+            this.errors.push("expecting color");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+        this.nextToken();
+
+        const left = this.parseExpression(Precedence.LOWEST);
+        if (!left) {
+            this.errors.push("expecting left");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+        this.nextToken();
+
+        const top = this.parseExpression(Precedence.LOWEST);
+        if (!top) {
+            this.errors.push("expecting top");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+        this.nextToken();
+
+        const width = this.parseExpression(Precedence.LOWEST);
+        if (!width) {
+            this.errors.push("expecting width");
+            return null;
+        }
+
+        if (!this.expectPeek(TokenType.COMMA)) {
+            return null;
+        }
+        this.nextToken();
+
+        const height = this.parseExpression(Precedence.LOWEST);
+        if (!height) {
+            this.errors.push("expecting height");
+            return null;
+        }
+
+        return new BoxStatement(token, color, left, top, width, height);
     }
 }

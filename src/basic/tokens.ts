@@ -27,6 +27,7 @@ export enum TokenType {
     RPAREN = ")",
 
     AND = "AND",
+    BOX = "BOX",
     CLR = "CLR",
     CONT = "CONT",
     DATA = "DATA",
@@ -72,6 +73,7 @@ export interface Token {
 
 const keywords: { [key: string]: TokenType } = {
     AND: TokenType.AND,
+    BOX: TokenType.BOX,
     CLR: TokenType.CLR,
     CONT: TokenType.CONT,
     DATA: TokenType.DATA,

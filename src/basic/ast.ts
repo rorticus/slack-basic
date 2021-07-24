@@ -6,6 +6,7 @@ export interface Node {
 }
 
 export enum StatementType {
+    BOX = "BOX",
     CLR = "CLR",
     COMPOUND = "COMPOUND",
     CONT = "CONT",
@@ -1074,6 +1075,52 @@ export class DrawStatement implements Statement {
             [this.x2?.toString(), this.y2?.toString()]
                 .filter((e) => e)
                 .join(", ")
+        );
+    }
+}
+
+export class BoxStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    type = StatementType.BOX;
+    next: Statement | null = null;
+    color: Expression;
+    left: Expression;
+    top: Expression;
+    width: Expression;
+    height: Expression;
+
+    constructor(
+        token: Token,
+        color: Expression,
+        left: Expression,
+        top: Expression,
+        width: Expression,
+        height: Expression
+    ) {
+        this.token = token;
+        this.color = color;
+        this.left = left;
+        this.top = top;
+        this.width = width;
+        this.height = height;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(
+            this.lineNumber,
+            this.tokenLiteral(),
+            [
+                this.color.toString(),
+                this.left.toString(),
+                this.top.toString(),
+                this.width.toString(),
+                this.height.toString(),
+            ].join(", ")
         );
     }
 }
