@@ -1,8 +1,8 @@
-import { TokenType } from "./tokens";
-import Lexer from "./lexer";
+import { TokenType } from './tokens';
+import Lexer from './lexer';
 
-describe("Token Tests", () => {
-    it("Gets the next token", () => {
+describe('Token Tests', () => {
+    it('Gets the next token', () => {
         const input = `
         START:
         LET A = 3
@@ -16,25 +16,25 @@ describe("Token Tests", () => {
         `;
 
         const expectedTypes = [
-            [TokenType.IDENT, "START"],
-            [TokenType.COLON, ":"],
-            [TokenType.LET, "LET"],
-            [TokenType.IDENT, "A"],
-            [TokenType.ASSIGN, "="],
-            [TokenType.INT, "3"],
-            [TokenType.IF, "IF"],
-            [TokenType.IDENT, "A"],
-            [TokenType.LT, "<"],
-            [TokenType.FLOAT, "4.5"],
-            [TokenType.THEN, "THEN"],
-            [TokenType.GOSUB, "GOSUB"],
-            [TokenType.IDENT, "DOTHING"],
-            [TokenType.END, "END"],
-            [TokenType.EXP, "^"],
-            [TokenType.REM, "REM hello world"],
-            [TokenType.NOT_EQ, "<>"],
-            [TokenType.PRINT, "?"],
-            [TokenType.EOF, ""],
+            [TokenType.IDENT, 'START'],
+            [TokenType.COLON, ':'],
+            [TokenType.LET, 'LET'],
+            [TokenType.IDENT, 'A'],
+            [TokenType.ASSIGN, '='],
+            [TokenType.INT, '3'],
+            [TokenType.IF, 'IF'],
+            [TokenType.IDENT, 'A'],
+            [TokenType.LT, '<'],
+            [TokenType.FLOAT, '4.5'],
+            [TokenType.THEN, 'THEN'],
+            [TokenType.GOSUB, 'GOSUB'],
+            [TokenType.IDENT, 'DOTHING'],
+            [TokenType.END, 'END'],
+            [TokenType.EXP, '^'],
+            [TokenType.REM, 'REM hello world'],
+            [TokenType.NOT_EQ, '<>'],
+            [TokenType.PRINT, '?'],
+            [TokenType.EOF, ''],
         ];
 
         const l = new Lexer(input);
@@ -47,7 +47,7 @@ describe("Token Tests", () => {
         }
     });
 
-    it("returns correct line and column information", () => {
+    it('returns correct line and column information', () => {
         const code = `123
 hello world
 again`;

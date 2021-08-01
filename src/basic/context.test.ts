@@ -1,7 +1,7 @@
-import { BasicCanvas, Context, ContextApi } from "./context";
-import Lexer from "./lexer";
-import { Parser } from "./parser";
-import { IdentifierType, LetStatement, StatementType } from "./ast";
+import { BasicCanvas, Context, ContextApi } from './context';
+import Lexer from './lexer';
+import { Parser } from './parser';
+import { IdentifierType, LetStatement, StatementType } from './ast';
 import {
     ArrayValue,
     ErrorValue,
@@ -11,26 +11,26 @@ import {
     ObjectType,
     StringValue,
     ValueObject,
-} from "./object";
+} from './object';
 
-describe("context tests", () => {
+describe('context tests', () => {
     async function run(
         code: string,
         overrides: Partial<ContextApi> = {},
-        existingContext: Context | null = null
+        existingContext: Context | null = null,
     ) {
         const context =
             existingContext ||
             new Context({
                 print: jest.fn().mockResolvedValue(undefined),
-                input: jest.fn().mockResolvedValue(""),
+                input: jest.fn().mockResolvedValue(''),
                 load: jest.fn().mockResolvedValue([]),
                 save: jest.fn().mockResolvedValue(undefined),
                 createImage(
                     width: number,
-                    height: number
+                    height: number,
                 ): Promise<BasicCanvas> {
-                    let data = Array(width * height);
+                    const data = Array(width * height);
                     for (let i = 0; i < width * height; i++) {
                         data[i] = 0;
                     }
@@ -50,7 +50,7 @@ describe("context tests", () => {
                 ...overrides,
             });
 
-        const lines = code.split("\n");
+        const lines = code.split('\n');
         let result: ValueObject | undefined;
         const errors = [];
         for (let i = 0; i < lines.length; i++) {
@@ -63,7 +63,7 @@ describe("context tests", () => {
             if (statement) {
                 result = await context.runImmediateStatement(statement!);
                 if (isError(result)) {
-                    pushError(result.message);
+                    errors.push(result.message);
                 }
             }
         }
@@ -76,18 +76,18 @@ describe("context tests", () => {
         expect((result as ErrorValue).message).toEqual(expected);
     }
 
-    describe("immediate tasks", () => {
-        it("runs statements without line numbers immediately", async () => {
+    describe('immediate tasks', () => {
+        it('runs statements without line numbers immediately', async () => {
             const { context } = await run('PRINT "hello"');
-            expect(context.api.print).toHaveBeenCalledWith("hello");
+            expect(context.api.print).toHaveBeenCalledWith('hello');
         });
 
-        it("add statements with line numbers to the program", async () => {
-            const { context } = await run("100 LET A = 1");
+        it('add statements with line numbers to the program', async () => {
+            const { context } = await run('100 LET A = 1');
             expect(context.lines).toHaveLength(1);
         });
 
-        it("puts line numbers in order", async () => {
+        it('puts line numbers in order', async () => {
             const { context } = await run(`
             100 LET A = 1
             50 LET B = 1
@@ -97,7 +97,7 @@ describe("context tests", () => {
             expect(context.lines[1].lineNumber).toBe(100);
         });
 
-        it("replaces line numbers", async () => {
+        it('replaces line numbers', async () => {
             const { context } = await run(`
             100 LET A = 1
             100 LET B = 1
@@ -107,33 +107,33 @@ describe("context tests", () => {
             expect(context.lines[0].type).toEqual(StatementType.LET);
             expect((context.lines[0] as LetStatement).names).toHaveLength(1);
             expect((context.lines[0] as LetStatement).names[0].name.value).toBe(
-                "B"
+                'B',
             );
         });
     });
 
-    describe("evaluation", () => {
-        it("evaluates expressions", async () => {
+    describe('evaluation', () => {
+        it('evaluates expressions', async () => {
             const { context } = await run(`PRINT 1 + 2`);
-            expect(context.api.print).toHaveBeenCalledWith("3");
+            expect(context.api.print).toHaveBeenCalledWith('3');
         });
 
-        it("evaluates identifiers", async () => {
+        it('evaluates identifiers', async () => {
             const { context } = await run(`
             LET A$ = "hello"
             PRINT A$ + " world"
             `);
-            expect(context.api.print).toHaveBeenCalledWith("hello world");
+            expect(context.api.print).toHaveBeenCalledWith('hello world');
         });
 
-        it("evaluates the exponent operator", async () => {
+        it('evaluates the exponent operator', async () => {
             const { context } = await run(`PRINT 2^3`);
-            expect(context.api.print).toHaveBeenCalledWith("8");
+            expect(context.api.print).toHaveBeenCalledWith('8');
         });
     });
 
-    describe("stored programs", () => {
-        it("runs stored programs", async () => {
+    describe('stored programs', () => {
+        it('runs stored programs', async () => {
             const { context } = await run(`
         10 LET A, B = 2
         20 LET C = A + B
@@ -144,10 +144,10 @@ describe("context tests", () => {
 
             await context.runProgram();
 
-            expect(context.api.print).toHaveBeenCalledWith("the answer is 4");
+            expect(context.api.print).toHaveBeenCalledWith('the answer is 4');
         });
 
-        it("ends execution on an error", async () => {
+        it('ends execution on an error', async () => {
             const { context } = await run(`
         10 LET A = "23"
         30 PRINT "should not get here"
@@ -157,15 +157,15 @@ describe("context tests", () => {
         });
     });
 
-    describe("input", () => {
-        it("pauses until input is accepted", async () => {
+    describe('input', () => {
+        it('pauses until input is accepted', async () => {
             const print = jest.fn();
             let resolver: any;
             const input = jest.fn().mockImplementation(
                 () =>
                     new Promise((resolve) => {
                         resolver = resolve;
-                    })
+                    }),
             );
 
             run(
@@ -176,46 +176,46 @@ describe("context tests", () => {
                 {
                     input,
                     print,
-                }
+                },
             );
 
             expect(input).toHaveBeenCalled();
 
-            resolver("test");
+            resolver('test');
 
             await new Promise(setImmediate);
 
-            expect(print).toHaveBeenCalledWith("test");
+            expect(print).toHaveBeenCalledWith('test');
         });
 
-        it("accepts multiple inputs", async () => {
+        it('accepts multiple inputs', async () => {
             const print = jest.fn();
 
             const input = jest
                 .fn()
-                .mockResolvedValueOnce("1")
-                .mockResolvedValueOnce("2");
+                .mockResolvedValueOnce('1')
+                .mockResolvedValueOnce('2');
 
             await run(`INPUT A$, B$ : PRINT "results are " A$ " " B$`, {
                 input,
                 print,
             });
 
-            expect(print).toHaveBeenCalledWith("results are 1 2");
+            expect(print).toHaveBeenCalledWith('results are 1 2');
         });
     });
 
-    describe("compound statements", () => {
-        it("runs compound statements", async () => {
+    describe('compound statements', () => {
+        it('runs compound statements', async () => {
             const { context } = await run(`PRINT "a" : PRINT "b"`);
 
-            expect(context.api.print).toHaveBeenCalledWith("a");
-            expect(context.api.print).toHaveBeenCalledWith("b");
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).toHaveBeenCalledWith('b');
         });
     });
 
-    describe("goto statements", () => {
-        it("runs goto statements", async () => {
+    describe('goto statements', () => {
+        it('runs goto statements', async () => {
             const { context } = await run(`
             10 PRINT "a"
             20 GOTO 40
@@ -224,12 +224,12 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("a");
-            expect(context.api.print).not.toHaveBeenCalledWith("b");
-            expect(context.api.print).toHaveBeenCalledWith("c");
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).not.toHaveBeenCalledWith('b');
+            expect(context.api.print).toHaveBeenCalledWith('c');
         });
 
-        it("errors if line does not exist", async () => {
+        it('errors if line does not exist', async () => {
             const { context, result } = await run(`
             10 PRINT "a"
             20 GOTO 50
@@ -238,13 +238,13 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "cannot goto line that does not exist, 50 - (GOTO 50)"
+                'cannot goto line that does not exist, 50 - (GOTO 50)',
             );
         });
     });
 
-    describe("runs if statements", () => {
-        it("runs if..goto statements", async () => {
+    describe('runs if statements', () => {
+        it('runs if..goto statements', async () => {
             const { context, result } = await run(`
             10 PRINT "a"
             20 IF -1 GOTO 40
@@ -253,12 +253,12 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("a");
-            expect(context.api.print).not.toHaveBeenCalledWith("b");
-            expect(context.api.print).toHaveBeenCalledWith("c");
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).not.toHaveBeenCalledWith('b');
+            expect(context.api.print).toHaveBeenCalledWith('c');
         });
 
-        it("runs if..then goto statements", async () => {
+        it('runs if..then goto statements', async () => {
             const { context, result } = await run(`
             10 PRINT "a"
             20 IF -1 THEN 40
@@ -267,12 +267,12 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("a");
-            expect(context.api.print).not.toHaveBeenCalledWith("b");
-            expect(context.api.print).toHaveBeenCalledWith("c");
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).not.toHaveBeenCalledWith('b');
+            expect(context.api.print).toHaveBeenCalledWith('c');
         });
 
-        it("runs if..then statements", async () => {
+        it('runs if..then statements', async () => {
             const { context, result } = await run(`
             10 PRINT "a"
             20 IF -1 THEN PRINT "b"
@@ -280,12 +280,12 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("a");
-            expect(context.api.print).toHaveBeenCalledWith("b");
-            expect(context.api.print).toHaveBeenCalledWith("c");
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).toHaveBeenCalledWith('b');
+            expect(context.api.print).toHaveBeenCalledWith('c');
         });
 
-        it("does not run if..then statements if condition is false", async () => {
+        it('does not run if..then statements if condition is false', async () => {
             const { context } = await run(`
             10 PRINT "a"
             20 IF 0 GOTO 40
@@ -294,12 +294,12 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("a");
-            expect(context.api.print).toHaveBeenCalledWith("b");
-            expect(context.api.print).toHaveBeenCalledWith("c");
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).toHaveBeenCalledWith('b');
+            expect(context.api.print).toHaveBeenCalledWith('c');
         });
 
-        it("runs the conditions", async () => {
+        it('runs the conditions', async () => {
             const { context, result } = await run(`
             10 A = 0
             20 IF A = 1 THEN PRINT "a is 1"
@@ -307,13 +307,13 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).not.toHaveBeenCalledWith("a is 1");
-            expect(context.api.print).toHaveBeenCalledWith("a is not 1");
+            expect(context.api.print).not.toHaveBeenCalledWith('a is 1');
+            expect(context.api.print).toHaveBeenCalledWith('a is not 1');
         });
     });
 
-    describe("for/next statements", () => {
-        it("runs for loops on multiple lines", async () => {
+    describe('for/next statements', () => {
+        it('runs for loops on multiple lines', async () => {
             const { context } = await run(`
             10 FOR I = 0 TO 5
             20 PRINT I
@@ -321,44 +321,44 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("0");
-            expect(context.api.print).toHaveBeenCalledWith("1");
-            expect(context.api.print).toHaveBeenCalledWith("2");
-            expect(context.api.print).toHaveBeenCalledWith("3");
-            expect(context.api.print).toHaveBeenCalledWith("4");
+            expect(context.api.print).toHaveBeenCalledWith('0');
+            expect(context.api.print).toHaveBeenCalledWith('1');
+            expect(context.api.print).toHaveBeenCalledWith('2');
+            expect(context.api.print).toHaveBeenCalledWith('3');
+            expect(context.api.print).toHaveBeenCalledWith('4');
 
             expect(context.forStack).toHaveLength(0);
         });
 
-        it("runs for in a compound statement", async () => {
+        it('runs for in a compound statement', async () => {
             const { context } = await run(`FOR I = 0 TO 5 : PRINT I : NEXT`);
 
-            expect(context.api.print).toHaveBeenCalledWith("0");
-            expect(context.api.print).toHaveBeenCalledWith("1");
-            expect(context.api.print).toHaveBeenCalledWith("2");
-            expect(context.api.print).toHaveBeenCalledWith("3");
-            expect(context.api.print).toHaveBeenCalledWith("4");
-            expect(context.api.print).toHaveBeenCalledWith("5");
+            expect(context.api.print).toHaveBeenCalledWith('0');
+            expect(context.api.print).toHaveBeenCalledWith('1');
+            expect(context.api.print).toHaveBeenCalledWith('2');
+            expect(context.api.print).toHaveBeenCalledWith('3');
+            expect(context.api.print).toHaveBeenCalledWith('4');
+            expect(context.api.print).toHaveBeenCalledWith('5');
 
             expect(context.forStack).toHaveLength(0);
         });
 
-        it("runs for loops backwards", async () => {
+        it('runs for loops backwards', async () => {
             const { context } = await run(
-                `FOR I = 5 TO 0 STEP -1 : PRINT I : NEXT`
+                `FOR I = 5 TO 0 STEP -1 : PRINT I : NEXT`,
             );
 
-            expect(context.api.print).toHaveBeenCalledWith("5");
-            expect(context.api.print).toHaveBeenCalledWith("4");
-            expect(context.api.print).toHaveBeenCalledWith("3");
-            expect(context.api.print).toHaveBeenCalledWith("2");
-            expect(context.api.print).toHaveBeenCalledWith("1");
-            expect(context.api.print).toHaveBeenCalledWith("0");
+            expect(context.api.print).toHaveBeenCalledWith('5');
+            expect(context.api.print).toHaveBeenCalledWith('4');
+            expect(context.api.print).toHaveBeenCalledWith('3');
+            expect(context.api.print).toHaveBeenCalledWith('2');
+            expect(context.api.print).toHaveBeenCalledWith('1');
+            expect(context.api.print).toHaveBeenCalledWith('0');
 
             expect(context.forStack).toHaveLength(0);
         });
 
-        it("runs nested for loops", async () => {
+        it('runs nested for loops', async () => {
             const { context } = await run(`
             10 FOR X = 0 TO 2
             20    FOR Y = 0 TO 2
@@ -368,15 +368,15 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("0,0");
-            expect(context.api.print).toHaveBeenCalledWith("0,1");
-            expect(context.api.print).toHaveBeenCalledWith("1,0");
-            expect(context.api.print).toHaveBeenCalledWith("1,1");
+            expect(context.api.print).toHaveBeenCalledWith('0,0');
+            expect(context.api.print).toHaveBeenCalledWith('0,1');
+            expect(context.api.print).toHaveBeenCalledWith('1,0');
+            expect(context.api.print).toHaveBeenCalledWith('1,1');
 
             expect(context.forStack).toHaveLength(0);
         });
 
-        it("runs for loops by name", async () => {
+        it('runs for loops by name', async () => {
             const { context } = await run(`
             10 FOR X = 0 TO 2
             20    FOR Y = 0 TO 2
@@ -385,50 +385,50 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("0,0");
-            expect(context.api.print).toHaveBeenCalledWith("0,1");
-            expect(context.api.print).toHaveBeenCalledWith("1,0");
-            expect(context.api.print).toHaveBeenCalledWith("1,1");
+            expect(context.api.print).toHaveBeenCalledWith('0,0');
+            expect(context.api.print).toHaveBeenCalledWith('0,1');
+            expect(context.api.print).toHaveBeenCalledWith('1,0');
+            expect(context.api.print).toHaveBeenCalledWith('1,1');
 
             expect(context.forStack).toHaveLength(0);
         });
     });
 
-    describe("boolean conditions", () => {
-        it("treats boolean AND operators in conditions as conditions", async () => {
+    describe('boolean conditions', () => {
+        it('treats boolean AND operators in conditions as conditions', async () => {
             const { context } = await run(
-                `IF 1 = 1 AND 2 = 2 THEN PRINT "true"`
+                `IF 1 = 1 AND 2 = 2 THEN PRINT "true"`,
             );
-            expect(context.api.print).toHaveBeenCalledWith("true");
+            expect(context.api.print).toHaveBeenCalledWith('true');
         });
 
-        it("treats boolean OR operators in conditions as conditions", async () => {
+        it('treats boolean OR operators in conditions as conditions', async () => {
             const { context } = await run(
-                `IF 1 = 1 OR 2 = 3 THEN PRINT "true"`
+                `IF 1 = 1 OR 2 = 3 THEN PRINT "true"`,
             );
-            expect(context.api.print).toHaveBeenCalledWith("true");
+            expect(context.api.print).toHaveBeenCalledWith('true');
         });
 
-        it("treats AND operators in expressions as bitwise", async () => {
+        it('treats AND operators in expressions as bitwise', async () => {
             const { context } = await run(
-                `IF 1 = 1 AND 2 = 2 THEN PRINT 3 AND 1`
+                `IF 1 = 1 AND 2 = 2 THEN PRINT 3 AND 1`,
             );
-            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith('1');
         });
 
-        it("treats NOT operators in expressions as bitwise", async () => {
+        it('treats NOT operators in expressions as bitwise', async () => {
             const { context } = await run(`PRINT NOT 1`);
             expect(context.api.print).toHaveBeenCalledWith(`${~1}`);
         });
 
-        it("treats NOT operators in condtionals as boolean operators", async () => {
+        it('treats NOT operators in condtionals as boolean operators', async () => {
             const { context } = await run(`IF NOT 1 = 3 THEN PRINT "true"`);
             expect(context.api.print).toHaveBeenCalledWith(`true`);
         });
     });
 
-    describe("gosub statements", () => {
-        it("runs gosub statements", async () => {
+    describe('gosub statements', () => {
+        it('runs gosub statements', async () => {
             const { context } = await run(`
             5 PRINT "starting"
             10 GOSUB 30
@@ -440,23 +440,23 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenNthCalledWith(1, "starting");
-            expect(context.api.print).toHaveBeenNthCalledWith(2, "hello");
-            expect(context.api.print).toHaveBeenNthCalledWith(3, "done");
+            expect(context.api.print).toHaveBeenNthCalledWith(1, 'starting');
+            expect(context.api.print).toHaveBeenNthCalledWith(2, 'hello');
+            expect(context.api.print).toHaveBeenNthCalledWith(3, 'done');
         });
 
-        it("it errors if you return with no gosub", async () => {
+        it('it errors if you return with no gosub', async () => {
             const { context, result } = await run(`
             50 RETURN            
             RUN
             `);
 
-            testForError(result, "cannot return on empty stack - (50 RETURN)");
+            testForError(result, 'cannot return on empty stack - (50 RETURN)');
         });
     });
 
-    describe("clr statements", () => {
-        it("clears all variables on clr", async () => {
+    describe('clr statements', () => {
+        it('clears all variables on clr', async () => {
             const { context } = await run(`
             10 LET A = 1
             20 LET B$ = "hello"
@@ -465,15 +465,15 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("0 and ");
+            expect(context.api.print).toHaveBeenCalledWith('0 and ');
         });
 
-        it("clears for loops", async () => {
+        it('clears for loops', async () => {
             const { result } = await run(`FOR I = 0 TO 5 : CLR : NEXT`);
-            testForError(result, "cannot iterate on unknown variable - (NEXT)");
+            testForError(result, 'cannot iterate on unknown variable - (NEXT)');
         });
 
-        it("clears gosubs", async () => {
+        it('clears gosubs', async () => {
             const { result } = await run(`
             10 GOSUB 20
             20 CLR
@@ -481,39 +481,39 @@ describe("context tests", () => {
             RUN
             `);
 
-            testForError(result, "cannot return on empty stack - (30 RETURN)");
+            testForError(result, 'cannot return on empty stack - (30 RETURN)');
         });
     });
 
-    describe("built-ins", () => {
-        describe("abs", () => {
-            it("calls abs", async () => {
+    describe('built-ins', () => {
+        describe('abs', () => {
+            it('calls abs', async () => {
                 const { result } = await run(`A = ABS(-1)`);
-                expect(result?.inspect()).toEqual("1");
+                expect(result?.inspect()).toEqual('1');
             });
         });
 
-        it("calls asc", async () => {
+        it('calls asc', async () => {
             const { result } = await run(`A = ASC("ABC")`);
-            expect(result?.inspect()).toEqual("65");
+            expect(result?.inspect()).toEqual('65');
         });
 
-        it("calls atn", async () => {
+        it('calls atn', async () => {
             const { result } = await run(`A = ATN(1)`);
             expect(result?.inspect()).toEqual(Math.atan(1).toString());
         });
 
-        it("calls chr$", async () => {
-            const { result } = await run(`A$ = CHR$(${"A".charCodeAt(0)})`);
+        it('calls chr$', async () => {
+            const { result } = await run(`A$ = CHR$(${'A'.charCodeAt(0)})`);
             expect(result?.inspect()).toEqual('"A"');
         });
 
-        it("trims strings with left$", async () => {
+        it('trims strings with left$', async () => {
             const { result } = await run(`A$ = LEFT$("hello world", 5)`);
             expect(result?.inspect()).toEqual('"hello"');
         });
 
-        it("cuts strings with mid$", async () => {
+        it('cuts strings with mid$', async () => {
             const { context } = await run(`
             10 A$="SATURDAY MORNING"
             20 B$=MID$(A$,6,3): PRINT B$
@@ -522,24 +522,24 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenNthCalledWith(1, "DAY");
-            expect(context.api.print).toHaveBeenNthCalledWith(2, "SATURDAY");
-            expect(context.api.print).toHaveBeenNthCalledWith(3, "MORNING");
+            expect(context.api.print).toHaveBeenNthCalledWith(1, 'DAY');
+            expect(context.api.print).toHaveBeenNthCalledWith(2, 'SATURDAY');
+            expect(context.api.print).toHaveBeenNthCalledWith(3, 'MORNING');
         });
 
-        it("cuts strings with right$", async () => {
+        it('cuts strings with right$', async () => {
             const { context } = await run(`
             10 A$="SATURDAY MORNING"
             20 B$=RIGHT$(A$,7): PRINT B$
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("MORNING");
+            expect(context.api.print).toHaveBeenCalledWith('MORNING');
         });
     });
 
-    describe("data/.read/restore", () => {
-        it("reads from data statements", async () => {
+    describe('data/.read/restore', () => {
+        it('reads from data statements', async () => {
             const { context } = await run(`
             DATA 1, 2.5, 3.14 "three"
             READ A%, B, PI%, C$
@@ -547,20 +547,20 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledWith(
-                "1 - 2.5 - three - 3"
+                '1 - 2.5 - three - 3',
             );
         });
 
-        it("errors if there is no data on the data stack", async () => {
+        it('errors if there is no data on the data stack', async () => {
             const { result } = await run(`
             DATA 1
             READ A%, B
             `);
 
-            testForError(result, "no more data to read - (READ A%, B)");
+            testForError(result, 'no more data to read - (READ A%, B)');
         });
 
-        it("errors if there is a type mismatch assigning a string to an int", async () => {
+        it('errors if there is a type mismatch assigning a string to an int', async () => {
             const { result } = await run(`
             DATA "test"
             READ A%
@@ -568,11 +568,11 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "type mismatch. cannot set STRING to identifier of type INT - (READ A%)"
+                'type mismatch. cannot set STRING to identifier of type INT - (READ A%)',
             );
         });
 
-        it("errors if there is a type mismatch assigning a string to a float", async () => {
+        it('errors if there is a type mismatch assigning a string to a float', async () => {
             const { result } = await run(`
             DATA "test"
             READ A
@@ -580,11 +580,11 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "type mismatch. cannot set STRING to identifier of type FLOAT - (READ A)"
+                'type mismatch. cannot set STRING to identifier of type FLOAT - (READ A)',
             );
         });
 
-        it("errors if there is a type mismatch assigning a int to a string", async () => {
+        it('errors if there is a type mismatch assigning a int to a string', async () => {
             const { result } = await run(`
             DATA 1
             READ A$
@@ -592,11 +592,11 @@ describe("context tests", () => {
 
             testForError(
                 result,
-                "type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)"
+                'type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)',
             );
         });
 
-        it("runs RESTORE statements", async () => {
+        it('runs RESTORE statements', async () => {
             const { context } = await run(`
             DATA "1"
             READ A$
@@ -605,12 +605,12 @@ describe("context tests", () => {
             PRINT A$ " - " B$
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("1 - 1");
+            expect(context.api.print).toHaveBeenCalledWith('1 - 1');
         });
     });
 
-    describe("def/fn statements", () => {
-        it("defines functions", async () => {
+    describe('def/fn statements', () => {
+        it('defines functions', async () => {
             const { context } = await run(`
             10 DEF FN FTEST1(X) = X*3
             20 A = 5
@@ -618,10 +618,10 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("15");
+            expect(context.api.print).toHaveBeenCalledWith('15');
         });
 
-        it("uses a local stack to run functions", async () => {
+        it('uses a local stack to run functions', async () => {
             const { context } = await run(`
             5  X = 3
             10 DEF FN FTEST1(X) = X*3
@@ -630,15 +630,15 @@ describe("context tests", () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("15, 3");
+            expect(context.api.print).toHaveBeenCalledWith('15, 3');
         });
     });
 
-    describe("dim statements", () => {
-        it("initializes float arrays", async () => {
+    describe('dim statements', () => {
+        it('initializes float arrays', async () => {
             const { context } = await run(`DIM B(10)`);
 
-            const v = context.globalStack.get("B") as ArrayValue;
+            const v = context.globalStack.get('B') as ArrayValue;
 
             expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
             expect(v.dimensions).toHaveLength(1);
@@ -652,10 +652,10 @@ describe("context tests", () => {
             }
         });
 
-        it("initializes integer arrays", async () => {
+        it('initializes integer arrays', async () => {
             const { context } = await run(`DIM B%(10)`);
 
-            const v = context.globalStack.get("B%") as ArrayValue;
+            const v = context.globalStack.get('B%') as ArrayValue;
 
             expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
             expect(v.dimensions).toHaveLength(1);
@@ -669,10 +669,10 @@ describe("context tests", () => {
             }
         });
 
-        it("initializes string arrays", async () => {
+        it('initializes string arrays', async () => {
             const { context } = await run(`DIM B$(10)`);
 
-            const v = context.globalStack.get("B$") as ArrayValue;
+            const v = context.globalStack.get('B$') as ArrayValue;
 
             expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
             expect(v.dimensions).toHaveLength(1);
@@ -682,14 +682,14 @@ describe("context tests", () => {
 
             for (let i = 0; i < v.data.length; i++) {
                 expect(v.data[i].type()).toEqual(ObjectType.STRING_OBJ);
-                expect((v.data[i] as StringValue).value).toEqual("");
+                expect((v.data[i] as StringValue).value).toEqual('');
             }
         });
 
-        it("initializes multidimensional arrays", async () => {
+        it('initializes multidimensional arrays', async () => {
             const { context } = await run(`DIM B(5, 5)`);
 
-            const v = context.globalStack.get("B") as ArrayValue;
+            const v = context.globalStack.get('B') as ArrayValue;
 
             expect(v.type()).toEqual(ObjectType.ARRAY_OBJ);
             expect(v.dimensions).toHaveLength(2);
@@ -698,19 +698,19 @@ describe("context tests", () => {
             expect(v.data).toHaveLength(36);
         });
 
-        it("accesses array values", async () => {
+        it('accesses array values', async () => {
             const { context } = await run(`
             DIM B(2)
             B(0) = 1 : B(1) = 2 : B(2) = 3 
             PRINT B(0) ", " B(1) ", " B(2)
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith("1, 2, 3");
+            expect(context.api.print).toHaveBeenCalledWith('1, 2, 3');
         });
     });
 
-    describe("end statements", () => {
-        it("stops multiline program execution", async () => {
+    describe('end statements', () => {
+        it('stops multiline program execution', async () => {
             const { context } = await run(`
             10 PRINT 1
             20 END
@@ -719,19 +719,19 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith('1');
         });
 
-        it("stops compound program execution", async () => {
+        it('stops compound program execution', async () => {
             const { context } = await run(`
             PRINT 1 : END : PRINT 2
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith('1');
         });
 
-        it("continues execution on CONT", async () => {
+        it('continues execution on CONT', async () => {
             const { context } = await run(`
             10 PRINT "PART 1"
             20 END : PRINT "AFTER 'END'"
@@ -740,18 +740,18 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith("PART 1");
+            expect(context.api.print).toHaveBeenCalledWith('PART 1');
 
-            await run("CONT", {}, context);
+            await run('CONT', {}, context);
 
             expect(context.api.print).toHaveBeenCalledTimes(3);
             expect(context.api.print).toHaveBeenNthCalledWith(2, "AFTER 'END'");
-            expect(context.api.print).toHaveBeenNthCalledWith(3, "PART 2");
+            expect(context.api.print).toHaveBeenNthCalledWith(3, 'PART 2');
         });
     });
 
-    describe("list statements", () => {
-        it("runs a list statement", async () => {
+    describe('list statements', () => {
+        it('runs a list statement', async () => {
             const { context } = await run(`
             10 SPACE = CHR$(32)
             20 PRINT "hello", SPACE, "world"
@@ -767,36 +767,36 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledWith(
-                "10 SPACE = CHR$(32)"
+                '10 SPACE = CHR$(32)',
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello" SPACE "world"`
+                `20 PRINT "hello" SPACE "world"`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `30 DEF FN TEST(Y) = (Y * Y)`
+                `30 DEF FN TEST(Y) = (Y * Y)`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `40 LET B = ((FN TEST(3)) + 2)`
+                `40 LET B = ((FN TEST(3)) + 2)`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `50 C = B : PRINT C`
+                `50 C = B : PRINT C`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `60 INPUT "test"; D, E`
+                `60 INPUT "test"; D, E`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `70 FOR I = 0 TO 5 STEP 1`
+                `70 FOR I = 0 TO 5 STEP 1`,
             );
             expect(context.api.print).toHaveBeenCalledWith(`80 NEXT`);
             expect(context.api.print).toHaveBeenCalledWith(`90 REM blah blah`);
             expect(context.api.print).toHaveBeenCalledWith(
-                `100 DIM AR(16, 16) : AR(12, 2) = 4`
+                `100 DIM AR(16, 16) : AR(12, 2) = 4`,
             );
         });
     });
 
-    describe("load statements", () => {
-        it("calls the load api", async () => {
+    describe('load statements', () => {
+        it('calls the load api', async () => {
             const load = jest
                 .fn()
                 .mockResolvedValue([
@@ -809,16 +809,16 @@ describe("context tests", () => {
             LOAD "test"
             LIST
             `,
-                { load }
+                { load },
             );
 
-            expect(load).toHaveBeenCalledWith("test");
+            expect(load).toHaveBeenCalledWith('test');
             expect(context.api.print).toHaveBeenCalledWith(`10 PRINT "loaded"`);
         });
     });
 
-    describe("on statements", () => {
-        it("runs on..goto statements", async () => {
+    describe('on statements', () => {
+        it('runs on..goto statements', async () => {
             const { context } = await run(`
             10   A = 1
             20   ON A GOTO 1000,2000,3000
@@ -833,12 +833,12 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(3);
-            expect(context.api.print).toHaveBeenCalledWith("1. jump");
-            expect(context.api.print).toHaveBeenCalledWith("2. jump");
-            expect(context.api.print).toHaveBeenCalledWith("3. jump");
+            expect(context.api.print).toHaveBeenCalledWith('1. jump');
+            expect(context.api.print).toHaveBeenCalledWith('2. jump');
+            expect(context.api.print).toHaveBeenCalledWith('3. jump');
         });
 
-        it("runs on..gosub statements", async () => {
+        it('runs on..gosub statements', async () => {
             const { context } = await run(`
             10   A = 1
             20   ON A GOSUB 1000,2000,3000
@@ -853,12 +853,12 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith("1. Subroutine");
+            expect(context.api.print).toHaveBeenCalledWith('1. Subroutine');
         });
     });
 
-    describe("stop statements", () => {
-        it("stops and continues on CONT", async () => {
+    describe('stop statements', () => {
+        it('stops and continues on CONT', async () => {
             const { context } = await run(`
             10 PRINT "1"
             20 STOP
@@ -868,37 +868,37 @@ describe("context tests", () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith("1");
+            expect(context.api.print).toHaveBeenCalledWith('1');
 
-            await run("GOTO 30", undefined, context);
+            await run('GOTO 30', undefined, context);
 
             expect(context.api.print).toHaveBeenCalledTimes(3);
-            expect(context.api.print).toHaveBeenCalledWith("2");
-            expect(context.api.print).toHaveBeenCalledWith("3");
+            expect(context.api.print).toHaveBeenCalledWith('2');
+            expect(context.api.print).toHaveBeenCalledWith('3');
         });
     });
 
-    describe("time", () => {
-        it("reads the system time", async () => {
-            const { context } = await run("PRINT TIME");
+    describe('time', () => {
+        it('reads the system time', async () => {
+            const { context } = await run('PRINT TIME');
 
             expect(context.api.print).toHaveBeenCalled();
             expect(
-                (context.api.print as jest.Mock).mock.calls[0][0]
-            ).not.toEqual("0");
+                (context.api.print as jest.Mock).mock.calls[0][0],
+            ).not.toEqual('0');
         });
     });
 
-    describe("graphics", () => {
-        it("initializes the graphics canvas", async () => {
-            const { context } = await run("GRAPHICS 320, 200");
+    describe('graphics', () => {
+        it('initializes the graphics canvas', async () => {
+            const { context } = await run('GRAPHICS 320, 200');
 
             expect(context.image).not.toBeNull();
             expect(context.image!.width).toEqual(320);
             expect(context.image!.height).toEqual(200);
         });
 
-        it("draws single pixels", async () => {
+        it('draws single pixels', async () => {
             const { context } = await run(`
             GRAPHICS 3, 3
             DRAW RGB(255, 0, 0), 0, 0
@@ -907,7 +907,7 @@ describe("context tests", () => {
             expect(context.image?.getPixel(0, 0)).toEqual(0xff0000);
         });
 
-        it("draws lines", async () => {
+        it('draws lines', async () => {
             const { context } = await run(`
             GRAPHICS 3, 3
             DRAW RGB(255, 0, 0), 0, 0 TO 2, 2
@@ -918,7 +918,7 @@ describe("context tests", () => {
             expect(context.image?.getPixel(2, 2)).toEqual(0xff0000);
         });
 
-        it("draws weird lines", async () => {
+        it('draws weird lines', async () => {
             const { context } = await run(`
             GRAPHICS 10, 10
             DRAW RGB(0, 0, 1), 0, 0 TO 5, 2
@@ -932,7 +932,7 @@ describe("context tests", () => {
             expect(context.image?.getPixel(5, 2)).toEqual(1);
         });
 
-        it("draws boxes", async () => {
+        it('draws boxes', async () => {
             const { context, errors } = await run(`
             GRAPHICS 10, 10 
             BOX RGB(0, 0, 1), 0, 0, 9,9

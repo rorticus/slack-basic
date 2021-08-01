@@ -1,5 +1,5 @@
-import Lexer from "./lexer";
-import { Parser } from "./parser";
+import Lexer from './lexer';
+import { Parser } from './parser';
 import {
     BoxStatement,
     CallExpression,
@@ -29,10 +29,10 @@ import {
     ReadStatement,
     StatementType,
     StringLiteral,
-} from "./ast";
-import { TokenType } from "./tokens";
+} from './ast';
+import { TokenType } from './tokens';
 
-describe("Parser tests", () => {
+describe('Parser tests', () => {
     function parse(source: string, checkForErrors = true) {
         const lexer = new Lexer(source);
         const parser = new Parser(lexer);
@@ -85,7 +85,7 @@ describe("Parser tests", () => {
         expression: Expression | null,
         left: number,
         operator: string,
-        right: number
+        right: number,
     ) {
         expect(expression).not.toBeNull();
         expect(expression instanceof InfixExpression).toBeTruthy();
@@ -100,118 +100,118 @@ describe("Parser tests", () => {
         expect((infix.right as IntegerLiteral).value).toEqual(right);
     }
 
-    describe("statements", () => {
-        describe("let statements", () => {
-            it("parses let statements with a single identifier", () => {
-                const { statement } = parse("LET A = 3");
+    describe('statements', () => {
+        describe('let statements', () => {
+            it('parses let statements with a single identifier', () => {
+                const { statement } = parse('LET A = 3');
 
                 expect(statement.type).toEqual(StatementType.LET);
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0].name, "A");
+                testIdentifier(letStatement.names[0].name, 'A');
                 expect(letStatement.names[0].indices).toHaveLength(0);
 
                 testIntegerLiteral(letStatement.value, 3);
             });
 
-            it("parses let statements with array access", () => {
-                const { statement } = parse("LET A(0) = 3");
+            it('parses let statements with array access', () => {
+                const { statement } = parse('LET A(0) = 3');
 
                 expect(statement.type).toEqual(StatementType.LET);
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0].name, "A");
+                testIdentifier(letStatement.names[0].name, 'A');
                 expect(letStatement.names[0].indices).toHaveLength(1);
 
                 testIntegerLiteral(letStatement.value, 3);
             });
 
-            it("parses let statements with multiple identifiers", () => {
-                const { statement } = parse("LET A, B = 3");
+            it('parses let statements with multiple identifiers', () => {
+                const { statement } = parse('LET A, B = 3');
 
                 expect(statement.type).toEqual(StatementType.LET);
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(2);
-                testIdentifier(letStatement.names[0].name, "A");
-                testIdentifier(letStatement.names[1].name, "B");
+                testIdentifier(letStatement.names[0].name, 'A');
+                testIdentifier(letStatement.names[1].name, 'B');
 
                 testIntegerLiteral(letStatement.value, 3);
             });
 
-            it("defaults to let statements if no statement type specified", () => {
-                const { statement } = parse("A = 3");
+            it('defaults to let statements if no statement type specified', () => {
+                const { statement } = parse('A = 3');
 
                 expect(statement.type).toEqual(StatementType.LET);
 
                 const letStatement = statement as LetStatement;
                 expect(letStatement.names).toHaveLength(1);
-                testIdentifier(letStatement.names[0].name, "A");
+                testIdentifier(letStatement.names[0].name, 'A');
 
                 testIntegerLiteral(letStatement.value, 3);
             });
         });
 
-        describe("labels and line numbers", () => {
-            it("parses and assigns line numbers", () => {
-                const { statement } = parse("10 LET A = 3");
+        describe('labels and line numbers', () => {
+            it('parses and assigns line numbers', () => {
+                const { statement } = parse('10 LET A = 3');
                 expect(statement.lineNumber).toEqual(10);
             });
 
-            it("does not require line numbers", () => {
-                const { statement } = parse("LET A = 3");
+            it('does not require line numbers', () => {
+                const { statement } = parse('LET A = 3');
                 expect(statement.lineNumber).toBeUndefined();
             });
         });
 
-        describe("print statements", () => {
-            it("parses print statements", () => {
+        describe('print statements', () => {
+            it('parses print statements', () => {
                 const { statement } = parse('PRINT "hello"');
                 expect(statement.type).toEqual(StatementType.PRINT);
 
                 const printStatement = statement as PrintStatement;
 
                 expect(printStatement.args).toHaveLength(1);
-                testStringLiteral(printStatement.args[0], "hello");
+                testStringLiteral(printStatement.args[0], 'hello');
             });
 
-            it("parses print statements with multiple arguments", () => {
+            it('parses print statements with multiple arguments', () => {
                 const { statement } = parse('PRINT "hello" SPACE$ "world"');
                 expect(statement.type).toEqual(StatementType.PRINT);
 
                 const printStatement = statement as PrintStatement;
 
                 expect(printStatement.args).toHaveLength(3);
-                testStringLiteral(printStatement.args[0], "hello");
-                testIdentifier(printStatement.args[1], "SPACE$");
-                testStringLiteral(printStatement.args[2], "world");
+                testStringLiteral(printStatement.args[0], 'hello');
+                testIdentifier(printStatement.args[1], 'SPACE$');
+                testStringLiteral(printStatement.args[2], 'world');
             });
 
-            it("parses print statements with multiple arguments separated by commas and semicolons", () => {
+            it('parses print statements with multiple arguments separated by commas and semicolons', () => {
                 const { statement } = parse('PRINT "hello", SPACE$; "world"');
                 expect(statement.type).toEqual(StatementType.PRINT);
 
                 const printStatement = statement as PrintStatement;
 
                 expect(printStatement.args).toHaveLength(3);
-                testStringLiteral(printStatement.args[0], "hello");
-                testIdentifier(printStatement.args[1], "SPACE$");
-                testStringLiteral(printStatement.args[2], "world");
+                testStringLiteral(printStatement.args[0], 'hello');
+                testIdentifier(printStatement.args[1], 'SPACE$');
+                testStringLiteral(printStatement.args[2], 'world');
             });
 
-            it("parses print statements with expressions", () => {
+            it('parses print statements with expressions', () => {
                 const { statement } = parse('PRINT "2 + 2 = " 2 + 2');
                 expect(statement.type).toEqual(StatementType.PRINT);
 
                 const printStatement = statement as PrintStatement;
                 expect(printStatement.args).toHaveLength(2);
-                testStringLiteral(printStatement.args[0], "2 + 2 = ");
-                testInfix(printStatement.args[1], 2, "+", 2);
+                testStringLiteral(printStatement.args[0], '2 + 2 = ');
+                testInfix(printStatement.args[1], 2, '+', 2);
             });
 
-            it("stops parsing print statements at colons", () => {
+            it('stops parsing print statements at colons', () => {
                 const { statement } = parse('PRINT "one" : PRINT "two"');
                 expect(statement.type).toEqual(StatementType.COMPOUND);
 
@@ -219,99 +219,99 @@ describe("Parser tests", () => {
                 expect(compoundStatement.statements).toHaveLength(2);
 
                 expect(compoundStatement.statements[0].type).toEqual(
-                    StatementType.PRINT
+                    StatementType.PRINT,
                 );
                 expect(compoundStatement.statements[1].type).toEqual(
-                    StatementType.PRINT
+                    StatementType.PRINT,
                 );
 
                 expect(
-                    (compoundStatement.statements[0] as PrintStatement).args
+                    (compoundStatement.statements[0] as PrintStatement).args,
                 ).toHaveLength(1);
                 expect(
-                    (compoundStatement.statements[1] as PrintStatement).args
+                    (compoundStatement.statements[1] as PrintStatement).args,
                 ).toHaveLength(1);
 
                 testStringLiteral(
                     (compoundStatement.statements[0] as PrintStatement).args[0],
-                    "one"
+                    'one',
                 );
                 testStringLiteral(
                     (compoundStatement.statements[1] as PrintStatement).args[0],
-                    "two"
+                    'two',
                 );
             });
         });
 
-        describe("input statements", () => {
-            it("parses input statements", () => {
-                const { statement } = parse("INPUT A$");
+        describe('input statements', () => {
+            it('parses input statements', () => {
+                const { statement } = parse('INPUT A$');
                 expect(statement.type).toEqual(StatementType.INPUT);
                 expect((statement as InputStatement).destination).toHaveLength(
-                    1
+                    1,
                 );
                 expect(
-                    (statement as InputStatement).destination[0].value
-                ).toEqual("A$");
+                    (statement as InputStatement).destination[0].value,
+                ).toEqual('A$');
             });
 
-            it("parses input statements with messages", () => {
+            it('parses input statements with messages', () => {
                 const { statement } = parse(`INPUT "test"; A$`);
                 expect(statement.type).toEqual(StatementType.INPUT);
 
                 const inputStatement = statement as InputStatement;
                 expect(inputStatement.message).not.toBeNull();
                 expect(inputStatement.destination).toHaveLength(1);
-                expect(inputStatement.destination[0].value).toEqual("A$");
+                expect(inputStatement.destination[0].value).toEqual('A$');
             });
 
-            it("parses input statements with multiple destinations", () => {
+            it('parses input statements with multiple destinations', () => {
                 const { statement } = parse(`INPUT A$, B`);
                 expect(statement.type).toEqual(StatementType.INPUT);
 
                 const inputStatement = statement as InputStatement;
                 expect(inputStatement.destination).toHaveLength(2);
-                expect(inputStatement.destination[0].value).toEqual("A$");
-                expect(inputStatement.destination[1].value).toEqual("B");
+                expect(inputStatement.destination[0].value).toEqual('A$');
+                expect(inputStatement.destination[1].value).toEqual('B');
             });
 
-            it("parses input statements with a message and multiple destinations", () => {
+            it('parses input statements with a message and multiple destinations', () => {
                 const { statement } = parse(`INPUT "message"; A$, B`);
                 expect(statement.type).toEqual(StatementType.INPUT);
 
                 const inputStatement = statement as InputStatement;
                 expect(inputStatement.message).not.toBeNull();
                 expect(inputStatement.destination).toHaveLength(2);
-                expect(inputStatement.destination[0].value).toEqual("A$");
-                expect(inputStatement.destination[1].value).toEqual("B");
+                expect(inputStatement.destination[0].value).toEqual('A$');
+                expect(inputStatement.destination[1].value).toEqual('B');
             });
         });
 
-        describe("goto statements", () => {
-            it("parses goto statements", () => {
-                const { statement } = parse("GOTO 10");
+        describe('goto statements', () => {
+            it('parses goto statements', () => {
+                const { statement } = parse('GOTO 10');
                 expect(statement.type).toEqual(StatementType.GOTO);
                 expect((statement as GotoStatement).destination).toEqual(10);
             });
 
-            it("does not allow string destinations", () => {
+            it('does not allow string destinations', () => {
                 const { parser } = parse('GOTO "10"', false);
                 expect(parser.errors).toHaveLength(1);
             });
 
-            it("does not allow float destinations", () => {
-                const { parser } = parse("GOTO 10.2", false);
+            it('does not allow float destinations', () => {
+                const { parser } = parse('GOTO 10.2', false);
                 expect(parser.errors).toHaveLength(1);
             });
 
-            it("does not allow variable destinations", () => {
-                const { parser } = parse("GOTO C%", false);
+            it('does not allow variable destinations', () => {
+                const { parser } = parse('GOTO C%', false);
                 expect(parser.errors).toHaveLength(1);
             });
         });
 
-        describe("if statements", () => {
-            it("parses if..goto", () => {
+        describe('if statements', () => {
+            it('parses if..goto', () => {
                 const { statement } = parse(`IF 1 GOTO 2`);
 
                 const ifStatement = statement as IfStatement;
@@ -325,7 +325,7 @@ describe("Parser tests", () => {
                 expect(ifStatement.then).toBeUndefined();
             });
 
-            it("parses if..then number", () => {
+            it('parses if..then number', () => {
                 const { statement } = parse(`IF 1 THEN 2`);
 
                 const ifStatement = statement as IfStatement;
@@ -339,7 +339,7 @@ describe("Parser tests", () => {
                 expect(ifStatement.then).toBe(2);
             });
 
-            it("parses if..then condition", () => {
+            it('parses if..then condition', () => {
                 const { statement } = parse(`IF 1 THEN PRINT "hello"`);
 
                 const ifStatement = statement as IfStatement;
@@ -353,40 +353,40 @@ describe("Parser tests", () => {
 
                 expect(ifStatement.then).not.toBeUndefined();
                 expect((ifStatement.then as PrintStatement).type).toEqual(
-                    StatementType.PRINT
+                    StatementType.PRINT,
                 );
             });
         });
 
-        describe("for statements", () => {
-            it("parses for statements with no steps", () => {
+        describe('for statements', () => {
+            it('parses for statements with no steps', () => {
                 const { statement } = parse(`FOR I=1 TO 5`);
 
                 expect(statement.type).toEqual(StatementType.FOR);
 
                 const forStatement = statement as ForStatement;
 
-                testIdentifier(forStatement.iterator, "I");
+                testIdentifier(forStatement.iterator, 'I');
                 testIntegerLiteral(forStatement.from, 1);
                 testIntegerLiteral(forStatement.to, 5);
 
                 expect(forStatement.step).toBeNull();
             });
 
-            it("parses for statements with a step", () => {
+            it('parses for statements with a step', () => {
                 const { statement } = parse(`FOR I=1 TO 5 STEP 2`);
 
                 expect(statement.type).toEqual(StatementType.FOR);
 
                 const forStatement = statement as ForStatement;
 
-                testIdentifier(forStatement.iterator, "I");
+                testIdentifier(forStatement.iterator, 'I');
                 testIntegerLiteral(forStatement.from, 1);
                 testIntegerLiteral(forStatement.to, 5);
                 testIntegerLiteral(forStatement.step, 2);
             });
 
-            it("parses next statements with no arguments", () => {
+            it('parses next statements with no arguments', () => {
                 const { statement } = parse(`NEXT`);
 
                 expect(statement.type).toEqual(StatementType.NEXT);
@@ -396,7 +396,7 @@ describe("Parser tests", () => {
                 expect(nextStatement.values).toHaveLength(0);
             });
 
-            it("parses next statements with a single argument", () => {
+            it('parses next statements with a single argument', () => {
                 const { statement } = parse(`NEXT X`);
 
                 expect(statement.type).toEqual(StatementType.NEXT);
@@ -404,10 +404,10 @@ describe("Parser tests", () => {
                 const nextStatement = statement as NextStatement;
 
                 expect(nextStatement.values).toHaveLength(1);
-                testIdentifier(nextStatement.values[0], "X");
+                testIdentifier(nextStatement.values[0], 'X');
             });
 
-            it("parses next statements with multiple arguments", () => {
+            it('parses next statements with multiple arguments', () => {
                 const { statement } = parse(`NEXT X, Y`);
 
                 expect(statement.type).toEqual(StatementType.NEXT);
@@ -415,125 +415,125 @@ describe("Parser tests", () => {
                 const nextStatement = statement as NextStatement;
 
                 expect(nextStatement.values).toHaveLength(2);
-                testIdentifier(nextStatement.values[0], "X");
-                testIdentifier(nextStatement.values[1], "Y");
+                testIdentifier(nextStatement.values[0], 'X');
+                testIdentifier(nextStatement.values[1], 'Y');
             });
         });
 
-        describe("rem statements", () => {
-            it("parses rem statements", () => {
+        describe('rem statements', () => {
+            it('parses rem statements', () => {
                 const { statement } = parse('REM 1234adsfasdf 987ds"asdff');
                 expect(statement.type).toEqual(StatementType.REM);
             });
         });
 
-        describe("gosub statements", () => {
-            it("parses return statements", () => {
-                const { statement } = parse("RETURN");
+        describe('gosub statements', () => {
+            it('parses return statements', () => {
+                const { statement } = parse('RETURN');
                 expect(statement.type).toEqual(StatementType.RETURN);
             });
 
-            it("parses gosub statements", () => {
-                const { statement } = parse("GOSUB 1000");
+            it('parses gosub statements', () => {
+                const { statement } = parse('GOSUB 1000');
                 expect(statement.type).toEqual(StatementType.GOSUB);
                 expect((statement as GosubStatement).gosubLineNumber).toEqual(
-                    1000
+                    1000,
                 );
             });
         });
 
-        describe("call statements", () => {
-            it("parses call statements", () => {
-                const { statement } = parse("A = ABS(1)");
+        describe('call statements', () => {
+            it('parses call statements', () => {
+                const { statement } = parse('A = ABS(1)');
                 expect(statement.type).toEqual(StatementType.LET);
                 expect(
-                    (statement as LetStatement).value instanceof CallExpression
+                    (statement as LetStatement).value instanceof CallExpression,
                 ).toBeTruthy();
             });
         });
 
-        describe("data statements", () => {
-            it("parses data statements", () => {
+        describe('data statements', () => {
+            it('parses data statements', () => {
                 const { statement } = parse('DATA 1, TWO, "THREE"');
 
                 expect(statement.type).toEqual(StatementType.DATA);
                 const d = statement as DataStatement;
                 expect(d.datas).toHaveLength(3);
                 testIntegerLiteral(d.datas[0], 1);
-                testIdentifier(d.datas[1], "TWO");
-                testStringLiteral(d.datas[2], "THREE");
+                testIdentifier(d.datas[1], 'TWO');
+                testStringLiteral(d.datas[2], 'THREE');
             });
 
-            it("parses read statements", () => {
-                const { statement } = parse("READ A, B$");
+            it('parses read statements', () => {
+                const { statement } = parse('READ A, B$');
 
                 expect(statement.type).toEqual(StatementType.READ);
                 const d = statement as ReadStatement;
                 expect(d.outputs).toHaveLength(2);
-                testIdentifier(d.outputs[0], "A");
-                testIdentifier(d.outputs[1], "B$");
+                testIdentifier(d.outputs[0], 'A');
+                testIdentifier(d.outputs[1], 'B$');
             });
         });
 
-        it("parses def statements with arguments", () => {
-            const { statement } = parse("DEF FN SQR(X) = 1 * 1");
+        it('parses def statements with arguments', () => {
+            const { statement } = parse('DEF FN SQR(X) = 1 * 1');
             expect(statement.type).toEqual(StatementType.DEF);
 
             const defFn = statement as DefStatement;
-            testIdentifier(defFn.name, "SQR");
-            testIdentifier(defFn.argument, "X");
-            testInfix(defFn.body, 1, "*", 1);
+            testIdentifier(defFn.name, 'SQR');
+            testIdentifier(defFn.argument, 'X');
+            testInfix(defFn.body, 1, '*', 1);
         });
 
-        it("parses def statements without arguments", () => {
-            const { statement } = parse("DEF FN SQR() = 1 * 1");
+        it('parses def statements without arguments', () => {
+            const { statement } = parse('DEF FN SQR() = 1 * 1');
             expect(statement.type).toEqual(StatementType.DEF);
 
             const defFn = statement as DefStatement;
-            testIdentifier(defFn.name, "SQR");
+            testIdentifier(defFn.name, 'SQR');
             expect(defFn.argument).toBeNull();
-            testInfix(defFn.body, 1, "*", 1);
+            testInfix(defFn.body, 1, '*', 1);
         });
 
-        it("parses FN calls", () => {
-            const { statement } = parse("PRINT FN SQR(1 + 2)");
+        it('parses FN calls', () => {
+            const { statement } = parse('PRINT FN SQR(1 + 2)');
             expect(statement.type).toEqual(StatementType.PRINT);
 
             const right = (statement as PrintStatement)
                 .args[0] as PrefixExpression;
             expect(right instanceof PrefixExpression).toBeTruthy();
 
-            expect(right.operator).toEqual("FN");
+            expect(right.operator).toEqual('FN');
             expect(right.right instanceof CallExpression).toBeTruthy();
 
             const v = right.right as CallExpression;
 
-            testIdentifier(v.fn, "SQR");
+            testIdentifier(v.fn, 'SQR');
             expect(v.args).toHaveLength(1);
-            testInfix(v.args[0], 1, "+", 2);
+            testInfix(v.args[0], 1, '+', 2);
         });
 
-        it("parses DIM calls", () => {
-            const { statement } = parse("DIM A(1), B(2, 3)");
+        it('parses DIM calls', () => {
+            const { statement } = parse('DIM A(1), B(2, 3)');
 
             expect(statement.type).toEqual(StatementType.DIM);
             const d = statement as DimStatement;
 
             expect(d.variables).toHaveLength(2);
-            testIdentifier(d.variables[0].name, "A");
+            testIdentifier(d.variables[0].name, 'A');
             expect(d.variables[0].dimensions).toHaveLength(1);
             testIntegerLiteral(d.variables[0].dimensions[0], 1);
 
-            testIdentifier(d.variables[1].name, "B");
+            testIdentifier(d.variables[1].name, 'B');
             expect(d.variables[1].dimensions).toHaveLength(2);
             testIntegerLiteral(d.variables[1].dimensions[0], 2);
             testIntegerLiteral(d.variables[1].dimensions[1], 3);
         });
     });
 
-    describe("list statements", () => {
-        it("parses list statements with no parameters", () => {
-            const { statement } = parse("LIST");
+    describe('list statements', () => {
+        it('parses list statements with no parameters', () => {
+            const { statement } = parse('LIST');
 
             expect(statement.type).toEqual(StatementType.LIST);
             const listStatement = statement as ListStatement;
@@ -542,8 +542,8 @@ describe("Parser tests", () => {
             expect(listStatement.endLine).toBeNull();
         });
 
-        it("parses list statements with a range", () => {
-            const { statement } = parse("LIST 10-20");
+        it('parses list statements with a range', () => {
+            const { statement } = parse('LIST 10-20');
 
             expect(statement.type).toEqual(StatementType.LIST);
             const listStatement = statement as ListStatement;
@@ -552,8 +552,8 @@ describe("Parser tests", () => {
             testIntegerLiteral(listStatement.endLine, 20);
         });
 
-        it("parses list statements with a single line", () => {
-            const { statement } = parse("LIST 10");
+        it('parses list statements with a single line', () => {
+            const { statement } = parse('LIST 10');
 
             expect(statement.type).toEqual(StatementType.LIST);
             const listStatement = statement as ListStatement;
@@ -562,8 +562,8 @@ describe("Parser tests", () => {
             testIntegerLiteral(listStatement.endLine, 10);
         });
 
-        it("parses list statements with a missing end range", () => {
-            const { statement } = parse("LIST 10-");
+        it('parses list statements with a missing end range', () => {
+            const { statement } = parse('LIST 10-');
 
             expect(statement.type).toEqual(StatementType.LIST);
             const listStatement = statement as ListStatement;
@@ -572,8 +572,8 @@ describe("Parser tests", () => {
             expect(listStatement.endLine).toBeNull();
         });
 
-        it("parses list statements with a missing start range", () => {
-            const { statement } = parse("LIST -10");
+        it('parses list statements with a missing start range', () => {
+            const { statement } = parse('LIST -10');
 
             expect(statement.type).toEqual(StatementType.LIST);
             const listStatement = statement as ListStatement;
@@ -583,20 +583,20 @@ describe("Parser tests", () => {
         });
     });
 
-    describe("load statements", () => {
-        it("parses load statements", () => {
+    describe('load statements', () => {
+        it('parses load statements', () => {
             const { statement } = parse(`LOAD "test"`);
 
             expect(statement.type).toEqual(StatementType.LOAD);
             const loadStatement = statement as LoadStatement;
 
-            testStringLiteral(loadStatement.filename, "test");
+            testStringLiteral(loadStatement.filename, 'test');
         });
     });
 
-    describe("on statements", () => {
-        it("parses on..goto statements", () => {
-            const { statement } = parse("ON 1 GOTO 10");
+    describe('on statements', () => {
+        it('parses on..goto statements', () => {
+            const { statement } = parse('ON 1 GOTO 10');
             expect(statement.type).toEqual(StatementType.ON);
             const onStatement = statement as OnStatement;
 
@@ -606,12 +606,12 @@ describe("Parser tests", () => {
             testIntegerLiteral(onStatement.destinations[0], 10);
         });
 
-        it("parses on..gosub statements", () => {
-            const { statement } = parse("ON A GOSUB 10, 20");
+        it('parses on..gosub statements', () => {
+            const { statement } = parse('ON A GOSUB 10, 20');
             expect(statement.type).toEqual(StatementType.ON);
             const onStatement = statement as OnStatement;
 
-            testIdentifier(onStatement.condition, "A");
+            testIdentifier(onStatement.condition, 'A');
             expect(onStatement.operation.type).toEqual(TokenType.GOSUB);
             expect(onStatement.destinations).toHaveLength(2);
             testIntegerLiteral(onStatement.destinations[0], 10);
@@ -619,20 +619,20 @@ describe("Parser tests", () => {
         });
     });
 
-    describe("graphics statements", () => {
-        it("parses graphics statements", () => {
-            const { statement } = parse("GRAPHICS 320,200");
+    describe('graphics statements', () => {
+        it('parses graphics statements', () => {
+            const { statement } = parse('GRAPHICS 320,200');
             expect(statement.type).toEqual(StatementType.GRAPHICS);
             const gStatement = statement as GraphicsStatement;
 
             testIntegerLiteral(gStatement.width, 320);
             testIntegerLiteral(gStatement.height, 200);
 
-            expect(statement.toString()).toEqual("GRAPHICS 320, 200");
+            expect(statement.toString()).toEqual('GRAPHICS 320, 200');
         });
 
-        it("parses draw statements as single points", () => {
-            const { statement } = parse("DRAW 1,2,3");
+        it('parses draw statements as single points', () => {
+            const { statement } = parse('DRAW 1,2,3');
             expect(statement.type).toEqual(StatementType.DRAW);
             const draw = statement as DrawStatement;
 
@@ -643,11 +643,11 @@ describe("Parser tests", () => {
             expect(draw.x2).toBeNull();
             expect(draw.y2).toBeNull();
 
-            expect(draw.toString()).toEqual("DRAW 1, 2, 3");
+            expect(draw.toString()).toEqual('DRAW 1, 2, 3');
         });
 
-        it("parses draw statements as lines", () => {
-            const { statement } = parse("DRAW 1,2,3 TO 4, 5");
+        it('parses draw statements as lines', () => {
+            const { statement } = parse('DRAW 1,2,3 TO 4, 5');
             expect(statement.type).toEqual(StatementType.DRAW);
             const draw = statement as DrawStatement;
 
@@ -657,11 +657,11 @@ describe("Parser tests", () => {
             testIntegerLiteral(draw.x2, 4);
             testIntegerLiteral(draw.y2, 5);
 
-            expect(draw.toString()).toEqual("DRAW 1, 2, 3 TO 4, 5");
+            expect(draw.toString()).toEqual('DRAW 1, 2, 3 TO 4, 5');
         });
 
-        it("parses box statements", () => {
-            const { statement } = parse("BOX 0, 1, 2, 3, 4");
+        it('parses box statements', () => {
+            const { statement } = parse('BOX 0, 1, 2, 3, 4');
             expect(statement.type).toEqual(StatementType.BOX);
             const draw = statement as BoxStatement;
 
@@ -671,7 +671,7 @@ describe("Parser tests", () => {
             testIntegerLiteral(draw.width, 3);
             testIntegerLiteral(draw.height, 4);
 
-            expect(draw.toString()).toEqual("BOX 0, 1, 2, 3, 4");
+            expect(draw.toString()).toEqual('BOX 0, 1, 2, 3, 4');
         });
     });
 });

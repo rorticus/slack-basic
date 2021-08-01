@@ -1,16 +1,16 @@
-import { Expression, Identifier, IdentifierType } from "./ast";
+import { Expression, Identifier, IdentifierType } from './ast';
 
 export enum ObjectType {
-    INTEGER_OBJ = "INTEGER",
-    FLOAT_OBJ = "FLOAT",
-    RETURN_VALUE_OBJ = "RETURN_VALUE",
-    ERROR_OBJ = "ERROR",
-    STRING_OBJ = "STRING",
-    NULL_OBJ = "NULL",
-    BUILTIN_OBJ = "BUILTIN",
-    FUNCTION_OBJ = "FUNCTION",
-    ARRAY_OBJ = "ARRAY",
-    CALCULATED_OBJ = "CALCULATED",
+    INTEGER_OBJ = 'INTEGER',
+    FLOAT_OBJ = 'FLOAT',
+    RETURN_VALUE_OBJ = 'RETURN_VALUE',
+    ERROR_OBJ = 'ERROR',
+    STRING_OBJ = 'STRING',
+    NULL_OBJ = 'NULL',
+    BUILTIN_OBJ = 'BUILTIN',
+    FUNCTION_OBJ = 'FUNCTION',
+    ARRAY_OBJ = 'ARRAY',
+    CALCULATED_OBJ = 'CALCULATED',
 }
 
 export interface ValueObject {
@@ -22,7 +22,7 @@ export type BuiltInFunction = (args: ValueObject[]) => ValueObject;
 
 export class NullValue implements ValueObject {
     inspect(): string {
-        return "NULL";
+        return 'NULL';
     }
 
     type(): ObjectType {
@@ -30,12 +30,12 @@ export class NullValue implements ValueObject {
     }
 
     toString() {
-        return "NULL";
+        return 'NULL';
     }
 }
 
 export class IntValue implements ValueObject {
-    value: number = 0;
+    value = 0;
 
     constructor(value: number) {
         this.value = Math.floor(value);
@@ -55,7 +55,7 @@ export class IntValue implements ValueObject {
 }
 
 export class FloatValue implements ValueObject {
-    value: number = 0;
+    value = 0;
 
     constructor(value: number) {
         this.value = value;
@@ -142,7 +142,7 @@ export class BuiltInFunctionValue implements ValueObject {
     }
 
     inspect(): string {
-        return "builtin function";
+        return 'builtin function';
     }
 }
 
@@ -157,7 +157,7 @@ export class FunctionValue implements ValueObject {
 
     inspect(): string {
         return `FN(${
-            this.argument ? this.argument.toString() : ""
+            this.argument ? this.argument.toString() : ''
         }) = ${this.body.toString()}`;
     }
 
@@ -167,7 +167,7 @@ export class FunctionValue implements ValueObject {
 
     toString() {
         return `FN(${
-            this.argument ? this.argument.toString() : ""
+            this.argument ? this.argument.toString() : ''
         }) = ${this.body.toString()}`;
     }
 }
@@ -192,7 +192,7 @@ export class ArrayValue implements ValueObject {
         } else if (type === IdentifierType.FLOAT) {
             t = new FloatValue(0);
         } else if (type === IdentifierType.STRING) {
-            t = new StringValue("");
+            t = new StringValue('');
         } else {
             t = new IntValue(0);
         }
@@ -211,7 +211,7 @@ export class ArrayValue implements ValueObject {
         for (let i = 0; i < indices.length - 1; i++) {
             if (indices[i] < 0 || indices[i] >= this.dimensions[i]) {
                 return new ErrorValue(
-                    `array index out of bounds, ${indices[i]}`
+                    `array index out of bounds, ${indices[i]}`,
                 );
             }
 
@@ -231,7 +231,7 @@ export class ArrayValue implements ValueObject {
     get(indices: number[]) {
         const dataIndex = this.calculateIndex(indices);
 
-        if (!(typeof dataIndex === "number")) {
+        if (!(typeof dataIndex === 'number')) {
             return dataIndex;
         }
 
@@ -241,7 +241,7 @@ export class ArrayValue implements ValueObject {
     set(indices: number[], value: ValueObject) {
         const dataIndex = this.calculateIndex(indices);
 
-        if (!(typeof dataIndex === "number")) {
+        if (!(typeof dataIndex === 'number')) {
             return dataIndex;
         }
 
@@ -261,7 +261,7 @@ export class ArrayValue implements ValueObject {
     }
 
     inspect(): string {
-        return `[${this.data.map((d) => d.inspect()).join(", ")}]`;
+        return `[${this.data.map((d) => d.inspect()).join(', ')}]`;
     }
 
     type(): ObjectType {
@@ -269,7 +269,7 @@ export class ArrayValue implements ValueObject {
     }
 
     toString() {
-        return `ARRAY(${this.dimensions.join(", ")})`;
+        return `ARRAY(${this.dimensions.join(', ')})`;
     }
 }
 

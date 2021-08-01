@@ -9,10 +9,10 @@ import {
     ObjectType,
     StringValue,
     ValueObject,
-} from "./object";
+} from './object';
 
 function getSingleNumericArgument(
-    values: ValueObject[]
+    values: ValueObject[],
 ): IntValue | FloatValue | ErrorValue {
     if (values.length == 0) {
         return new ErrorValue(`too few arguments`);
@@ -31,7 +31,7 @@ function getSingleNumericArgument(
         return new ErrorValue(
             `type mismatch, expected ${
                 ObjectType.FLOAT_OBJ
-            }, received ${v.type()}`
+            }, received ${v.type()}`,
         );
     }
 
@@ -39,7 +39,7 @@ function getSingleNumericArgument(
 }
 
 function getSingleStringArgument(
-    values: ValueObject[]
+    values: ValueObject[],
 ): StringValue | ErrorValue {
     if (values.length == 0) {
         return new ErrorValue(`too few arguments`);
@@ -55,7 +55,7 @@ function getSingleStringArgument(
         return new ErrorValue(
             `type mismatch, expected ${
                 ObjectType.STRING_OBJ
-            }, received ${v.type()}`
+            }, received ${v.type()}`,
         );
     }
 
@@ -69,10 +69,10 @@ function singleNumberFunction(callback: (num: number) => number | ValueObject) {
             return n;
         }
 
-        let result = callback(n.value);
-        if (typeof result === "number") {
+        const result = callback(n.value);
+        if (typeof result === 'number') {
             if (isNaN(result)) {
-                return new ErrorValue("ILLEGAL QUANTITY");
+                return new ErrorValue('ILLEGAL QUANTITY');
             }
 
             return new FloatValue(result);
@@ -99,7 +99,7 @@ export default {
     INT: singleNumberFunction((n) => new IntValue(n)),
     LEFT$: new BuiltInFunctionValue((args: ValueObject[]) => {
         if (args.length !== 2) {
-            return new ErrorValue("expected 2 arguments");
+            return new ErrorValue('expected 2 arguments');
         }
 
         const str = args[0];
@@ -107,13 +107,13 @@ export default {
 
         if (!isString(str)) {
             return new ErrorValue(
-                `type mismatch, expected string got ${str.type()}`
+                `type mismatch, expected string got ${str.type()}`,
             );
         }
 
         if (!isNumeric(cnt)) {
             return new ErrorValue(
-                `type mismatch, expected number got ${cnt.type()}`
+                `type mismatch, expected number got ${cnt.type()}`,
             );
         }
 
@@ -122,7 +122,7 @@ export default {
         }
 
         if (cnt.value === 0) {
-            return new StringValue("");
+            return new StringValue('');
         }
 
         if (cnt.value >= str.value.length) {
@@ -142,7 +142,7 @@ export default {
     LOG: singleNumberFunction(Math.log),
     MID$: new BuiltInFunctionValue((args: ValueObject[]) => {
         if (args.length < 2 || args.length >= 4) {
-            return new ErrorValue("expected 2 or 3 arguments");
+            return new ErrorValue('expected 2 or 3 arguments');
         }
 
         const str = args[0];
@@ -150,7 +150,7 @@ export default {
 
         if (!isString(str)) {
             return new ErrorValue(
-                `type mismatch, expected string got ${str.type()}`
+                `type mismatch, expected string got ${str.type()}`,
             );
         }
 
@@ -159,7 +159,7 @@ export default {
         if (args.length === 3) {
             if (!isNumeric(args[2])) {
                 return new ErrorValue(
-                    `type mismatch, expected number got ${args[2].type()}`
+                    `type mismatch, expected number got ${args[2].type()}`,
                 );
             }
 
@@ -168,7 +168,7 @@ export default {
 
         if (!isNumeric(left)) {
             return new ErrorValue(
-                `type mismatch, expected number got ${left.type()}`
+                `type mismatch, expected number got ${left.type()}`,
             );
         }
 
@@ -177,7 +177,7 @@ export default {
         }
 
         if (left.value === 0) {
-            return new StringValue("");
+            return new StringValue('');
         }
 
         if (left.value >= str.value.length) {
@@ -192,7 +192,7 @@ export default {
     }),
     RGB: new BuiltInFunctionValue((args: ValueObject[]) => {
         if (args.length !== 3) {
-            return new ErrorValue("expected 3 arguments");
+            return new ErrorValue('expected 3 arguments');
         }
 
         const r = args[0];
@@ -200,22 +200,22 @@ export default {
         const b = args[2];
 
         if (!isNumeric(r)) {
-            return new ErrorValue("expected red to be numeric");
+            return new ErrorValue('expected red to be numeric');
         }
 
         if (!isNumeric(g)) {
-            return new ErrorValue("expected green to be numeric");
+            return new ErrorValue('expected green to be numeric');
         }
 
         if (!isNumeric(b)) {
-            return new ErrorValue("expected blue to be numeric");
+            return new ErrorValue('expected blue to be numeric');
         }
 
         return new IntValue((r.value << 16) | (g.value << 8) | b.value);
     }),
     RIGHT$: new BuiltInFunctionValue((args: ValueObject[]) => {
         if (args.length !== 2) {
-            return new ErrorValue("expected 2 arguments");
+            return new ErrorValue('expected 2 arguments');
         }
 
         const str = args[0];
@@ -223,13 +223,13 @@ export default {
 
         if (!isString(str)) {
             return new ErrorValue(
-                `type mismatch, expected string got ${str.type()}`
+                `type mismatch, expected string got ${str.type()}`,
             );
         }
 
         if (!isNumeric(cnt)) {
             return new ErrorValue(
-                `type mismatch, expected number got ${cnt.type()}`
+                `type mismatch, expected number got ${cnt.type()}`,
             );
         }
 
@@ -238,7 +238,7 @@ export default {
         }
 
         if (cnt.value === 0) {
-            return new StringValue("");
+            return new StringValue('');
         }
 
         if (cnt.value >= str.value.length) {
@@ -258,7 +258,7 @@ export default {
         }
     }),
     SIN: singleNumberFunction(Math.sin),
-    SPC: singleNumberFunction((n) => new StringValue(" ".repeat(n))),
+    SPC: singleNumberFunction((n) => new StringValue(' '.repeat(n))),
     SQR: singleNumberFunction(Math.sqrt),
     STR$: singleNumberFunction((n) => new StringValue(`${n}`)),
     TAN: singleNumberFunction(Math.tan),

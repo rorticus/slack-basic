@@ -1,4 +1,4 @@
-import { ValueObject } from "./object";
+import { ValueObject } from './object';
 
 export class Stack {
     private store: Map<string, ValueObject>;

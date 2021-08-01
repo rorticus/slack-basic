@@ -1,9 +1,9 @@
-import { lookupIdent, newToken, Token, TokenType } from "./tokens";
+import { lookupIdent, newToken, Token, TokenType } from './tokens';
 
 export function isLetter(c: string) {
-    const letters = "abcdefghijklmnopqrstuvwxyz_";
+    const letters = 'abcdefghijklmnopqrstuvwxyz_';
 
-    if (c === "") {
+    if (c === '') {
         return false;
     }
 
@@ -11,9 +11,9 @@ export function isLetter(c: string) {
 }
 
 export function isDigit(c: string) {
-    const digits = "0123456789";
+    const digits = '0123456789';
 
-    if (c === "") {
+    if (c === '') {
         return false;
     }
 
@@ -32,7 +32,7 @@ export class Lexer {
         this.input = input;
         this.position = 0;
         this.readPosition = 0;
-        this.ch = "";
+        this.ch = '';
         this.line = 1;
         this.column = 0;
 
@@ -41,7 +41,7 @@ export class Lexer {
 
     peekChar() {
         if (this.readPosition >= this.input.length) {
-            return "";
+            return '';
         } else {
             return this.input[this.readPosition];
         }
@@ -49,9 +49,9 @@ export class Lexer {
 
     readChar() {
         if (this.readPosition >= this.input.length) {
-            this.ch = "";
+            this.ch = '';
         } else {
-            if (this.ch === "\n") {
+            if (this.ch === '\n') {
                 this.line++;
                 this.column = 1;
             } else {
@@ -66,7 +66,7 @@ export class Lexer {
     }
 
     readIdentifier() {
-        let position = this.position;
+        const position = this.position;
 
         while (isLetter(this.ch)) {
             this.readChar();
@@ -76,7 +76,7 @@ export class Lexer {
             this.readChar();
         }
 
-        if (this.ch === "$" || this.ch === "%") {
+        if (this.ch === '$' || this.ch === '%') {
             this.readChar();
         }
 
@@ -84,9 +84,9 @@ export class Lexer {
     }
 
     readNumber() {
-        let position = this.position;
+        const position = this.position;
 
-        while (isDigit(this.ch) || this.ch === ".") {
+        while (isDigit(this.ch) || this.ch === '.') {
             this.readChar();
         }
 
@@ -95,21 +95,21 @@ export class Lexer {
 
     skipWhitespace() {
         while (
-            this.ch === " " ||
-            this.ch === "\t" ||
-            this.ch === "\r" ||
-            this.ch === "\n"
+            this.ch === ' ' ||
+            this.ch === '\t' ||
+            this.ch === '\r' ||
+            this.ch === '\n'
         ) {
             this.readChar();
         }
     }
 
     readString() {
-        let position = this.position + 1;
+        const position = this.position + 1;
         while (1) {
             this.readChar();
 
-            if (this.ch === '"' || this.ch === "") {
+            if (this.ch === '"' || this.ch === '') {
                 break;
             }
         }
@@ -123,83 +123,83 @@ export class Lexer {
         this.skipWhitespace();
 
         switch (this.ch) {
-            case "=":
+            case '=':
                 tok = newToken(
                     TokenType.ASSIGN,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case ":":
+            case ':':
                 tok = newToken(
                     TokenType.COLON,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case ",":
+            case ',':
                 tok = newToken(
                     TokenType.COMMA,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case "(":
+            case '(':
                 tok = newToken(
                     TokenType.LPAREN,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case ")":
+            case ')':
                 tok = newToken(
                     TokenType.RPAREN,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case "+":
+            case '+':
                 tok = newToken(TokenType.PLUS, this.ch, this.line, this.column);
                 break;
-            case "-":
+            case '-':
                 tok = newToken(
                     TokenType.MINUS,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case "*":
+            case '*':
                 tok = newToken(
                     TokenType.ASTERISK,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case "/":
+            case '/':
                 tok = newToken(
                     TokenType.SLASH,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case "<":
-                if (this.peekChar() === "=") {
-                    tok = newToken(TokenType.LTE, "<=", this.line, this.column);
+            case '<':
+                if (this.peekChar() === '=') {
+                    tok = newToken(TokenType.LTE, '<=', this.line, this.column);
                     this.readChar();
-                } else if (this.peekChar() === ">") {
+                } else if (this.peekChar() === '>') {
                     tok = newToken(
                         TokenType.NOT_EQ,
-                        "<>",
+                        '<>',
                         this.line,
-                        this.column
+                        this.column,
                     );
                     this.readChar();
                 } else {
@@ -207,17 +207,17 @@ export class Lexer {
                         TokenType.LT,
                         this.ch,
                         this.line,
-                        this.column
+                        this.column,
                     );
                 }
                 break;
-            case ">":
-                if (this.peekChar() === "=") {
+            case '>':
+                if (this.peekChar() === '=') {
                     tok = newToken(
                         TokenType.GTE,
                         this.ch,
                         this.line,
-                        this.column
+                        this.column,
                     );
                     this.readChar();
                 } else {
@@ -225,11 +225,11 @@ export class Lexer {
                         TokenType.GT,
                         this.ch,
                         this.line,
-                        this.column
+                        this.column,
                     );
                 }
                 break;
-            case "":
+            case '':
                 tok = newToken(TokenType.EOF, this.ch, this.line, this.column);
                 break;
             case '"':
@@ -237,26 +237,26 @@ export class Lexer {
                     TokenType.STRING,
                     this.readString(),
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case "^":
+            case '^':
                 tok = newToken(TokenType.EXP, this.ch, this.line, this.column);
                 break;
-            case "?":
+            case '?':
                 tok = newToken(
                     TokenType.PRINT,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
-            case ";":
+            case ';':
                 tok = newToken(
                     TokenType.SEMICOLON,
                     this.ch,
                     this.line,
-                    this.column
+                    this.column,
                 );
                 break;
             default:
@@ -267,13 +267,13 @@ export class Lexer {
                     const literal = this.readIdentifier();
                     tok = newToken(lookupIdent(literal), literal, line, column);
                     if (tok.type === TokenType.REM) {
-                        let startPos = this.readPosition;
-                        let rest = "";
-                        while (this.ch !== "\n" && this.ch !== "") {
+                        const startPos = this.readPosition;
+                        let rest = '';
+                        while (this.ch !== '\n' && this.ch !== '') {
                             rest += this.ch;
                             this.readChar();
                         }
-                        tok.literal = "REM" + rest;
+                        tok.literal = 'REM' + rest;
                     }
                     return tok;
                 } else if (isDigit(this.ch)) {
@@ -283,10 +283,10 @@ export class Lexer {
                     const num = this.readNumber();
 
                     tok = newToken(
-                        num.indexOf(".") >= 0 ? TokenType.FLOAT : TokenType.INT,
+                        num.indexOf('.') >= 0 ? TokenType.FLOAT : TokenType.INT,
                         num,
                         line,
-                        column
+                        column,
                     );
                     return tok;
                 } else {
@@ -294,7 +294,7 @@ export class Lexer {
                         TokenType.ILLEGAL,
                         this.ch,
                         this.line,
-                        this.column
+                        this.column,
                     );
                 }
         }
