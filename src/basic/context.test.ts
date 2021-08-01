@@ -63,7 +63,7 @@ describe("context tests", () => {
             if (statement) {
                 result = await context.runImmediateStatement(statement!);
                 if (isError(result)) {
-                    errors.push(result.message);
+                    pushError(result.message);
                 }
             }
         }

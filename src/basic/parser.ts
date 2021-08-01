@@ -1,5 +1,5 @@
-import Lexer from "./lexer";
-import { Token, TokenType } from "./tokens";
+import Lexer from './lexer';
+import { Token, TokenType } from './tokens';
 import {
     BoxStatement,
     CallExpression,
@@ -41,7 +41,7 @@ import {
     Statement,
     StopStatement,
     StringLiteral,
-} from "./ast";
+} from './ast';
 
 export type PrefixParser = () => Expression | null;
 export type InfixParser = (expression: Expression | null) => Expression | null;
@@ -95,48 +95,48 @@ export class Parser {
         this.registerPrefix(TokenType.FLOAT, this.parseFloatLiteral.bind(this));
         this.registerPrefix(
             TokenType.STRING,
-            this.parseStringLiteral.bind(this)
+            this.parseStringLiteral.bind(this),
         );
         this.registerPrefix(
             TokenType.MINUS,
-            this.parsePrefixExpression.bind(this)
+            this.parsePrefixExpression.bind(this),
         );
         this.registerPrefix(
             TokenType.LPAREN,
-            this.parseGroupedExpression.bind(this)
+            this.parseGroupedExpression.bind(this),
         );
         this.registerPrefix(
             TokenType.NOT,
-            this.parsePrefixExpression.bind(this)
+            this.parsePrefixExpression.bind(this),
         );
         this.registerPrefix(
             TokenType.FN,
-            this.parsePrefixExpression.bind(this)
+            this.parsePrefixExpression.bind(this),
         );
         this.registerInfix(
             TokenType.PLUS,
-            this.parseInfixExpression.bind(this)
+            this.parseInfixExpression.bind(this),
         );
         this.registerInfix(
             TokenType.MINUS,
-            this.parseInfixExpression.bind(this)
+            this.parseInfixExpression.bind(this),
         );
         this.registerInfix(
             TokenType.SLASH,
-            this.parseInfixExpression.bind(this)
+            this.parseInfixExpression.bind(this),
         );
         this.registerInfix(
             TokenType.ASTERISK,
-            this.parseInfixExpression.bind(this)
+            this.parseInfixExpression.bind(this),
         );
         this.registerInfix(TokenType.EXP, this.parseInfixExpression.bind(this));
         this.registerInfix(
             TokenType.ASSIGN,
-            this.parseInfixExpression.bind(this)
+            this.parseInfixExpression.bind(this),
         );
         this.registerInfix(
             TokenType.NOT_EQ,
-            this.parseInfixExpression.bind(this)
+            this.parseInfixExpression.bind(this),
         );
         this.registerInfix(TokenType.LT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
@@ -144,12 +144,16 @@ export class Parser {
         this.registerInfix(TokenType.OR, this.parseInfixExpression.bind(this));
         this.registerInfix(
             TokenType.LPAREN,
-            this.parseCallExpression.bind(this)
+            this.parseCallExpression.bind(this),
         );
 
         // read the two tokens to fill our buffer
         this.nextToken();
         this.nextToken();
+    }
+
+    pushError(message: string) {
+        this.errors.push(`Column ${this.curToken.column} - ${message}`);
     }
 
     registerPrefix(tokenType: TokenType, parser: PrefixParser) {
@@ -174,13 +178,13 @@ export class Parser {
     }
 
     peekError(t: TokenType) {
-        this.errors.push(
-            `expected next token to be ${t}, got ${this.peekToken.type} instead`
+        this.pushError(
+            `expected next token to be ${t}, got ${this.peekToken.type} instead`,
         );
     }
 
     noPrefixParseFnError(tokenType: TokenType) {
-        this.errors.push(`no prefix parse function available for ${tokenType}`);
+        this.pushError(`no prefix parse function available for ${tokenType}`);
     }
 
     expectPeek(type: TokenType) {
@@ -223,7 +227,7 @@ export class Parser {
         }
 
         const originalToken = this.curToken;
-        let statements: (Statement | null)[] = [];
+        const statements: (Statement | null)[] = [];
         while (1) {
             switch (this.curToken.type) {
                 case TokenType.LET:
@@ -328,7 +332,7 @@ export class Parser {
             statements.length > 1
                 ? new CompoundStatement(
                       originalToken,
-                      statements.filter((s) => s !== null) as Statement[]
+                      statements.filter((s) => s !== null) as Statement[],
                   )
                 : statements[0];
 
@@ -348,8 +352,8 @@ export class Parser {
         }
 
         if (!this.curTokenIs(TokenType.IDENT)) {
-            this.errors.push(
-                `Expecting identifier but found ${this.curToken.type}`
+            this.pushError(
+                `Expecting identifier but found ${this.curToken.type}`,
             );
             return null;
         }
@@ -450,7 +454,7 @@ export class Parser {
         }
 
         if (!this.peekTokenIs(TokenType.IDENT)) {
-            this.errors.push(`expected identifier`);
+            this.pushError(`expected identifier`);
             return null;
         }
 
@@ -499,8 +503,8 @@ export class Parser {
         const value = parseInt(this.curToken.literal, 10);
 
         if (isNaN(value)) {
-            this.errors.push(
-                `could not parse "${this.curToken.literal}" as integer`
+            this.pushError(
+                `could not parse "${this.curToken.literal}" as integer`,
             );
             return null;
         }
@@ -511,8 +515,8 @@ export class Parser {
     parseFloatLiteral(): Expression | null {
         const value = parseFloat(this.curToken.literal);
         if (isNaN(value)) {
-            this.errors.push(
-                `could not parse "${this.curToken.literal}" as float`
+            this.pushError(
+                `could not parse "${this.curToken.literal}" as float`,
             );
             return null;
         }
@@ -530,7 +534,7 @@ export class Parser {
         const right = this.parseExpression(
             token.type === TokenType.NOT
                 ? Precedence.LOGICAL
-                : Precedence.PREFIX
+                : Precedence.PREFIX,
         );
 
         return new PrefixExpression(token, token.literal, right);
@@ -550,7 +554,7 @@ export class Parser {
             token,
             left,
             token.literal,
-            this.parseExpression(precedence)
+            this.parseExpression(precedence),
         );
     }
 
@@ -575,7 +579,7 @@ export class Parser {
 
         const dest = parseInt(this.curToken.literal, 10);
         if (isNaN(dest)) {
-            this.errors.push(`invalid line number ${this.curToken.literal}`);
+            this.pushError(`invalid line number ${this.curToken.literal}`);
             return null;
         }
 
@@ -600,8 +604,8 @@ export class Parser {
 
             const nextLine = parseInt(this.curToken.literal, 10);
             if (isNaN(nextLine)) {
-                this.errors.push(
-                    `cannot goto a number that is not a number, ${this.curToken.literal}`
+                this.pushError(
+                    `cannot goto a number that is not a number, ${this.curToken.literal}`,
                 );
                 return null;
             }
@@ -615,8 +619,8 @@ export class Parser {
                 this.nextToken();
                 const nextLine = parseInt(this.curToken.literal, 10);
                 if (isNaN(nextLine)) {
-                    this.errors.push(
-                        `cannot goto a number that is not a number, ${this.curToken.literal}`
+                    this.pushError(
+                        `cannot goto a number that is not a number, ${this.curToken.literal}`,
                     );
                     return null;
                 }
@@ -631,7 +635,7 @@ export class Parser {
                 }
             }
         } else {
-            this.errors.push(`IF must be followed by GOTO or THEN`);
+            this.pushError(`IF must be followed by GOTO or THEN`);
             return null;
         }
 
@@ -720,7 +724,7 @@ export class Parser {
         return new CallExpression(
             this.curToken,
             fn!,
-            this.parseExpressionList(TokenType.RPAREN)
+            this.parseExpressionList(TokenType.RPAREN),
         );
     }
 
@@ -782,8 +786,8 @@ export class Parser {
                     !(d instanceof StringLiteral) &&
                     !(d instanceof Identifier)
                 ) {
-                    this.errors.push(
-                        "invalid data value, must be an number, string, or non-reserved keyword."
+                    this.pushError(
+                        'invalid data value, must be an number, string, or non-reserved keyword.',
                     );
                     return null;
                 }
@@ -807,7 +811,7 @@ export class Parser {
             const d = this.parseExpression(Precedence.LOWEST);
 
             if (!d || !(d instanceof Identifier)) {
-                this.errors.push(`can only READ into identifiers, not ${d}`);
+                this.pushError(`can only READ into identifiers, not ${d}`);
                 return null;
             }
 
@@ -887,7 +891,7 @@ export class Parser {
 
             const firstDim = this.parseExpression(Precedence.LOWEST);
             if (!firstDim) {
-                this.errors.push(`expecting at least one dimension`);
+                this.pushError(`expecting at least one dimension`);
                 return null;
             }
 
@@ -899,7 +903,7 @@ export class Parser {
 
                 const dim = this.parseExpression(Precedence.LOWEST);
                 if (!dim) {
-                    this.errors.push(`expecting dimension after comma`);
+                    this.pushError(`expecting dimension after comma`);
                     return null;
                 }
 
@@ -920,7 +924,7 @@ export class Parser {
         const first = parseDimVariable();
 
         if (!first) {
-            this.errors.push(`expecting at least one dimension variable`);
+            this.pushError(`expecting at least one dimension variable`);
             return null;
         }
 
@@ -981,7 +985,7 @@ export class Parser {
         if (filename) {
             return new LoadStatement(token, filename);
         } else {
-            this.errors.push("expected filename");
+            this.pushError('expected filename');
             return null;
         }
     }
@@ -996,7 +1000,7 @@ export class Parser {
         if (filename) {
             return new SaveStatement(token, filename);
         } else {
-            this.errors.push("expected filename");
+            this.pushError('expected filename');
             return null;
         }
     }
@@ -1015,7 +1019,7 @@ export class Parser {
             !this.peekTokenIs(TokenType.GOSUB) &&
             !this.peekTokenIs(TokenType.GOTO)
         ) {
-            this.errors.push(`expecting gosub or goto`);
+            this.pushError(`expecting gosub or goto`);
             return null;
         }
 
@@ -1030,7 +1034,7 @@ export class Parser {
         const first = this.parseExpression(Precedence.LOWEST);
 
         if (!first) {
-            this.errors.push("expected at least one line number");
+            this.pushError('expected at least one line number');
             return null;
         }
 
@@ -1055,7 +1059,7 @@ export class Parser {
 
         const width = this.parseExpression(Precedence.LOWEST);
         if (!width) {
-            this.errors.push("expected expression");
+            this.pushError('expected expression');
             return null;
         }
 
@@ -1067,7 +1071,7 @@ export class Parser {
 
         const height = this.parseExpression(Precedence.LOWEST);
         if (!height) {
-            this.errors.push("expected expression");
+            this.pushError('expected expression');
             return null;
         }
 
@@ -1081,7 +1085,7 @@ export class Parser {
 
         const color = this.parseExpression(Precedence.LOWEST);
         if (!color) {
-            this.errors.push("expected color");
+            this.pushError('expected color');
             return null;
         }
 
@@ -1092,7 +1096,7 @@ export class Parser {
 
         const x1 = this.parseExpression(Precedence.LOWEST);
         if (!x1) {
-            this.errors.push("expected x1");
+            this.pushError('expected x1');
             return null;
         }
 
@@ -1115,7 +1119,7 @@ export class Parser {
 
             x2 = this.parseExpression(Precedence.LOWEST);
             if (!x2) {
-                this.errors.push("expected x2");
+                this.pushError('expected x2');
             }
 
             if (!this.expectPeek(TokenType.COMMA)) {
@@ -1125,7 +1129,7 @@ export class Parser {
 
             y2 = this.parseExpression(Precedence.LOWEST);
             if (!y2) {
-                this.errors.push("expected y2");
+                this.pushError('expected y2');
             }
         }
 
@@ -1139,7 +1143,7 @@ export class Parser {
 
         const color = this.parseExpression(Precedence.LOWEST);
         if (!color) {
-            this.errors.push("expecting color");
+            this.pushError('expecting color');
             return null;
         }
 
@@ -1150,7 +1154,7 @@ export class Parser {
 
         const left = this.parseExpression(Precedence.LOWEST);
         if (!left) {
-            this.errors.push("expecting left");
+            this.pushError('expecting left');
             return null;
         }
 
@@ -1161,7 +1165,7 @@ export class Parser {
 
         const top = this.parseExpression(Precedence.LOWEST);
         if (!top) {
-            this.errors.push("expecting top");
+            this.pushError('expecting top');
             return null;
         }
 
@@ -1172,7 +1176,7 @@ export class Parser {
 
         const width = this.parseExpression(Precedence.LOWEST);
         if (!width) {
-            this.errors.push("expecting width");
+            this.pushError('expecting width');
             return null;
         }
 
@@ -1183,7 +1187,7 @@ export class Parser {
 
         const height = this.parseExpression(Precedence.LOWEST);
         if (!height) {
-            this.errors.push("expecting height");
+            this.pushError('expecting height');
             return null;
         }
 
