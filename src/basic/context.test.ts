@@ -203,6 +203,19 @@ describe('context tests', () => {
 
             expect(print).toHaveBeenCalledWith('results are 1 2');
         });
+
+        it('inputs integers', async () => {
+            const print = jest.fn();
+
+            const input = jest.fn().mockResolvedValueOnce('1');
+
+            await run(`INPUT A% : PRINT "the result is "; A%`, {
+                input,
+                print,
+            });
+
+            expect(print).toHaveBeenCalledWith('the result is 1');
+        });
     });
 
     describe('compound statements', () => {
