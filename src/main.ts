@@ -9,7 +9,6 @@ config();
 
 const contexts = new Map<string, Context>();
 const inputPromises: Map<string, (i: string) => void> = new Map();
-let inputId = 1;
 
 const app = new App({
     token: process.env.BOT_TOKEN,
@@ -48,9 +47,14 @@ app.view(
 );
 
 app.command('/basic', async (context) => {
-    const { text, user_id: userId } = context.body;
-
     await context.ack();
+});
+
+app.message(/(.*)/, async (context) => {
+    const { text, user: userId } = context.message as {
+        text: string;
+        user: string;
+    };
 
     if (!contexts.has(userId)) {
         contexts.set(
@@ -74,48 +78,25 @@ app.command('/basic', async (context) => {
 
     const basicContext = contexts.get(userId);
 
+    if (inputPromises.has(userId)) {
+        inputPromises.get(userId)(text);
+        inputPromises.delete(userId);
+        return;
+    }
+
     // set up local request callbacks
     basicContext.api.print = async (msg: string) => {
         printLines.push(msg);
     };
     basicContext.api.input = (message?: string) => {
-        const id = `input-${inputId++}`;
+        const p = new Promise<string | null>(async (resolve) => {
+            inputPromises.set(userId, resolve);
 
-        const p = new Promise<string | null>((resolve) => {
-            inputPromises.set(id, resolve);
+            message && printLines.push(message);
 
-            return context.client.views.open({
-                response_action: 'notify_on_close',
-                trigger_id: context.body.trigger_id,
-                view: {
-                    notify_on_close: true,
-                    type: 'modal',
-                    callback_id: 'input_view',
-                    title: {
-                        type: 'plain_text',
-                        text: 'Slack Basic Input',
-                    },
-                    blocks: [
-                        {
-                            type: 'input',
-                            block_id: 'input_box',
-                            label: {
-                                type: 'plain_text',
-                                text: message ?? 'Enter a value',
-                            },
-                            element: {
-                                type: 'plain_text_input',
-                                action_id: id,
-                                multiline: true,
-                            },
-                        },
-                    ],
-                    submit: {
-                        type: 'plain_text',
-                        text: 'Submit',
-                    },
-                },
-            });
+            // ask the question and ask for input
+            await context.say(`\`\`\`${printLines.join('\n')}\`\`\``);
+            printLines = [];
         });
 
         return p;
@@ -124,7 +105,7 @@ app.command('/basic', async (context) => {
     const lines = text.replace(/```/g, '').split('\n');
     let result: ValueObject | null = null;
 
-    const printLines: string[] = [];
+    let printLines: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
@@ -158,7 +139,7 @@ ${printLines.join('\n')}
     }
 
     if (result.type() !== ObjectType.ERROR_OBJ) {
-        await context.say('`OK`');
+        await context.say('```OK```');
     }
 });
 
