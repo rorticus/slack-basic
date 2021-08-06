@@ -41,7 +41,7 @@
 410 PRINT "You find yourself face to face with the wumpus."
 420 PRINT "It eats you whole."
 430 PRINT: PRINT "You have met your demise."
-440 LINE INPUT "Another game (Y/N)?";I$
+440 INPUT "Another game (Y/N)?";I$
 450 IF I$="Y" OR I$="y" THEN 60
 460 IF I$<>"N" AND I$<>"n" THEN PRINT "Sorry?": GOTO 440
 470 END

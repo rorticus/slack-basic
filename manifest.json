@@ -23,7 +23,8 @@
                 "commands",
                 "chat:write.public",
                 "app_mentions:read",
-                "chat:write"
+                "chat:write",
+                "reactions:write"
             ]
         }
     },

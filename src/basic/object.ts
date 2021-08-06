@@ -215,15 +215,15 @@ export class ArrayValue implements ValueObject {
                 );
             }
 
-            let product = indices[i];
-            for (let j = i; j < this.dimensions.length; j++) {
+            let product = Math.floor(indices[i]);
+            for (let j = i + 1; j < this.dimensions.length; j++) {
                 product *= this.dimensions[j];
             }
 
             dataIndex += product;
         }
 
-        dataIndex += indices[indices.length - 1];
+        dataIndex += Math.floor(indices[indices.length - 1]);
 
         return dataIndex;
     }

@@ -177,6 +177,15 @@ describe('Parser tests', () => {
                 testStringLiteral(printStatement.args[0], 'hello');
             });
 
+            it('parses empty print statements', () => {
+                const { statement } = parse('PRINT');
+                expect(statement.type).toEqual(StatementType.PRINT);
+
+                const printStatement = statement as PrintStatement;
+
+                expect(printStatement.args).toHaveLength(0);
+            });
+
             it('parses print statements with multiple arguments', () => {
                 const { statement } = parse('PRINT "hello" SPACE$ "world"');
                 expect(statement.type).toEqual(StatementType.PRINT);
@@ -326,14 +335,14 @@ describe('Parser tests', () => {
             });
 
             it('parses if..then number', () => {
-                const { statement } = parse(`IF 1 THEN 2`);
+                const { statement } = parse(`IF 0 < 1 THEN 2`);
 
                 const ifStatement = statement as IfStatement;
 
                 expect(statement).not.toBeNull();
                 expect(statement.type).toEqual(StatementType.IF);
 
-                testIntegerLiteral(ifStatement.condition, 1);
+                testInfix(ifStatement.condition, 0, '<', 1);
 
                 expect(ifStatement.goto).toBeUndefined();
                 expect(ifStatement.then).toBe(2);
@@ -355,6 +364,10 @@ describe('Parser tests', () => {
                 expect((ifStatement.then as PrintStatement).type).toEqual(
                     StatementType.PRINT,
                 );
+            });
+
+            it('parses if conditions', () => {
+                parse(`IF RND() < .25 THEN PRINT "woo"`);
             });
         });
 
@@ -465,13 +478,16 @@ describe('Parser tests', () => {
             });
 
             it('parses read statements', () => {
-                const { statement } = parse('READ A, B$');
+                const { statement } = parse('READ A, B$, C(0, 1)');
 
                 expect(statement.type).toEqual(StatementType.READ);
                 const d = statement as ReadStatement;
-                expect(d.outputs).toHaveLength(2);
-                testIdentifier(d.outputs[0], 'A');
-                testIdentifier(d.outputs[1], 'B$');
+                expect(d.outputs).toHaveLength(3);
+                testIdentifier(d.outputs[0].name, 'A');
+                testIdentifier(d.outputs[1].name, 'B$');
+                testIdentifier(d.outputs[2].name, 'C');
+                testIntegerLiteral(d.outputs[2].indices[0], 0);
+                testIntegerLiteral(d.outputs[2].indices[1], 1);
             });
         });
 
@@ -672,6 +688,27 @@ describe('Parser tests', () => {
             testIntegerLiteral(draw.height, 4);
 
             expect(draw.toString()).toEqual('BOX 0, 1, 2, 3, 4');
+        });
+    });
+
+    describe('real tests', () => {
+        it('', () => {
+            const tests = [
+                [
+                    'IF R(X,3)=0 THEN R(X,3)=1: RETURN ELSE 500',
+                    'IF (R(X, 3) = 0) THEN R(X, 3) = 1 : RETURN ELSE 500',
+                ],
+                [
+                    'IF R(X,3)=0 THEN R(X,3)=1: RETURN ELSE GOSUB 12',
+                    'IF (R(X, 3) = 0) THEN R(X, 3) = 1 : RETURN ELSE GOSUB 12',
+                ],
+                ['IF 0 GOTO 40 ELSE 50', 'IF 0 GOTO 40 ELSE 50'],
+            ] as const;
+
+            for (let i = 0; i < tests.length; i++) {
+                const { statement } = parse(tests[i][0]);
+                expect(statement.toString()).toEqual(tests[i][1]);
+            }
         });
     });
 });

@@ -276,7 +276,7 @@ export class Lexer {
                         tok.literal = 'REM' + rest;
                     }
                     return tok;
-                } else if (isDigit(this.ch)) {
+                } else if (isDigit(this.ch) || this.ch === '.') {
                     const line = this.line;
                     const column = this.column;
 

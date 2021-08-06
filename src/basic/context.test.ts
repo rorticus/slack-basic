@@ -312,6 +312,21 @@ describe('context tests', () => {
             expect(context.api.print).toHaveBeenCalledWith('c');
         });
 
+        it('runs else conditions on falsey conditions', async () => {
+            const { context } = await run(`
+            10 PRINT "a"
+            20 IF 0 GOTO 40 ELSE 50
+            30 PRINT "b"
+            40 PRINT "c"
+            50 PRINT "d"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledTimes(2);
+            expect(context.api.print).toHaveBeenCalledWith('a');
+            expect(context.api.print).toHaveBeenCalledWith('d');
+        });
+
         it('runs the conditions', async () => {
             const { context, result } = await run(`
             10 A = 0
@@ -554,13 +569,14 @@ describe('context tests', () => {
     describe('data/.read/restore', () => {
         it('reads from data statements', async () => {
             const { context } = await run(`
-            DATA 1, 2.5, 3.14 "three"
-            READ A%, B, PI%, C$
-            PRINT A% " - " B " - " C$ " - " PI%
+            DIM E(5)
+            DATA 1, 2.5, 3.14 "three", 5
+            READ A%, B, PI%, C$, E(0)
+            PRINT A% " - " B " - " C$ " - " PI% " - " E(0)
             `);
 
             expect(context.api.print).toHaveBeenCalledWith(
-                '1 - 2.5 - three - 3',
+                '1 - 2.5 - three - 3 - 5',
             );
         });
 

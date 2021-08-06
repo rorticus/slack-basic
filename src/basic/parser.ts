@@ -411,12 +411,6 @@ export class Parser {
         const token = this.curToken;
         const args: (Expression | null)[] = [];
 
-        // consume print
-        this.nextToken();
-
-        // consume the first argument
-        args.push(this.parseExpression(Precedence.LOWEST));
-
         // consume additional arguments, if available
         while (
             !this.peekTokenIs(TokenType.COLON) &&
@@ -611,6 +605,8 @@ export class Parser {
             }
 
             statement.goto = nextLine;
+
+            this.nextToken();
         } else if (this.peekTokenIs(TokenType.THEN)) {
             this.nextToken();
 
@@ -635,8 +631,37 @@ export class Parser {
                 }
             }
         } else {
-            this.pushError(`IF must be followed by GOTO or THEN`);
+            this.pushError(
+                `IF must be followed by GOTO or THEN, found ${this.peekToken.literal}`,
+            );
             return null;
+        }
+
+        if (this.curTokenIs(TokenType.ELSE)) {
+            statement.elseToken = this.curToken;
+
+            if (this.peekTokenIs(TokenType.INT)) {
+                this.nextToken();
+
+                const lineNumber = parseInt(this.curToken.literal, 10);
+                if (isNaN(lineNumber) || lineNumber < 0) {
+                    this.pushError(
+                        `Invalid line number in else statement ${this.curToken.literal}`,
+                    );
+                    return null;
+                }
+                statement.elseGoto = lineNumber;
+            } else {
+                this.nextToken();
+
+                const elseStatement = this.parseStatement();
+                if (!elseStatement) {
+                    this.pushError(`ELSE without statement`);
+                    return null;
+                }
+
+                statement.elseThen = elseStatement;
+            }
         }
 
         return statement;
@@ -800,7 +825,7 @@ export class Parser {
 
     parseReadStatement() {
         const token = this.curToken;
-        const outputs: Identifier[] = [];
+        const outputs: LetAssignment[] = [];
 
         while (
             !this.peekTokenIs(TokenType.EOF) &&
@@ -808,14 +833,26 @@ export class Parser {
         ) {
             this.nextToken();
 
-            const d = this.parseExpression(Precedence.LOWEST);
+            const d = this.parseExpression(Precedence.CALL);
 
             if (!d || !(d instanceof Identifier)) {
                 this.pushError(`can only READ into identifiers, not ${d}`);
                 return null;
             }
 
-            outputs.push(d);
+            // this is an index expression
+            if (this.peekTokenIs(TokenType.LPAREN)) {
+                this.nextToken();
+
+                const indices = this.parseExpressionList(TokenType.RPAREN);
+
+                outputs.push({
+                    name: d,
+                    indices,
+                });
+            } else {
+                outputs.push({ name: d, indices: [] });
+            }
 
             if (this.peekTokenIs(TokenType.COMMA)) {
                 this.nextToken();

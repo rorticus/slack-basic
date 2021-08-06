@@ -20,6 +20,7 @@ import {
     InfixExpression,
     InputStatement,
     IntegerLiteral,
+    LetAssignment,
     LetStatement,
     ListStatement,
     LoadStatement,
@@ -432,48 +433,15 @@ export class Context {
                 );
             }
 
-            if (indices.length > 0) {
-                const arr = this.globalStack.get(identifier.value);
-                if (!arr) {
-                    // create it!
-                    return NULL;
-                }
-
-                if (arr.type() !== ObjectType.ARRAY_OBJ) {
-                    return newError(
-                        `cannot use array access on a ${arr.type()}`,
-                        statement,
-                    );
-                }
-
-                const indexArgs = this.evalExpressions(indices, false);
-                if (indexArgs.length === 1 && isError(indexArgs[0])) {
-                    return indexArgs[0];
-                }
-
-                for (let j = 0; j < indexArgs.length; j++) {
-                    if (
-                        indexArgs[j].type() !== ObjectType.FLOAT_OBJ &&
-                        indexArgs[j].type() !== ObjectType.INTEGER_OBJ
-                    ) {
-                        return newError(
-                            `cannot use type ${indexArgs[
-                                j
-                            ].type()} as array index`,
-                            statement,
-                        );
-                    }
-                }
-
-                return (arr as ArrayValue).set(
-                    indexArgs.map(
-                        (idx) => (idx as IntValue | FloatValue).value,
-                    ),
-                    value,
-                );
+            const result = this.assignVarOrIndexExpression(
+                statement,
+                identifier,
+                indices,
+                value,
+            );
+            if (isError(result)) {
+                return result;
             }
-
-            this.globalStack.set(identifier.value, value);
         }
 
         return value;
@@ -883,6 +851,12 @@ export class Context {
             } else if (statement.then) {
                 return this.runStatement(statement.then);
             }
+        } else {
+            if (statement.elseGoto) {
+                return this.goto(statement.elseGoto, statement);
+            } else if (statement.elseThen) {
+                return this.runStatement(statement.elseThen);
+            }
         }
 
         return NULL;
@@ -1145,31 +1119,40 @@ export class Context {
             const v = this.dataStack[this.dataStackIndex++];
 
             if (
-                (output.type === IdentifierType.INT ||
-                    output.type === IdentifierType.FLOAT) &&
+                (output.name.type === IdentifierType.INT ||
+                    output.name.type === IdentifierType.FLOAT) &&
                 (v.type() === ObjectType.FLOAT_OBJ ||
                     v.type() === ObjectType.INTEGER_OBJ)
             ) {
-                if (output.type === IdentifierType.FLOAT) {
-                    this.globalStack.set(
-                        output.value,
+                if (output.name.type === IdentifierType.FLOAT) {
+                    this.assignVarOrIndexExpression(
+                        statement,
+                        output.name,
+                        output.indices,
                         new FloatValue((v as FloatValue | IntValue).value),
                     );
-                } else if (output.type === IdentifierType.INT) {
-                    this.globalStack.set(
-                        output.value,
+                } else if (output.name.type === IdentifierType.INT) {
+                    this.assignVarOrIndexExpression(
+                        statement,
+                        output.name,
+                        output.indices,
                         new IntValue((v as FloatValue | IntValue).value),
                     );
                 }
             } else if (
-                output.type === IdentifierType.STRING &&
+                output.name.type === IdentifierType.STRING &&
                 v.type() === ObjectType.STRING_OBJ
             ) {
-                this.globalStack.set(output.value, v);
+                this.assignVarOrIndexExpression(
+                    statement,
+                    output.name,
+                    output.indices,
+                    v,
+                );
             } else {
                 return newError(
                     `type mismatch. cannot set ${v.type()} to identifier of type ${
-                        output.type
+                        output.name.type
                     }`,
                     statement,
                 );
@@ -1521,5 +1504,53 @@ export class Context {
         }
 
         return NULL;
+    }
+
+    private assignVarOrIndexExpression(
+        statement: Statement,
+        identifier: Identifier,
+        indices: Expression[],
+        value: ValueObject,
+    ) {
+        if (indices.length > 0) {
+            const arr = this.globalStack.get(identifier.value);
+            if (!arr) {
+                // create it!
+                return NULL;
+            }
+
+            if (arr.type() !== ObjectType.ARRAY_OBJ) {
+                return newError(
+                    `cannot use array access on a ${arr.type()}`,
+                    statement,
+                );
+            }
+
+            const indexArgs = this.evalExpressions(indices, false);
+            if (indexArgs.length === 1 && isError(indexArgs[0])) {
+                return indexArgs[0];
+            }
+
+            for (let j = 0; j < indexArgs.length; j++) {
+                if (
+                    indexArgs[j].type() !== ObjectType.FLOAT_OBJ &&
+                    indexArgs[j].type() !== ObjectType.INTEGER_OBJ
+                ) {
+                    return newError(
+                        `cannot use type ${indexArgs[j].type()} as array index`,
+                        statement,
+                    );
+                }
+            }
+
+            return (arr as ArrayValue).set(
+                indexArgs.map((idx) => (idx as IntValue | FloatValue).value),
+                value,
+            );
+        }
+
+        this.globalStack.set(identifier.value, value);
+
+        return value;
     }
 }

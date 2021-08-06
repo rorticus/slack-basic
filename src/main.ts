@@ -4,11 +4,15 @@ import { Context } from './basic/context';
 import Lexer from './basic/lexer';
 import { Parser } from './basic/parser';
 import { ErrorValue, ObjectType, ValueObject } from './basic/object';
+import { BufferedPrinter } from './bufferedprinter';
+import { react } from './react';
+import { decode } from 'html-entities';
 
 config();
 
 const contexts = new Map<string, Context>();
 const inputPromises: Map<string, (i: string) => void> = new Map();
+const printers = new Map<string, BufferedPrinter>();
 
 const app = new App({
     token: process.env.BOT_TOKEN,
@@ -56,11 +60,20 @@ app.message(/(.*)/, async (context) => {
         user: string;
     };
 
+    if (!printers.has(userId)) {
+        printers.set(userId, new BufferedPrinter());
+    }
+
+    const printer = printers.get(userId);
+    printer.say = async (message: string) => {
+        await context.say(message);
+    };
+
     if (!contexts.has(userId)) {
         contexts.set(
             userId,
             new Context({
-                print: () => Promise.resolve(),
+                print: printer.print.bind(printer),
                 input: () => Promise.resolve(''),
                 load: () => Promise.resolve([]),
                 save: () => Promise.resolve(),
@@ -84,31 +97,20 @@ app.message(/(.*)/, async (context) => {
         return;
     }
 
-    // set up local request callbacks
-    basicContext.api.print = async (msg: string) => {
-        printLines.push(msg);
-    };
     basicContext.api.input = (message?: string) => {
-        const p = new Promise<string | null>(async (resolve) => {
+        return new Promise<string | null>(async (resolve) => {
             inputPromises.set(userId, resolve);
 
-            message && printLines.push(message);
-
             // ask the question and ask for input
-            await context.say(`\`\`\`${printLines.join('\n')}\`\`\``);
-            printLines = [];
+            await basicContext.api.print(message);
         });
-
-        return p;
     };
 
     const lines = text.replace(/```/g, '').split('\n');
     let result: ValueObject | null = null;
 
-    let printLines: string[] = [];
-
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
+        const line = decode(lines[i].trim());
 
         if (line === '') {
             continue;
@@ -119,27 +121,24 @@ app.message(/(.*)/, async (context) => {
         const statement = parser.parseStatement();
 
         if (parser.errors.length) {
+            await react('x', context);
             await context.say(`\`${line}\` - ${parser.errors.join(', ')}`);
+            return;
         } else if (statement) {
             result = await basicContext.runImmediateStatement(statement);
 
             if (result.type() === ObjectType.ERROR_OBJ) {
+                await react('x', context);
                 await context.say(
                     `Error - \`${(result as ErrorValue).message}\``,
                 );
-                break;
+                return;
             }
         }
     }
 
-    if (printLines.length > 0) {
-        await context.say(`\`\`\`
-${printLines.join('\n')}
-\`\`\``);
-    }
-
     if (result.type() !== ObjectType.ERROR_OBJ) {
-        await context.say('```OK```');
+        await react('ok', context);
     }
 });
 

@@ -276,6 +276,10 @@ export class IfStatement implements Statement {
     then: number | Statement | undefined;
     goto: number | undefined;
 
+    elseToken: Token | undefined;
+    elseGoto: number | undefined;
+    elseThen: Statement | undefined;
+
     constructor(token: Token, condition: Expression | null) {
         this.token = token;
         this.condition = condition;
@@ -291,13 +295,23 @@ export class IfStatement implements Statement {
 
     toString(): string {
         const condition = this.condition?.toString() ?? '';
+        let base = `IF ${this.condition?.toString() ?? ''}`;
 
         if (this.goto !== undefined) {
-            return `IF ${condition} GOTO ${this.goto}`;
+            base = `IF ${condition} GOTO ${this.goto}`;
         } else if (this.then !== undefined) {
-            return `IF ${condition} THEN ${this.then}`;
+            base = `IF ${condition} THEN ${this.then}`;
         }
-        return `IF ${this.condition?.toString() ?? ''}`;
+
+        if (this.elseGoto !== undefined) {
+            base = `${base} ${this.elseToken.literal} ${this.elseGoto}`;
+        } else if (this.elseThen !== undefined) {
+            base = `${base} ${
+                this.elseToken.literal
+            } ${this.elseThen.toString()}`;
+        }
+
+        return base;
     }
 }
 
@@ -670,13 +684,16 @@ export class ReadStatement implements Statement {
     lineNumber: number | undefined;
     type = StatementType.READ;
     next: Statement | null = null;
-    outputs: Identifier[];
+    outputs: LetAssignment[];
 
-    constructor(token: Token, outputs: Identifier[]) {
+    constructor(token: Token, outputs: LetAssignment[]) {
         this.token = token;
         this.outputs = outputs;
 
-        this.outputs.forEach((o) => (o.statement = this));
+        this.outputs.forEach((o) => {
+            o.name.statement = this;
+            o.indices.forEach((i) => (i.statement = this));
+        });
     }
 
     tokenLiteral(): string {
@@ -687,7 +704,17 @@ export class ReadStatement implements Statement {
         return combineParts(
             this.lineNumber,
             this.tokenLiteral(),
-            this.outputs.map((o) => o.value).join(', '),
+            this.outputs
+                .map((n) => {
+                    if (n.indices.length > 0) {
+                        return `${n.name}(${n.indices
+                            .map((i) => i.toString())
+                            .join(', ')})`;
+                    } else {
+                        return n.name.toString();
+                    }
+                })
+                .join(', '),
         );
     }
 }
