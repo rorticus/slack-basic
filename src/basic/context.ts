@@ -849,13 +849,16 @@ export class Context {
             } else if (typeof statement.then === 'number') {
                 return this.goto(statement.then, statement);
             } else if (statement.then) {
-                return this.runStatement(statement.then);
+                linkNextStatement(statement.then, statement.next);
+                this.nextStatement = statement.then;
+                return NULL;
             }
         } else {
             if (statement.elseGoto) {
                 return this.goto(statement.elseGoto, statement);
             } else if (statement.elseThen) {
-                return this.runStatement(statement.elseThen);
+                linkNextStatement(statement.elseThen, statement.next);
+                this.nextStatement = statement.elseThen;
             }
         }
 
