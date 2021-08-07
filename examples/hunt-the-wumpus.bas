@@ -16,9 +16,9 @@
 160 IF R(P,I)=B(J) THEN PRINT "You hear a rustling."
 170 IF R(P,I)=P(J) THEN PRINT "You feel a cold wind blowing from a nearby cavern."
 180 NEXT J,I
-190 PRINT USING "You are in room ##. ";P;
-200 PRINT USING "Tunnels lead to ##; ##; and ##.";R(P,0);R(P,1);R(P,2)
-210 PRINT USING "You have # arrows.";A: PRINT
+190 PRINT "You are in room "; P
+200 PRINT "Tunnels lead to "; R(P,0); " "; R(P,1); " and "; R(P,2)
+210 PRINT "You have " A " arrows." : PRINT
 220 INPUT "M)ove, S)hoot or Q)uit? ";I$
 230 S=I$="S" OR I$="s": IF S OR I$="M" OR I$="m" THEN 260
 240 IF I$="Q" OR I$="q" THEN END
