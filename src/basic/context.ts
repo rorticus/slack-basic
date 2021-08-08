@@ -142,6 +142,35 @@ export function linkNextStatement(
     }
 }
 
+export interface CancelablePromise {
+    promise: Promise<any>;
+    cancel: () => void;
+}
+
+function wrap(promises: CancelablePromise[], promise) {
+    return new Promise((resolve, reject) => {
+        promises.push({
+            promise,
+            cancel: () => {
+                reject('cancelled');
+            },
+        });
+
+        promise
+            .then((v) => {
+                const index = promises.findIndex((p) => p.promise === promise);
+                promises.splice(index, 1);
+                resolve(v);
+            })
+            .catch((e) => {
+                const index = promises.findIndex((p) => p.promise === promise);
+                promises.splice(index, 1);
+
+                reject(e);
+            });
+    });
+}
+
 export class Context {
     globalStack: Stack;
     lines: Statement[];
@@ -150,6 +179,8 @@ export class Context {
     forStack: ForStatement[];
     dataStack: ValueObject[];
     image: BasicCanvas | null = null;
+
+    private openPromises: CancelablePromise[] = [];
 
     private dataStackIndex = 0;
     private nextStatement: Statement | null;
@@ -168,6 +199,15 @@ export class Context {
         this.continueStatement = null;
 
         this.initializeGlobals();
+    }
+
+    private ownPromise<T>(promise: Promise<T>): Promise<T> {
+        return wrap(this.openPromises, promise) as Promise<T>;
+    }
+
+    private cancelAllPromises() {
+        this.openPromises.forEach((p) => p.cancel());
+        this.openPromises = [];
     }
 
     private initializeGlobals() {
@@ -575,7 +615,7 @@ export class Context {
             case 'AND':
                 if (isInCondition) {
                     return new FloatValue(
-                        leftValue === -1 && rightValue === -1 ? -1 : 0,
+                        isTruthy(left) && isTruthy(right) ? -1 : 0,
                     );
                 } else {
                     return new FloatValue(leftValue & rightValue);
@@ -583,7 +623,7 @@ export class Context {
             case 'OR':
                 if (isInCondition) {
                     return new FloatValue(
-                        leftValue === -1 || rightValue === -1 ? -1 : 0,
+                        isTruthy(left) || isTruthy(right) ? -1 : 0,
                     );
                 } else {
                     return new FloatValue(leftValue | rightValue);
@@ -605,9 +645,9 @@ export class Context {
             case '+':
                 return new StringValue(leftValue + rightValue);
             case '=':
-                return new FloatValue(leftValue === rightValue ? 1 : 0);
+                return new FloatValue(leftValue === rightValue ? -1 : 0);
             case '<>':
-                return new FloatValue(leftValue !== rightValue ? 1 : 0);
+                return new FloatValue(leftValue !== rightValue ? -1 : 0);
         }
 
         return new ErrorValue(`invalid operator ${operator}`);
@@ -768,7 +808,8 @@ export class Context {
             }
 
             for (let i = 0; i < expr.destination.length; i++) {
-                const result = await this.api.input(message);
+                const result = await this.ownPromise(this.api.input(message));
+
                 let intermediate: number;
 
                 switch (expr.destination[i].type) {
@@ -841,7 +882,7 @@ export class Context {
             return newError(`cannot run an if with no condition`, statement);
         }
 
-        const condition = this.evalExpression(statement.condition);
+        const condition = this.evalExpression(statement.condition, true);
 
         if (isTruthy(condition)) {
             if (statement.goto !== undefined) {
@@ -1344,8 +1385,14 @@ export class Context {
     runStopStatement(statement: EndStatement) {
         this.continueStatement = statement.next;
 
-        this.state = ContextState.IDLE;
+        this.stop();
+
         return NULL;
+    }
+
+    stop() {
+        this.cancelAllPromises();
+        this.state = ContextState.IDLE;
     }
 
     async runGraphicsStatement(statement: GraphicsStatement) {

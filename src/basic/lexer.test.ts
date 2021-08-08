@@ -6,7 +6,7 @@ describe('Token Tests', () => {
         const input = `
         START:
         LET A = 3
-        IF A < 4.5 THEN
+        IF A <= 4.5 THEN
             GOSUB DOTHING
         END
         ^
@@ -24,7 +24,7 @@ describe('Token Tests', () => {
             [TokenType.INT, '3'],
             [TokenType.IF, 'IF'],
             [TokenType.IDENT, 'A'],
-            [TokenType.LT, '<'],
+            [TokenType.LTE, '<='],
             [TokenType.FLOAT, '4.5'],
             [TokenType.THEN, 'THEN'],
             [TokenType.GOSUB, 'GOSUB'],

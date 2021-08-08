@@ -15,6 +15,35 @@ async function run(
     overrides: Partial<ContextApi> = {},
     existingContext: Context | null = null,
 ) {
+    const promises = [];
+
+    function wrap(promise) {
+        return new Promise((resolve, reject) => {
+            promises.push({
+                promise,
+                resolve,
+                reject,
+            });
+
+            promise
+                .then((v) => {
+                    const index = promises.findIndex(
+                        (p) => p.promise === promise,
+                    );
+                    promises.splice(index, 1);
+                    resolve(v);
+                })
+                .catch((e) => {
+                    const index = promises.findIndex(
+                        (p) => p.promise === promise,
+                    );
+                    promises.splice(index, 1);
+
+                    reject(e);
+                });
+        });
+    }
+
     const context =
         existingContext ||
         new Context({
@@ -45,6 +74,12 @@ async function run(
     const lines = code.split('\n');
     let result: ValueObject | undefined;
     const errors = [];
+
+    const timeout = setTimeout(() => {
+        promises.forEach(([_, reject]) => reject());
+        context.stop();
+    }, 1000);
+
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
@@ -59,14 +94,21 @@ async function run(
             }
         }
     }
+
+    clearTimeout(timeout);
+
     return { context, result, errors };
 }
 
 describe('hunt the wumpus', () => {
     it('plays', async () => {
         const input = jest.fn();
+        const print = jest
+            .fn()
+            .mockImplementation((message) => console.log(message));
 
-        input.mockResolvedValueOnce('1'); // enter a number
+        input.mockResolvedValueOnce('m'); // move
+        input.mockResolvedValueOnce('2');
 
         const { errors } = await run(
             `
@@ -75,9 +117,8 @@ describe('hunt the wumpus', () => {
         `,
             {
                 input,
+                print,
             },
         );
-
-        console.log(errors);
     });
 });

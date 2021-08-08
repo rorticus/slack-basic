@@ -703,6 +703,11 @@ describe('Parser tests', () => {
                     'IF (R(X, 3) = 0) THEN R(X, 3) = 1 : RETURN ELSE GOSUB 12',
                 ],
                 ['IF 0 GOTO 40 ELSE 50', 'IF 0 GOTO 40 ELSE 50'],
+                [
+                    'IF X=R(P,0) OR X=R(P,1) OR X=R(P,2) THEN IF S THEN 290 ELSE P=X: GOTO 90',
+                    'IF (((X = R(P, 0)) OR (X = R(P, 1))) OR (X = R(P, 2))) THEN IF S THEN 290 ELSE P = X : GOTO 90',
+                ],
+                ['if k <= 2 then 790', 'IF (K <= 2) THEN 790'],
             ] as const;
 
             for (let i = 0; i < tests.length; i++) {

@@ -63,6 +63,8 @@ const precedences: Record<string, Precedence> = {
     [TokenType.NOT_EQ]: Precedence.EQUALS,
     [TokenType.LT]: Precedence.LESSGREATER,
     [TokenType.GT]: Precedence.LESSGREATER,
+    [TokenType.LTE]: Precedence.LESSGREATER,
+    [TokenType.GTE]: Precedence.LESSGREATER,
     [TokenType.PLUS]: Precedence.SUM,
     [TokenType.MINUS]: Precedence.SUM,
     [TokenType.ASTERISK]: Precedence.PRODUCT,
@@ -140,6 +142,8 @@ export class Parser {
         );
         this.registerInfix(TokenType.LT, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.GT, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.LTE, this.parseInfixExpression.bind(this));
+        this.registerInfix(TokenType.GTE, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.AND, this.parseInfixExpression.bind(this));
         this.registerInfix(TokenType.OR, this.parseInfixExpression.bind(this));
         this.registerInfix(
