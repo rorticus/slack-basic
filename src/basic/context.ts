@@ -20,7 +20,6 @@ import {
     InfixExpression,
     InputStatement,
     IntegerLiteral,
-    LetAssignment,
     LetStatement,
     ListStatement,
     LoadStatement,
@@ -52,7 +51,7 @@ import {
     ValueObject,
 } from './object';
 import builtins from './builtins';
-import { Token, TokenType } from './tokens';
+import { TokenType } from './tokens';
 
 export const NULL = new NullValue();
 
@@ -74,7 +73,7 @@ export interface ContextApi {
     print(str: string): Promise<void>;
     input(message?: string): Promise<string>;
     load(filename: string): Promise<Statement[]>;
-    save(statements: Statement[]): Promise<void>;
+    save(filename: string, statements: Statement[]): Promise<void>;
     createImage(width: number, height: number): Promise<BasicCanvas>;
 }
 
@@ -302,7 +301,7 @@ export class Context {
             case StatementType.NEXT:
                 return this.runNextStatement(statement as NextStatement);
             case StatementType.GOSUB:
-                return this.runGosubStatement(statement as GosubStatement);
+                return this.runGoSubStatement(statement as GosubStatement);
             case StatementType.RETURN:
                 return this.runReturnStatement(statement);
             case StatementType.REM:
@@ -723,7 +722,7 @@ export class Context {
 
             this.globalStack = fnStack;
             const result = this.evalExpression(target.body, false);
-            this.globalStack = fnStack.outer!;
+            this.globalStack = fnStack.outer;
 
             return result;
         }
@@ -1020,7 +1019,7 @@ export class Context {
             return [false, NULL];
         };
 
-        const indicies =
+        const indices =
             statement.values.length === 0
                 ? [this.forStack.length - 1]
                 : statement.values.map((v) =>
@@ -1029,8 +1028,8 @@ export class Context {
                       ),
                   );
 
-        for (let i = 0; i < indicies.length; i++) {
-            const index = indicies[i];
+        for (let i = 0; i < indices.length; i++) {
+            const index = indices[i];
             if (index < 0) {
                 return newError(
                     `cannot iterate on unknown variable`,
@@ -1056,15 +1055,15 @@ export class Context {
         return NULL;
     }
 
-    private gosub(statement: Statement, lineNumber: number) {
+    private goSub(statement: Statement, lineNumber: number) {
         this.returnStack.push(statement.next);
         return this.goto(lineNumber, statement);
     }
 
-    private async runGosubStatement(
+    private async runGoSubStatement(
         statement: GosubStatement,
     ): Promise<ValueObject> {
-        return this.gosub(statement, statement.gosubLineNumber);
+        return this.goSub(statement, statement.gosubLineNumber);
     }
 
     private async runReturnStatement(
@@ -1340,10 +1339,11 @@ export class Context {
         }
 
         try {
-            await this.api.save(this.lines);
+            await this.api.save(filename.value, this.lines);
             return NULL;
         } catch (e) {
-            return new ErrorValue(e.message);
+            console.log(e);
+            return newError(typeof e === 'string' ? e : e.message, statement);
         }
     }
 
@@ -1376,7 +1376,7 @@ export class Context {
         if (statement.operation.type === TokenType.GOTO) {
             return this.goto(lineNumber.value, statement);
         } else if (statement.operation.type === TokenType.GOSUB) {
-            return this.gosub(statement, lineNumber.value);
+            return this.goSub(statement, lineNumber.value);
         }
 
         return NULL;
@@ -1571,7 +1571,7 @@ export class Context {
 
             if (arr.type() !== ObjectType.ARRAY_OBJ) {
                 return newError(
-                    `cannot use array access on a ${arr.type()}`,
+                    `cannot use array access on a ${arr.type()} (${identifier.toString()})`,
                     statement,
                 );
             }

@@ -7,12 +7,21 @@ import { ErrorValue, ObjectType, ValueObject } from './basic/object';
 import { BufferedPrinter } from './bufferedprinter';
 import { react } from './react';
 import { decode } from 'html-entities';
+import * as path from 'path';
+import * as fs from 'fs';
+import { Statement } from './basic/ast';
 
 config();
 
 const contexts = new Map<string, Context>();
 const inputPromises: Map<string, (i: string) => void> = new Map();
 const printers = new Map<string, BufferedPrinter>();
+
+const baseDataDirectory = path.resolve(__dirname, process.env.DATA_DIR);
+
+if (!fs.existsSync(baseDataDirectory)) {
+    fs.mkdirSync(baseDataDirectory);
+}
 
 const app = new App({
     token: process.env.BOT_TOKEN,
@@ -75,8 +84,78 @@ app.message(/(.*)/, async (context) => {
             new Context({
                 print: printer.print.bind(printer),
                 input: () => Promise.resolve(''),
-                load: () => Promise.resolve([]),
-                save: () => Promise.resolve(),
+                load: async (filename) => {
+                    const userPath = path.resolve(baseDataDirectory, userId);
+
+                    if (!filename.match(/^[a-z0-9\-_]+$/gi)) {
+                        return Promise.reject(
+                            'Error loading file. Filename cannot contain other than alphanumeric characters',
+                        );
+                    }
+
+                    const filePath = path.resolve(
+                        userPath,
+                        `${filename.toUpperCase()}.bas`,
+                    );
+
+                    if (!fs.existsSync(filePath)) {
+                        return Promise.reject('File not found');
+                    }
+
+                    const basicSource = fs.readFileSync(filePath, 'utf-8');
+
+                    const statements: Statement[] = [];
+
+                    const lines = basicSource.split('\n');
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+
+                        const lexer = new Lexer(line);
+                        const parser = new Parser(lexer);
+
+                        const statement = parser.parseStatement();
+                        if (parser.errors.length > 0) {
+                            return Promise.reject(parser.errors[0]);
+                        }
+
+                        if (statement) {
+                            statements.push(statement);
+                        }
+                    }
+
+                    return Promise.resolve(statements);
+                },
+                save: async (filename, statements) => {
+                    const userPath = path.resolve(baseDataDirectory, userId);
+
+                    if (!fs.existsSync(userPath)) {
+                        fs.mkdirSync(userPath);
+                    }
+
+                    const basicSource = statements
+                        .map((statement) => statement.toString())
+                        .join('\r\n');
+
+                    if (basicSource === '') {
+                        return Promise.reject(
+                            'Error saving file. Source listing is empty.',
+                        );
+                    }
+
+                    if (!filename.match(/^[a-z0-9\-_]+$/gi)) {
+                        return Promise.reject(
+                            'Error saving file. Filename cannot contain other than alphanumeric characters',
+                        );
+                    }
+
+                    fs.writeFileSync(
+                        path.resolve(userPath, `${filename.toUpperCase()}.bas`),
+                        basicSource,
+                        'utf-8',
+                    );
+
+                    return Promise.resolve();
+                },
                 createImage: () =>
                     Promise.resolve({
                         width: 0,
@@ -102,7 +181,9 @@ app.message(/(.*)/, async (context) => {
             inputPromises.set(userId, resolve);
 
             // ask the question and ask for input
-            await basicContext.api.print(message);
+            if (message) {
+                await basicContext.api.print(message);
+            }
         });
     };
 
