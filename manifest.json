@@ -24,7 +24,11 @@
                 "chat:write.public",
                 "app_mentions:read",
                 "chat:write",
-                "reactions:write"
+                "reactions:write",
+                "im:history",
+                "im:read",
+                "im:write",
+                "files:write"
             ]
         }
     },

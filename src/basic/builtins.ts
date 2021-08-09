@@ -211,7 +211,15 @@ export default {
             return new ErrorValue('expected blue to be numeric');
         }
 
-        return new IntValue((r.value << 16) | (g.value << 8) | b.value);
+        function hex2(n: number) {
+            const h = n.toString(16);
+
+            return h.length === 1 ? `0${h}` : h;
+        }
+
+        return new StringValue(
+            hex2(r.value) + hex2(g.value) + hex2(b.value) + 'FF',
+        );
     }),
     RIGHT$: new BuiltInFunctionValue((args: ValueObject[]) => {
         if (args.length !== 2) {

@@ -10,6 +10,7 @@ import { decode } from 'html-entities';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Statement } from './basic/ast';
+import * as Jimp from 'jimp';
 
 config();
 
@@ -156,14 +157,23 @@ app.message(/(.*)/, async (context) => {
 
                     return Promise.resolve();
                 },
-                createImage: () =>
-                    Promise.resolve({
-                        width: 0,
-                        height: 0,
-                        clear: () => 0,
-                        getPixel: () => 0,
-                        setPixel: () => 0,
-                    }),
+                createImage: (width, height) => {
+                    const image = new Jimp(width, height);
+
+                    return Promise.resolve({
+                        image,
+                        width,
+                        height,
+                        clear: (color) => image.background(color),
+                        getPixel: (x, y) => '', // image.getPixelColor(x, y),
+                        setPixel: (x, y, color) =>
+                            image.setPixelColor(
+                                Jimp.cssColorToHex(color),
+                                x,
+                                y,
+                            ),
+                    });
+                },
             }),
         );
     }
@@ -220,6 +230,21 @@ app.message(/(.*)/, async (context) => {
 
     if (result.type() !== ObjectType.ERROR_OBJ) {
         await react('ok', context);
+
+        if (basicContext.image) {
+            // display the image?
+            const buffer = await (
+                basicContext.image as any
+            ).image.getBufferAsync(Jimp.MIME_PNG);
+
+            await context.client.files.upload({
+                token: process.env.BOT_TOKEN,
+                filetype: 'png',
+                filename: 'slackbasic.png',
+                file: buffer,
+                channels: context.message.channel,
+            });
+        }
     }
 });
 

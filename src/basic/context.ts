@@ -65,8 +65,8 @@ export interface BasicCanvas {
     height: number;
 
     clear(color: number): void;
-    setPixel(x: number, y: number, color: number): void;
-    getPixel(x: number, y: number): number;
+    setPixel(x: number, y: number, color: string): void;
+    getPixel(x: number, y: number): string;
 }
 
 export interface ContextApi {
@@ -1446,8 +1446,8 @@ export class Context {
             return y1;
         }
 
-        if (!isNumeric(color)) {
-            return newError('expecting numeric color', statement);
+        if (!isString(color)) {
+            return newError('expecting stringly color', statement);
         }
 
         if (!isNumeric(x1) || !isNumeric(y1)) {
@@ -1507,8 +1507,8 @@ export class Context {
             return color;
         }
 
-        if (!isNumeric(color)) {
-            return newError('expecting numeric color value', statement);
+        if (!isString(color)) {
+            return newError('expecting stringly color value', statement);
         }
 
         if (isError(left)) {
