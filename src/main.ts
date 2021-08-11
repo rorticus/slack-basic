@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { App } from '@slack/bolt';
+import { App, View } from '@slack/bolt';
 import { Context } from './basic/context';
 import Lexer from './basic/lexer';
 import { Parser } from './basic/parser';
@@ -246,6 +246,126 @@ app.message(/(.*)/, async (context) => {
             });
         }
     }
+});
+
+function buildHomepage(userId: string): View {
+    const fileBlocks = [];
+
+    const userPath = path.resolve(baseDataDirectory, userId);
+    const allFiles = fs.existsSync(userPath) ? fs.readdirSync(userPath) : [];
+    if (allFiles.length === 0) {
+        fileBlocks.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: "It looks like you don't have any saved programs yet. Use the `SAVE` statement to save your first BASIC program!",
+            },
+        });
+    } else {
+        fileBlocks.push({
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: "You've saved the following BASIC programs.",
+            },
+            accessory: {
+                type: 'radio_buttons',
+                options: allFiles.map((file) => ({
+                    text: {
+                        type: 'mrkdwn',
+                        text: `\`${file.toUpperCase()}\``,
+                    },
+                    value: file,
+                })),
+                action_id: 'action-file',
+            },
+        });
+
+        fileBlocks.push({
+            type: 'actions',
+            elements: [
+                {
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: 'Delete',
+                        emoji: true,
+                    },
+                    value: 'action-delete',
+                    action_id: 'action-delete',
+                },
+            ],
+        });
+    }
+
+    const blocks = [
+        {
+            type: 'header',
+            text: {
+                type: 'plain_text',
+                text: 'Slack Basic',
+                emoji: true,
+            },
+        },
+        {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: 'Welcome to the home of *Slack Basic*!',
+            },
+        },
+        {
+            type: 'section',
+            text: {
+                type: 'mrkdwn',
+                text: 'Manage your BASIC programs and the status of your BASIC interpretter here.',
+            },
+        },
+        {
+            type: 'actions',
+            elements: [
+                {
+                    type: 'button',
+                    text: {
+                        type: 'plain_text',
+                        text: 'Stop Running Program',
+                        emoji: true,
+                    },
+                    value: 'value-stop',
+                    action_id: 'action-stop',
+                },
+            ],
+        },
+        {
+            type: 'divider',
+        },
+        {
+            type: 'header',
+            text: {
+                type: 'plain_text',
+                text: 'Saved Programs',
+                emoji: true,
+            },
+        },
+        ...fileBlocks,
+    ];
+
+    return {
+        type: 'home',
+        title: {
+            type: 'plain_text',
+            text: 'Slack Basic',
+        },
+        blocks,
+    };
+}
+
+app.event('app_home_opened', async (context) => {
+    await context.client.views.publish({
+        token: process.env.BOT_TOKEN,
+        user_id: context.event.user,
+        view: buildHomepage(context.event.user),
+    });
 });
 
 (async () => {
