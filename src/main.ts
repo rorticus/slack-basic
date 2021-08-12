@@ -180,6 +180,12 @@ app.message(/(.*)/, async (context) => {
 
     const basicContext = contexts.get(userId);
 
+    basicContext.onStop = () => {
+        if (inputPromises.has(userId)) {
+            inputPromises.delete(userId);
+        }
+    };
+
     if (inputPromises.has(userId)) {
         inputPromises.get(userId)(text);
         inputPromises.delete(userId);
@@ -366,6 +372,16 @@ app.event('app_home_opened', async (context) => {
         user_id: context.event.user,
         view: buildHomepage(context.event.user),
     });
+});
+
+app.action('action-stop', async (context) => {
+    await context.ack();
+
+    const basicContext = contexts.get(context.body.user.id);
+
+    if (basicContext) {
+        basicContext.stop();
+    }
 });
 
 (async () => {

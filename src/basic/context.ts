@@ -179,6 +179,8 @@ export class Context {
     dataStack: ValueObject[];
     image: BasicCanvas | null = null;
 
+    onStop?: () => void;
+
     private openPromises: CancelablePromise[] = [];
 
     private dataStackIndex = 0;
@@ -1391,6 +1393,7 @@ export class Context {
     }
 
     stop() {
+        this.onStop?.();
         this.cancelAllPromises();
         this.state = ContextState.IDLE;
     }
