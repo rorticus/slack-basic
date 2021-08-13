@@ -598,6 +598,9 @@ export class Context {
             case '*':
                 return new FloatValue(leftValue * rightValue);
             case '/':
+                if (rightValue === 0) {
+                    return newError('divide by zero');
+                }
                 return new FloatValue(leftValue / rightValue);
             case '^':
                 return new FloatValue(Math.pow(leftValue, rightValue));
