@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { App, View } from '@slack/bolt';
+import { App, Block, SectionBlock, View } from '@slack/bolt';
 import { Context } from './basic/context';
 import Lexer from './basic/lexer';
 import { Parser } from './basic/parser';
@@ -254,7 +254,10 @@ app.message(/(.*)/, async (context) => {
     }
 });
 
-function buildHomepage(userId: string): View {
+function buildHomepage(
+    userId: string,
+    { showFileError = false }: { showFileError?: boolean } = {},
+): View {
     const fileBlocks = [];
 
     const userPath = path.resolve(baseDataDirectory, userId);
@@ -274,6 +277,7 @@ function buildHomepage(userId: string): View {
                 type: 'mrkdwn',
                 text: "You've saved the following BASIC programs.",
             },
+            block_id: 'file_picker',
             accessory: {
                 type: 'radio_buttons',
                 options: allFiles.map((file) => ({
@@ -286,6 +290,16 @@ function buildHomepage(userId: string): View {
                 action_id: 'action-file',
             },
         });
+
+        if (showFileError) {
+            fileBlocks.push({
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: ':warning: *Please select a file first*',
+                },
+            });
+        }
 
         fileBlocks.push({
             type: 'actions',
@@ -358,6 +372,7 @@ function buildHomepage(userId: string): View {
 
     return {
         type: 'home',
+        callback_id: 'home',
         title: {
             type: 'plain_text',
             text: 'Slack Basic',
@@ -381,6 +396,44 @@ app.action('action-stop', async (context) => {
 
     if (basicContext) {
         basicContext.stop();
+    }
+});
+
+app.action('action-file', async (context) => {
+    await context.ack();
+});
+
+app.action('action-delete', async (context) => {
+    const viewState = (context.body as any).view.state;
+    const selectedFile =
+        viewState?.values[Object.keys(viewState.values)[0]]?.['action-file']?.[
+            'selected_option'
+        ]?.value;
+
+    if (selectedFile) {
+        if (selectedFile.match(/^[a-z\_\-]+\.bas$/gim)) {
+            // too many dots.. something is not right here
+            //todo: show error
+        }
+        const userPath = path.resolve(baseDataDirectory, context.body.user.id);
+        const filePath = path.resolve(userPath, selectedFile);
+
+        fs.rmSync(filePath);
+
+        await context.ack();
+        await context.client.views.publish({
+            token: process.env.BOT_TOKEN,
+            user_id: context.body.user.id,
+            view: buildHomepage(context.body.user.id),
+        });
+    } else {
+        //todo: show error
+        await context.ack();
+        await context.client.views.publish({
+            token: process.env.BOT_TOKEN,
+            user_id: context.body.user.id,
+            view: buildHomepage(context.body.user.id, { showFileError: true }),
+        });
     }
 });
 
