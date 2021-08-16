@@ -80,102 +80,99 @@ app.message(/(.*)/, async (context) => {
     };
 
     if (!contexts.has(userId)) {
-        contexts.set(
-            userId,
-            new Context({
-                print: printer.print.bind(printer),
-                input: () => Promise.resolve(''),
-                load: async (filename) => {
-                    const userPath = path.resolve(baseDataDirectory, userId);
+        const basicContext = new Context({
+            print: printer.print.bind(printer),
+            input: () => Promise.resolve(''),
+            load: async (filename) => {
+                const userPath = path.resolve(baseDataDirectory, userId);
 
-                    if (!filename.match(/^[a-z0-9\-_]+$/gi)) {
-                        return Promise.reject(
-                            'Error loading file. Filename cannot contain other than alphanumeric characters',
-                        );
-                    }
-
-                    const filePath = path.resolve(
-                        userPath,
-                        `${filename.toUpperCase()}.bas`,
+                if (!filename.match(/^[a-z0-9\-_]+$/gi)) {
+                    return Promise.reject(
+                        'Error loading file. Filename cannot contain other than alphanumeric characters',
                     );
+                }
 
-                    if (!fs.existsSync(filePath)) {
-                        return Promise.reject('File not found');
+                const filePath = path.resolve(
+                    userPath,
+                    `${filename.toUpperCase()}.bas`,
+                );
+
+                if (!fs.existsSync(filePath)) {
+                    return Promise.reject('File not found');
+                }
+
+                const basicSource = fs.readFileSync(filePath, 'utf-8');
+
+                const statements: Statement[] = [];
+
+                const lines = basicSource.split('\n');
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+
+                    const lexer = new Lexer(line);
+                    const parser = new Parser(lexer);
+
+                    const statement = parser.parseStatement();
+                    if (parser.errors.length > 0) {
+                        return Promise.reject(parser.errors[0]);
                     }
 
-                    const basicSource = fs.readFileSync(filePath, 'utf-8');
-
-                    const statements: Statement[] = [];
-
-                    const lines = basicSource.split('\n');
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i].trim();
-
-                        const lexer = new Lexer(line);
-                        const parser = new Parser(lexer);
-
-                        const statement = parser.parseStatement();
-                        if (parser.errors.length > 0) {
-                            return Promise.reject(parser.errors[0]);
-                        }
-
-                        if (statement) {
-                            statements.push(statement);
-                        }
+                    if (statement) {
+                        statements.push(statement);
                     }
+                }
 
-                    return Promise.resolve(statements);
-                },
-                save: async (filename, statements) => {
-                    const userPath = path.resolve(baseDataDirectory, userId);
+                return Promise.resolve(statements);
+            },
+            save: async (filename, statements) => {
+                const userPath = path.resolve(baseDataDirectory, userId);
 
-                    if (!fs.existsSync(userPath)) {
-                        fs.mkdirSync(userPath);
-                    }
+                if (!fs.existsSync(userPath)) {
+                    fs.mkdirSync(userPath);
+                }
 
-                    const basicSource = statements
-                        .map((statement) => statement.toString())
-                        .join('\r\n');
+                const basicSource = statements
+                    .map((statement) => statement.toString())
+                    .join('\r\n');
 
-                    if (basicSource === '') {
-                        return Promise.reject(
-                            'Error saving file. Source listing is empty.',
-                        );
-                    }
-
-                    if (!filename.match(/^[a-z0-9\-_]+$/gi)) {
-                        return Promise.reject(
-                            'Error saving file. Filename cannot contain other than alphanumeric characters',
-                        );
-                    }
-
-                    fs.writeFileSync(
-                        path.resolve(userPath, `${filename.toUpperCase()}.bas`),
-                        basicSource,
-                        'utf-8',
+                if (basicSource === '') {
+                    return Promise.reject(
+                        'Error saving file. Source listing is empty.',
                     );
+                }
 
-                    return Promise.resolve();
-                },
-                createImage: (width, height) => {
-                    const image = new Jimp(width, height);
+                if (!filename.match(/^[a-z0-9\-_]+$/gi)) {
+                    return Promise.reject(
+                        'Error saving file. Filename cannot contain other than alphanumeric characters',
+                    );
+                }
 
-                    return Promise.resolve({
-                        image,
-                        width,
-                        height,
-                        clear: (color) => image.background(color),
-                        getPixel: (x, y) => '', // image.getPixelColor(x, y),
-                        setPixel: (x, y, color) =>
-                            image.setPixelColor(
-                                Jimp.cssColorToHex(color),
-                                x,
-                                y,
-                            ),
-                    });
-                },
-            }),
-        );
+                fs.writeFileSync(
+                    path.resolve(userPath, `${filename.toUpperCase()}.bas`),
+                    basicSource,
+                    'utf-8',
+                );
+
+                return Promise.resolve();
+            },
+            createImage: (width, height) => {
+                const image = new Jimp(width, height);
+
+                return Promise.resolve({
+                    image,
+                    width,
+                    height,
+                    clear: (color) => image.background(color),
+                    getPixel: (x, y) => '', // image.getPixelColor(x, y),
+                    setPixel: (x, y, color) =>
+                        image.setPixelColor(Jimp.cssColorToHex(color), x, y),
+                });
+            },
+        });
+
+        basicContext.maxExecutionTime = 10000;
+
+        contexts.set(userId, basicContext);
     }
 
     const basicContext = contexts.get(userId);

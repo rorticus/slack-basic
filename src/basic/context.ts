@@ -178,6 +178,7 @@ export class Context {
     forStack: ForStatement[];
     dataStack: ValueObject[];
     image: BasicCanvas | null = null;
+    maxExecutionTime: number;
 
     onStop?: () => void;
 
@@ -198,6 +199,7 @@ export class Context {
         this.forStack = [];
         this.dataStack = [];
         this.continueStatement = null;
+        this.maxExecutionTime = 0;
 
         this.initializeGlobals();
     }
@@ -392,25 +394,36 @@ export class Context {
         this.state = ContextState.RUNNING;
         let lastResult: ValueObject = NULL;
 
-        try {
-            while (statement && this.state === ContextState.RUNNING) {
-                this.nextStatement = statement.next ?? null;
+        return new Promise(async (resolve, reject) => {
+            const timeout = this.maxExecutionTime
+                ? setTimeout(() => {
+                      resolve(newError('max run time exceeded'));
+                      this.state = ContextState.IDLE;
+                  }, this.maxExecutionTime)
+                : 0;
 
-                lastResult = await this.runStatement(statement);
+            try {
+                while (statement && this.state === ContextState.RUNNING) {
+                    this.nextStatement = statement.next ?? null;
 
-                if (lastResult.type() === ObjectType.ERROR_OBJ) {
-                    return lastResult;
+                    await new Promise(setImmediate);
+                    lastResult = await this.runStatement(statement);
+
+                    if (lastResult.type() === ObjectType.ERROR_OBJ) {
+                        return lastResult;
+                    }
+
+                    statement = this.nextStatement;
                 }
-
-                statement = this.nextStatement;
+            } catch (e) {
+                return newError(e.message);
+            } finally {
+                timeout && clearTimeout(timeout);
+                this.state = ContextState.IDLE;
             }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            this.state = ContextState.IDLE;
-        }
 
-        return lastResult;
+            return lastResult;
+        });
     }
 
     async runProgram(): Promise<ValueObject> {
