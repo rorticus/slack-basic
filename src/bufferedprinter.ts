@@ -12,6 +12,10 @@ export class BufferedPrinter {
     }
 
     print(message: string) {
+        if (this.buffer.length > 25) {
+            throw new Error('maximum output rate exceeded!');
+        }
+
         this.buffer.push(message);
 
         if (this.printTimeout) {

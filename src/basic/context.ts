@@ -410,19 +410,19 @@ export class Context {
                     lastResult = await this.runStatement(statement);
 
                     if (lastResult.type() === ObjectType.ERROR_OBJ) {
-                        return lastResult;
+                        resolve(lastResult);
                     }
 
                     statement = this.nextStatement;
                 }
             } catch (e) {
-                return newError(e.message);
+                resolve(newError(e.message));
             } finally {
                 timeout && clearTimeout(timeout);
                 this.state = ContextState.IDLE;
             }
 
-            return lastResult;
+            resolve(lastResult);
         });
     }
 
@@ -446,7 +446,11 @@ export class Context {
             }
         }
 
-        await this.api.print(values.map((v) => v.toString()).join(''));
+        try {
+            await this.api.print(values.map((v) => v.toString()).join(''));
+        } catch (e) {
+            return newError(e.message, statement);
+        }
 
         return NULL;
     }
