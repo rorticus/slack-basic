@@ -1,10 +1,10 @@
 # SlackBasic
 
-SlackBasic is a simple Basic 2.0 (with a few enhancements) interpretter built to run right inside slack.
+SlackBasic is a simple Commodore Basic 2.0 (with a few enhancements) interpretter built to run right inside slack.
 
 ## Running Commands
 
-To get starated, click on the app's homepage in your Slack menu and choose the Messages tab. Anything you type here will be sent directly to the SlackBasic interpretter.
+To get started, click on the app's homepage in your Slack menu and choose the Messages tab. Anything you type here will be sent directly to the SlackBasic interpretter.
 
 ```basic
 PRINT "Hello, World."
@@ -28,7 +28,7 @@ FOR I = 0 TO 10 : PRINT I : NEXT
 
 ### Stored Mode
 
-Any command entered that is preceeded by a line number will be run in _Stored_ mode. In this mode, your commands are not executed, but simply stored for later execution using the immediate mode `RUN` command.
+Any command entered that is preceded by a line number will be run in _Stored_ mode. In this mode, your commands are not executed, but simply stored for later execution using the immediate mode `RUN` command.
 
 > Tip! You can use the `LIST` command at any time to list the contents of your stored program.
 
