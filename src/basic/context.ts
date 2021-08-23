@@ -54,6 +54,7 @@ import builtins from './builtins';
 import { TokenType } from './tokens';
 
 export const NULL = new NullValue();
+export const DimLimit = 1048576;
 
 export enum ContextState {
     IDLE = 'IDLE',
@@ -1285,6 +1286,15 @@ export class Context {
                         statement,
                     );
                 }
+            }
+
+            const totalSize = dimensions.reduce((total, d) => total * d, 1);
+
+            if (totalSize >= DimLimit) {
+                return newError(
+                    `dimension limit exceeded. total size cannot exceed ${DimLimit}`,
+                    statement,
+                );
             }
 
             this.globalStack.set(
