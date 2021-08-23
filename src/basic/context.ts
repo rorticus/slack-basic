@@ -188,6 +188,9 @@ export class Context {
     private nextStatement: Statement | null;
     private returnStack: (Statement | null)[] = [];
     private continueStatement: Statement | null;
+    private waitingForInput = false;
+    private lastTimeout = 0;
+    private runTime = 0;
 
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
@@ -394,13 +397,31 @@ export class Context {
         this.state = ContextState.RUNNING;
         let lastResult: ValueObject = NULL;
 
-        return new Promise(async (resolve, reject) => {
-            const timeout = this.maxExecutionTime
-                ? setTimeout(() => {
-                      resolve(newError('max run time exceeded'));
-                      this.state = ContextState.IDLE;
-                  }, this.maxExecutionTime)
-                : 0;
+        return new Promise(async (resolve) => {
+            this.runTime = 0;
+            this.lastTimeout = Date.now();
+
+            let timeout: any;
+            const timer = () => {
+                const now = Date.now();
+
+                if (!this.waitingForInput) {
+                    this.runTime += now - this.lastTimeout;
+                }
+
+                this.lastTimeout = now;
+
+                if (this.runTime > this.maxExecutionTime) {
+                    resolve(newError('max run time exceeded'));
+                    this.state = ContextState.IDLE;
+                } else {
+                    timeout = setTimeout(timer, 250);
+                }
+            };
+
+            if (this.maxExecutionTime) {
+                timer();
+            }
 
             try {
                 while (statement && this.state === ContextState.RUNNING) {
@@ -828,6 +849,8 @@ export class Context {
                 message = v.toString();
             }
 
+            this.waitingForInput = true;
+
             for (let i = 0; i < expr.destination.length; i++) {
                 const result = await this.ownPromise(this.api.input(message));
 
@@ -871,6 +894,9 @@ export class Context {
             }
         } catch (e) {
             return newError(`error with input: ${e.message}`, expr);
+        } finally {
+            this.waitingForInput = false;
+            this.runTime = 0;
         }
 
         return NULL;
