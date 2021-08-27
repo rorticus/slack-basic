@@ -308,7 +308,7 @@ app.command('/basic', async (context) => {
                 filetype: 'png',
                 filename: 'slackbasic.png',
                 file: buffer,
-                channels: context.body.channel_id,
+                channels: context.command.channel_name,
             });
         }
     }
