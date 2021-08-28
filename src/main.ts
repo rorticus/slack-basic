@@ -542,14 +542,17 @@ function buildHomepage(
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: 'Welcome to the home of *Slack Basic*!',
+                text: 'Welcome to the home of *Slack Basic*! What is Slack Basic? Read more about it, and read the help and examples, at http://slackbasic.com.',
             },
+        },
+        {
+            type: 'divider',
         },
         {
             type: 'section',
             text: {
                 type: 'mrkdwn',
-                text: 'Manage your BASIC programs and the status of your BASIC interpretter here.',
+                text: 'Stuck in a loop? Manage your Basic Interpreter here.',
             },
         },
         {
@@ -709,6 +712,7 @@ app.action('action-share', async (context) => {
                         },
                     ),
                 });
+                return;
             } else {
                 fs.writeFileSync(sharePath, context.body.user.id);
             }
@@ -719,7 +723,7 @@ app.action('action-share', async (context) => {
             token: process.env.BOT_TOKEN,
             user_id: context.body.user.id,
             view: buildHomepage(
-                context.body.user.team_id,
+                context.body.user.id,
                 context.body.user.team_id,
             ),
         });
@@ -729,9 +733,13 @@ app.action('action-share', async (context) => {
         await context.client.views.publish({
             token: process.env.BOT_TOKEN,
             user_id: context.body.user.id,
-            view: buildHomepage(context.body.user.id, context.body.user.id, {
-                showFileError: true,
-            }),
+            view: buildHomepage(
+                context.body.user.id,
+                context.body.user.team_id,
+                {
+                    showFileError: true,
+                },
+            ),
         });
     }
 });
@@ -759,18 +767,23 @@ app.action('action-unshare', async (context) => {
             token: process.env.BOT_TOKEN,
             user_id: context.body.user.id,
             view: buildHomepage(
-                context.body.user.team_id,
+                context.body.user.id,
                 context.body.user.team_id,
             ),
         });
+        return;
     } else {
         await context.ack();
         await context.client.views.publish({
             token: process.env.BOT_TOKEN,
             user_id: context.body.user.id,
-            view: buildHomepage(context.body.user.id, context.body.user.id, {
-                showShareFileError: true,
-            }),
+            view: buildHomepage(
+                context.body.user.id,
+                context.body.user.team_id,
+                {
+                    showShareFileError: true,
+                },
+            ),
         });
     }
 });
