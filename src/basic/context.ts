@@ -469,7 +469,22 @@ export class Context {
         }
 
         try {
-            await this.api.print(values.map((v) => v.toString()).join(''));
+            await this.api.print(
+                values
+                    .map((v) => {
+                        if (isNumeric(v)) {
+                            const str = v.toString();
+                            if (str[0] !== '-') {
+                                return ` ${str} `;
+                            } else {
+                                return `${str} `;
+                            }
+                        } else {
+                            return v.toString();
+                        }
+                    })
+                    .join(''),
+            );
         } catch (e) {
             return newError(e.message, statement);
         }
