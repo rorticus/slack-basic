@@ -17,6 +17,7 @@ config();
 const contexts = new Map<string, Context>();
 const inputPromises: Map<string, (i: string) => void> = new Map();
 const printers = new Map<string, BufferedPrinter>();
+const triggerIds = new Map<string, string>();
 
 function getPrinterForUserId(userId: string): BufferedPrinter {
     if (!printers.has(userId)) {
@@ -153,6 +154,8 @@ app.view(
 
         const actionId = context.view.blocks[0].element.action_id;
 
+        triggerIds.set(context.body.user.id, (context.body as any).trigger_id);
+
         const p = inputPromises.get(actionId);
         if (p) {
             p(context.view.state.values.input_box[actionId].value);
@@ -245,12 +248,13 @@ app.command('/basic', async (context) => {
         await context.say(message);
     };
 
+    triggerIds.set(context.body.user_id, context.body.trigger_id);
     basicContext.api.input = (message?: string) => {
         return new Promise<string | null>(async (resolve) => {
             inputPromises.set(userId, resolve);
 
             await context.client.views.open({
-                trigger_id: context.body.trigger_id,
+                trigger_id: triggerIds.get(context.body.user_id),
                 view: {
                     type: 'modal',
                     callback_id: 'input_view',
