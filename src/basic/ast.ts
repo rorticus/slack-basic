@@ -188,7 +188,7 @@ export class RunStatement implements Statement {
     }
 
     toString(): string {
-        return this.token.literal;
+        return combineParts(this.lineNumber, this.token.literal);
     }
 }
 
@@ -209,7 +209,11 @@ export class GotoStatement implements Statement {
     }
 
     toString(): string {
-        return `${this.token.literal} ${this.destination}`;
+        return combineParts(
+            this.lineNumber,
+            this.token.literal,
+            this.destination,
+        );
     }
 }
 
@@ -294,24 +298,15 @@ export class IfStatement implements Statement {
     }
 
     toString(): string {
-        const condition = this.condition?.toString() ?? '';
-        let base = `IF ${this.condition?.toString() ?? ''}`;
-
-        if (this.goto !== undefined) {
-            base = `IF ${condition} GOTO ${this.goto}`;
-        } else if (this.then !== undefined) {
-            base = `IF ${condition} THEN ${this.then}`;
-        }
-
-        if (this.elseGoto !== undefined) {
-            base = `${base} ${this.elseToken.literal} ${this.elseGoto}`;
-        } else if (this.elseThen !== undefined) {
-            base = `${base} ${
-                this.elseToken.literal
-            } ${this.elseThen.toString()}`;
-        }
-
-        return base;
+        return combineParts(
+            this.lineNumber,
+            this.token.literal,
+            this.condition?.toString(),
+            this.goto ? `GOTO ${this.goto}` : null,
+            this.then ? `THEN ${this.then}` : null,
+            this.elseGoto ? `${this.elseToken.literal} ${this.elseGoto}` : null,
+            this.elseThen ? `${this.elseToken.literal} ${this.elseThen}` : null,
+        );
     }
 }
 
