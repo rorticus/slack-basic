@@ -227,6 +227,7 @@ app.command('/basic', async (context) => {
         await context.respond({
             text: 'Uh oh! No shared basic programs with that name exist.',
         });
+        return;
     }
 
     const userId = fs.readFileSync(fileName, 'utf-8');
