@@ -1637,10 +1637,22 @@ export class Context {
         value: ValueObject,
     ) {
         if (indices.length > 0) {
-            const arr = this.globalStack.get(identifier.value);
+            const indexArgs = this.evalExpressions(indices, false);
+            if (indexArgs.length === 1 && isError(indexArgs[0])) {
+                return indexArgs[0];
+            }
+
+            let arr = this.globalStack.get(identifier.value);
             if (!arr) {
                 // create it!
-                return NULL;
+                this.globalStack.set(
+                    identifier.value,
+                    new ArrayValue(
+                        identifier.type,
+                        indexArgs.map((i: IntValue | FloatValue) => i.value),
+                    ),
+                );
+                arr = this.globalStack.get(identifier.value);
             }
 
             if (arr.type() !== ObjectType.ARRAY_OBJ) {
@@ -1648,11 +1660,6 @@ export class Context {
                     `cannot use array access on a ${arr.type()} (${identifier.toString()})`,
                     statement,
                 );
-            }
-
-            const indexArgs = this.evalExpressions(indices, false);
-            if (indexArgs.length === 1 && isError(indexArgs[0])) {
-                return indexArgs[0];
             }
 
             for (let j = 0; j < indexArgs.length; j++) {

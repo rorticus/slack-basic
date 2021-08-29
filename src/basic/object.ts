@@ -209,7 +209,7 @@ export class ArrayValue implements ValueObject {
 
         let dataIndex = 0;
         for (let i = 0; i < indices.length - 1; i++) {
-            if (indices[i] < 0 || indices[i] >= this.dimensions[i]) {
+            if (indices[i] < 0 || indices[i] > this.dimensions[i]) {
                 return new ErrorValue(
                     `array index out of bounds, ${indices[i]}`,
                 );
@@ -221,6 +221,15 @@ export class ArrayValue implements ValueObject {
             }
 
             dataIndex += product;
+        }
+
+        if (
+            indices[indices.length - 1] < 0 ||
+            indices[indices.length - 1] > this.dimensions[indices.length - 1]
+        ) {
+            return new ErrorValue(
+                `array index out of bounds, ${indices[indices.length - 1]}`,
+            );
         }
 
         dataIndex += Math.floor(indices[indices.length - 1]);
