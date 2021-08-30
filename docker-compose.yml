@@ -3,3 +3,4 @@ services:
   slackbasic:
     image: docker.rortic.us/slackbasic
     build: .
+    platform: linux/amd64
