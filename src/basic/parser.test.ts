@@ -467,14 +467,16 @@ describe('Parser tests', () => {
 
         describe('data statements', () => {
             it('parses data statements', () => {
-                const { statement } = parse('DATA 1, TWO, "THREE"');
+                const { statement } = parse('DATA 1, TWO, "THREE", -4');
 
                 expect(statement.type).toEqual(StatementType.DATA);
                 const d = statement as DataStatement;
-                expect(d.datas).toHaveLength(3);
+                expect(d.datas).toHaveLength(4);
                 testIntegerLiteral(d.datas[0], 1);
                 testIdentifier(d.datas[1], 'TWO');
                 testStringLiteral(d.datas[2], 'THREE');
+
+                expect(d.datas[3] instanceof PrefixExpression).toBeTruthy();
             });
 
             it('parses read statements', () => {

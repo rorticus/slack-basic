@@ -813,7 +813,13 @@ export class Parser {
                     !(d instanceof IntegerLiteral) &&
                     !(d instanceof FloatLiteral) &&
                     !(d instanceof StringLiteral) &&
-                    !(d instanceof Identifier)
+                    !(d instanceof Identifier) &&
+                    !(
+                        d instanceof PrefixExpression &&
+                        d.operator === '-' &&
+                        (d.right instanceof IntegerLiteral ||
+                            d.right instanceof FloatLiteral)
+                    )
                 ) {
                     this.pushError(
                         'invalid data value, must be an number, string, or non-reserved keyword.',

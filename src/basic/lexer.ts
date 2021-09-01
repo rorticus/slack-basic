@@ -86,7 +86,7 @@ export class Lexer {
     readNumber() {
         const position = this.position;
 
-        while (isDigit(this.ch) || this.ch === '.' || this.ch === '-') {
+        while (isDigit(this.ch) || this.ch === '.') {
             this.readChar();
         }
 
@@ -167,28 +167,12 @@ export class Lexer {
                 tok = newToken(TokenType.PLUS, this.ch, this.line, this.column);
                 break;
             case '-':
-                if (isDigit(this.peekChar())) {
-                    // negative number
-                    const line = this.line;
-                    const column = this.column;
-
-                    const num = this.readNumber();
-
-                    tok = newToken(
-                        num.indexOf('.') >= 0 ? TokenType.FLOAT : TokenType.INT,
-                        num,
-                        line,
-                        column,
-                    );
-                    return tok;
-                } else {
-                    tok = newToken(
-                        TokenType.MINUS,
-                        this.ch,
-                        this.line,
-                        this.column,
-                    );
-                }
+                tok = newToken(
+                    TokenType.MINUS,
+                    this.ch,
+                    this.line,
+                    this.column,
+                );
                 break;
             case '*':
                 tok = newToken(

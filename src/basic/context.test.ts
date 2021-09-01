@@ -115,7 +115,7 @@ describe('context tests', () => {
     describe('evaluation', () => {
         it('evaluates expressions', async () => {
             const { context } = await run(`PRINT 1 + 2`);
-            expect(context.api.print).toHaveBeenCalledWith('3');
+            expect(context.api.print).toHaveBeenCalledWith(' 3 ');
         });
 
         it('evaluates identifiers', async () => {
@@ -128,7 +128,7 @@ describe('context tests', () => {
 
         it('evaluates the exponent operator', async () => {
             const { context } = await run(`PRINT 2^3`);
-            expect(context.api.print).toHaveBeenCalledWith('8');
+            expect(context.api.print).toHaveBeenCalledWith(' 8 ');
         });
     });
 
@@ -144,7 +144,7 @@ describe('context tests', () => {
 
             await context.runProgram();
 
-            expect(context.api.print).toHaveBeenCalledWith('the answer is 4');
+            expect(context.api.print).toHaveBeenCalledWith('the answer is  4 ');
         });
 
         it('ends execution on an error', async () => {
@@ -158,36 +158,6 @@ describe('context tests', () => {
     });
 
     describe('input', () => {
-        it('pauses until input is accepted', async () => {
-            const print = jest.fn();
-            let resolver: any;
-            const input = jest.fn().mockImplementation(
-                () =>
-                    new Promise((resolve) => {
-                        resolver = resolve;
-                    }),
-            );
-
-            run(
-                `
-            INPUT A$
-            PRINT A$
-            `,
-                {
-                    input,
-                    print,
-                },
-            );
-
-            expect(input).toHaveBeenCalled();
-
-            resolver('test');
-
-            await new Promise(setImmediate);
-
-            expect(print).toHaveBeenCalledWith('test');
-        });
-
         it('accepts multiple inputs', async () => {
             const print = jest.fn();
 
@@ -214,7 +184,7 @@ describe('context tests', () => {
                 print,
             });
 
-            expect(print).toHaveBeenCalledWith('the result is 1');
+            expect(print).toHaveBeenCalledWith('the result is  1 ');
         });
     });
 
@@ -251,7 +221,7 @@ describe('context tests', () => {
 
             testForError(
                 result,
-                'cannot goto line that does not exist, 50 - (GOTO 50)',
+                'cannot goto line that does not exist, 50 - (20 GOTO 50)',
             );
         });
     });
@@ -349,11 +319,11 @@ describe('context tests', () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('0');
-            expect(context.api.print).toHaveBeenCalledWith('1');
-            expect(context.api.print).toHaveBeenCalledWith('2');
-            expect(context.api.print).toHaveBeenCalledWith('3');
-            expect(context.api.print).toHaveBeenCalledWith('4');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 2 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 3 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 4 ');
 
             expect(context.forStack).toHaveLength(0);
         });
@@ -361,12 +331,12 @@ describe('context tests', () => {
         it('runs for in a compound statement', async () => {
             const { context } = await run(`FOR I = 0 TO 5 : PRINT I : NEXT`);
 
-            expect(context.api.print).toHaveBeenCalledWith('0');
-            expect(context.api.print).toHaveBeenCalledWith('1');
-            expect(context.api.print).toHaveBeenCalledWith('2');
-            expect(context.api.print).toHaveBeenCalledWith('3');
-            expect(context.api.print).toHaveBeenCalledWith('4');
-            expect(context.api.print).toHaveBeenCalledWith('5');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 2 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 3 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 4 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 5 ');
 
             expect(context.forStack).toHaveLength(0);
         });
@@ -376,12 +346,12 @@ describe('context tests', () => {
                 `FOR I = 5 TO 0 STEP -1 : PRINT I : NEXT`,
             );
 
-            expect(context.api.print).toHaveBeenCalledWith('5');
-            expect(context.api.print).toHaveBeenCalledWith('4');
-            expect(context.api.print).toHaveBeenCalledWith('3');
-            expect(context.api.print).toHaveBeenCalledWith('2');
-            expect(context.api.print).toHaveBeenCalledWith('1');
-            expect(context.api.print).toHaveBeenCalledWith('0');
+            expect(context.api.print).toHaveBeenCalledWith(' 5 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 4 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 3 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 2 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 ');
 
             expect(context.forStack).toHaveLength(0);
         });
@@ -396,10 +366,10 @@ describe('context tests', () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('0,0');
-            expect(context.api.print).toHaveBeenCalledWith('0,1');
-            expect(context.api.print).toHaveBeenCalledWith('1,0');
-            expect(context.api.print).toHaveBeenCalledWith('1,1');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 , 0 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 , 1 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 , 0 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 , 1 ');
 
             expect(context.forStack).toHaveLength(0);
         });
@@ -413,10 +383,10 @@ describe('context tests', () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('0,0');
-            expect(context.api.print).toHaveBeenCalledWith('0,1');
-            expect(context.api.print).toHaveBeenCalledWith('1,0');
-            expect(context.api.print).toHaveBeenCalledWith('1,1');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 , 0 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 0 , 1 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 , 0 ');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 , 1 ');
 
             expect(context.forStack).toHaveLength(0);
         });
@@ -441,12 +411,12 @@ describe('context tests', () => {
             const { context } = await run(
                 `IF 1 = 1 AND 2 = 2 THEN PRINT 3 AND 1`,
             );
-            expect(context.api.print).toHaveBeenCalledWith('1');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ');
         });
 
         it('treats NOT operators in expressions as bitwise', async () => {
             const { context } = await run(`PRINT NOT 1`);
-            expect(context.api.print).toHaveBeenCalledWith(`${~1}`);
+            expect(context.api.print).toHaveBeenCalledWith(`${~1} `);
         });
 
         it('treats NOT operators in condtionals as boolean operators', async () => {
@@ -493,7 +463,7 @@ describe('context tests', () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('0 and ');
+            expect(context.api.print).toHaveBeenCalledWith(' 0  and ');
         });
 
         it('clears for loops', async () => {
@@ -566,17 +536,27 @@ describe('context tests', () => {
         });
     });
 
-    describe('data/.read/restore', () => {
+    describe('data/read/restore', () => {
+        it('runs data statements with negative numbers', async () => {
+            const { context } = await run(`
+            DATA 1, -2, 2
+            READ A, B
+            PRINT B
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith('-2 ');
+        });
+
         it('reads from data statements', async () => {
             const { context } = await run(`
             DIM E(5)
             DATA 1, 2.5, 3.14 "three", 5
             READ A%, B, PI%, C$, E(0)
-            PRINT A% " - " B " - " C$ " - " PI% " - " E(0)
+            PRINT A% "-" B "-" C$ "-" PI% "-" E(0)
             `);
 
             expect(context.api.print).toHaveBeenCalledWith(
-                '1 - 2.5 - three - 3 - 5',
+                ' 1 - 2.5 -three- 3 - 5 ',
             );
         });
 
@@ -647,7 +627,7 @@ describe('context tests', () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('15');
+            expect(context.api.print).toHaveBeenCalledWith(' 15 ');
         });
 
         it('uses a local stack to run functions', async () => {
@@ -659,7 +639,7 @@ describe('context tests', () => {
             RUN
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('15, 3');
+            expect(context.api.print).toHaveBeenCalledWith(' 15 ,  3 ');
         });
     });
 
@@ -734,7 +714,7 @@ describe('context tests', () => {
             PRINT B(0) ", " B(1) ", " B(2)
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith('1, 2, 3');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ,  2 ,  3 ');
         });
     });
 
@@ -748,7 +728,7 @@ describe('context tests', () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith('1');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ');
         });
 
         it('stops compound program execution', async () => {
@@ -757,7 +737,7 @@ describe('context tests', () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith('1');
+            expect(context.api.print).toHaveBeenCalledWith(' 1 ');
         });
 
         it('continues execution on CONT', async () => {
@@ -820,6 +800,25 @@ describe('context tests', () => {
             expect(context.api.print).toHaveBeenCalledWith(`90 REM blah blah`);
             expect(context.api.print).toHaveBeenCalledWith(
                 `100 DIM AR(16, 16) : AR(12, 2) = 4`,
+            );
+        });
+
+        it('runs a list statement with a range', async () => {
+            const { context } = await run(`
+            10 SPACE = CHR$(32)
+            20 PRINT "hello", SPACE, "world"
+            30 DEF FN TEST(Y) = Y * Y
+            40 LET B = FN TEST(3) + 2
+            50 C = B : PRINT C
+            60 INPUT "test"; D, E
+            LIST 10-20
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith(
+                '10 SPACE = CHR$(32)',
+            );
+            expect(context.api.print).toHaveBeenCalledWith(
+                `20 PRINT "hello" SPACE "world"`,
             );
         });
     });
@@ -933,7 +932,7 @@ describe('context tests', () => {
             DRAW RGB(255, 0, 0), 0, 0
             `);
 
-            expect(context.image?.getPixel(0, 0)).toEqual(0xff0000);
+            expect(context.image?.getPixel(0, 0)).toEqual('ff0000FF');
         });
 
         it('draws lines', async () => {
@@ -942,9 +941,9 @@ describe('context tests', () => {
             DRAW RGB(255, 0, 0), 0, 0 TO 2, 2
             `);
 
-            expect(context.image?.getPixel(0, 0)).toEqual(0xff0000);
-            expect(context.image?.getPixel(1, 1)).toEqual(0xff0000);
-            expect(context.image?.getPixel(2, 2)).toEqual(0xff0000);
+            expect(context.image?.getPixel(0, 0)).toEqual('ff0000FF');
+            expect(context.image?.getPixel(1, 1)).toEqual('ff0000FF');
+            expect(context.image?.getPixel(2, 2)).toEqual('ff0000FF');
         });
 
         it('draws weird lines', async () => {
@@ -953,12 +952,12 @@ describe('context tests', () => {
             DRAW RGB(0, 0, 1), 0, 0 TO 5, 2
             `);
 
-            expect(context.image?.getPixel(0, 0)).toEqual(1);
-            expect(context.image?.getPixel(1, 0)).toEqual(1);
-            expect(context.image?.getPixel(2, 0)).toEqual(1);
-            expect(context.image?.getPixel(3, 1)).toEqual(1);
-            expect(context.image?.getPixel(4, 1)).toEqual(1);
-            expect(context.image?.getPixel(5, 2)).toEqual(1);
+            expect(context.image?.getPixel(0, 0)).toEqual('000001FF');
+            expect(context.image?.getPixel(1, 0)).toEqual('000001FF');
+            expect(context.image?.getPixel(2, 0)).toEqual('000001FF');
+            expect(context.image?.getPixel(3, 1)).toEqual('000001FF');
+            expect(context.image?.getPixel(4, 1)).toEqual('000001FF');
+            expect(context.image?.getPixel(5, 2)).toEqual('000001FF');
         });
 
         it('draws boxes', async () => {
@@ -969,7 +968,7 @@ describe('context tests', () => {
 
             for (let y = 0; y < 10; y++) {
                 for (let x = 0; x < 10; x++) {
-                    expect(context.image?.getPixel(x, y)).toEqual(1);
+                    expect(context.image?.getPixel(x, y)).toEqual('000001FF');
                 }
             }
         });
