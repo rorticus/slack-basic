@@ -779,7 +779,7 @@ describe('context tests', () => {
                 '10 SPACE = CHR$(32)',
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello" SPACE "world"`,
+                `20 PRINT "hello" ; SPACE ; "world"`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
                 `30 DEF FN TEST(Y) = (Y * Y)`,
@@ -818,7 +818,7 @@ describe('context tests', () => {
                 '10 SPACE = CHR$(32)',
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello" SPACE "world"`,
+                `20 PRINT "hello" ; SPACE ; "world"`,
             );
         });
     });

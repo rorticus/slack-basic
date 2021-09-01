@@ -414,7 +414,7 @@ export class PrintStatement implements Statement {
         return combineParts(
             this.lineNumber,
             this.tokenLiteral(),
-            this.args.map((a) => a.toString()),
+            this.args.map((a) => a.toString()).join(' ; '),
         );
     }
 }
