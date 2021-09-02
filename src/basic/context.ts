@@ -1384,6 +1384,8 @@ export class Context {
             lineEnd = (end as IntValue).value;
         }
 
+        const lines: string[] = [];
+
         for (let i = 0; i < this.lines.length; i++) {
             if (
                 (this.lines[i].lineNumber ?? 0) >= lineStart &&
@@ -1392,10 +1394,12 @@ export class Context {
                 const source = this.sourceCodeMap.get(this.lines[i]);
 
                 if (source) {
-                    await this.api.print(source);
+                    lines.push(source);
                 }
             }
         }
+
+        await this.api.print(lines.join('\n'));
 
         return NULL;
     }

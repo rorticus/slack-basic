@@ -8,7 +8,9 @@
   "scripts": {
     "start": "npx ts-node src/main.ts",
     "dev": "nodemon --watch './**/*.ts' --exec 'ts-node' src/main.ts",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "test": "npx jest",
+    "repl": "npx ts-node src/cli/repl.ts"
   },
   "dependencies": {
     "@slack/bolt": "3.5.0",

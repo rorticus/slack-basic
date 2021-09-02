@@ -54,37 +54,14 @@ function getContextForUserId(userId: string): Context {
 
                 const basicSource = fs.readFileSync(filePath, 'utf-8');
 
-                const statements: Statement[] = [];
-
-                const lines = basicSource.split('\n');
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
-
-                    const lexer = new Lexer(line);
-                    const parser = new Parser(lexer);
-
-                    const statement = parser.parseStatement();
-                    if (parser.errors.length > 0) {
-                        return Promise.reject(parser.errors[0]);
-                    }
-
-                    if (statement) {
-                        statements.push(statement);
-                    }
-                }
-
-                return Promise.resolve(statements);
+                return Promise.resolve(basicSource);
             },
-            save: async (filename, statements) => {
+            save: async (filename, basicSource) => {
                 const userPath = path.resolve(baseDataDirectory, userId);
 
                 if (!fs.existsSync(userPath)) {
                     fs.mkdirSync(userPath);
                 }
-
-                const basicSource = statements
-                    .map((statement) => statement.toString())
-                    .join('\r\n');
 
                 if (basicSource === '') {
                     return Promise.reject(

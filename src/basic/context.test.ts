@@ -604,7 +604,6 @@ describe('context tests', () => {
             READ A$
             `);
 
-            console.log(errors);
             expect(errors).toHaveLength(1);
             expect(errors[0]).toEqual(
                 'type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)',
@@ -781,31 +780,18 @@ describe('context tests', () => {
             LIST
             `);
 
+            expect(context.api.print).toHaveBeenCalledTimes(1);
             expect(context.api.print).toHaveBeenCalledWith(
-                '10 SPACE = CHR$(32)',
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello", SPACE, "world"`,
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `30 DEF FN TEST(Y) = Y * Y`,
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `40 LET B = FN TEST(3) + 2`,
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `50 C = B : PRINT C`,
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `60 INPUT "test"; D, E`,
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `70 FOR I = 0 TO 5 STEP 1`,
-            );
-            expect(context.api.print).toHaveBeenCalledWith(`80 NEXT`);
-            expect(context.api.print).toHaveBeenCalledWith(`90 REM blah blah`);
-            expect(context.api.print).toHaveBeenCalledWith(
-                `100 DIM AR(16, 16) : AR(12, 2) = 4`,
+                `10 SPACE = CHR$(32)
+20 PRINT "hello", SPACE, "world"
+30 DEF FN TEST(Y) = Y * Y
+40 LET B = FN TEST(3) + 2
+50 C = B : PRINT C
+60 INPUT "test"; D, E
+70 FOR I = 0 TO 5 STEP 1
+80 NEXT
+90 REM blah blah
+100 DIM AR(16, 16) : AR(12, 2) = 4`,
             );
         });
 
@@ -821,10 +807,8 @@ describe('context tests', () => {
             `);
 
             expect(context.api.print).toHaveBeenCalledWith(
-                '10 SPACE = CHR$(32)',
-            );
-            expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello", SPACE, "world"`,
+                `10 SPACE = CHR$(32)
+20 PRINT "hello", SPACE, "world"`,
             );
         });
     });
