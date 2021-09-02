@@ -22,6 +22,10 @@ const context = new Context({
     createImage(width: number, height: number): Promise<BasicCanvas> {
         return Promise.reject('not implemented');
     },
+    list(code: string) {
+        console.log(code);
+        return Promise.resolve();
+    },
 });
 
 const run = async (code: string) => {

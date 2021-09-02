@@ -33,6 +33,6 @@ export class BufferedPrinter {
     async flush() {
         const lines = this.buffer;
         this.buffer = [];
-        await this.say?.('```' + lines.join('\n') + '```');
+        await this.say?.(lines.join('\n'));
     }
 }

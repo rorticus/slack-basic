@@ -33,6 +33,7 @@ function getContextForUserId(userId: string): Context {
 
         const basicContext = new Context({
             print: printer.print.bind(printer),
+            list: () => Promise.resolve(),
             input: () => Promise.resolve(''),
             load: async (filename) => {
                 const userPath = path.resolve(baseDataDirectory, userId);
@@ -317,6 +318,10 @@ app.message(/(.*)/, async (context) => {
                 await basicContext.api.print(message);
             }
         });
+    };
+
+    basicContext.api.print = async (code: string) => {
+        await context.say('\n```' + code + '\n```');
     };
 
     const result = await loadProgram(text, basicContext);

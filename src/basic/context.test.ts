@@ -26,6 +26,7 @@ describe('context tests', () => {
                 input: jest.fn().mockResolvedValue(''),
                 load: jest.fn().mockResolvedValue([]),
                 save: jest.fn().mockResolvedValue(undefined),
+                list: jest.fn().mockResolvedValue(undefined),
                 createImage(
                     width: number,
                     height: number,
@@ -63,12 +64,6 @@ describe('context tests', () => {
         }
 
         return { context, result, errors };
-    }
-
-    function testForError(result: ValueObject | undefined, expected: string) {
-        expect(result).not.toBeUndefined();
-        expect(result!.type()).toEqual(ObjectType.ERROR_OBJ);
-        expect((result as ErrorValue).message).toEqual(expected);
     }
 
     describe('immediate tasks', () => {
@@ -780,8 +775,8 @@ describe('context tests', () => {
             LIST
             `);
 
-            expect(context.api.print).toHaveBeenCalledTimes(1);
-            expect(context.api.print).toHaveBeenCalledWith(
+            expect(context.api.list).toHaveBeenCalledTimes(1);
+            expect(context.api.list).toHaveBeenCalledWith(
                 `10 SPACE = CHR$(32)
 20 PRINT "hello", SPACE, "world"
 30 DEF FN TEST(Y) = Y * Y
@@ -806,7 +801,7 @@ describe('context tests', () => {
             LIST 10-20
             `);
 
-            expect(context.api.print).toHaveBeenCalledWith(
+            expect(context.api.list).toHaveBeenCalledWith(
                 `10 SPACE = CHR$(32)
 20 PRINT "hello", SPACE, "world"`,
             );
@@ -827,7 +822,7 @@ describe('context tests', () => {
             );
 
             expect(load).toHaveBeenCalledWith('test');
-            expect(context.api.print).toHaveBeenCalledWith(`10 PRINT "loaded"`);
+            expect(context.api.list).toHaveBeenCalledWith(`10 PRINT "loaded"`);
         });
     });
 

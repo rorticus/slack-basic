@@ -77,6 +77,7 @@ export interface ContextApi {
     input(message?: string): Promise<string>;
     load(filename: string): Promise<string>;
     save(filename: string, code: string): Promise<void>;
+    list(code: string): Promise<void>;
     createImage(width: number, height: number): Promise<BasicCanvas>;
 }
 
@@ -1399,7 +1400,7 @@ export class Context {
             }
         }
 
-        await this.api.print(lines.join('\n'));
+        await this.api.list(lines.join('\n'));
 
         return NULL;
     }
