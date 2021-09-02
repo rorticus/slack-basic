@@ -13,10 +13,10 @@ const context = new Context({
     input(message?: string): Promise<string> {
         return Promise.resolve('');
     },
-    save(filename: string, statements: Statement[]): Promise<void> {
+    save(filename: string, code: string): Promise<void> {
         return Promise.reject('not implemented');
     },
-    load(filename: string): Promise<Statement[]> {
+    load(filename: string): Promise<string> {
         return Promise.reject('not implemented');
     },
     createImage(width: number, height: number): Promise<BasicCanvas> {
@@ -25,19 +25,12 @@ const context = new Context({
 });
 
 const run = async (code: string) => {
-    const parser = new Parser(new Lexer(code.trim()));
-    const statement = parser.parseStatement();
-
-    if (statement) {
-        const result = await context.runImmediateStatement(statement);
-        if (isError(result)) {
-            console.log(result.toString());
-        }
-
-        return result;
+    const result = await context.runImmediateStatement(code);
+    if (isError(result)) {
+        console.log(result.toString());
     }
 
-    return null;
+    return result;
 };
 
 async function main() {
@@ -49,7 +42,6 @@ async function main() {
 
         const result = await run(line);
 
-        
         if (result) {
             console.log(result.toString());
         }

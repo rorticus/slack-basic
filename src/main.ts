@@ -193,18 +193,10 @@ async function loadProgram(
             continue;
         }
 
-        const lexer = new Lexer(line);
-        const parser = new Parser(lexer);
-        const statement = parser.parseStatement();
+        result = await context.runImmediateStatement(line);
 
-        if (parser.errors.length) {
-            return new ErrorValue(parser.errors.join(', '));
-        } else if (statement) {
-            result = await context.runImmediateStatement(statement);
-
-            if (result.type() === ObjectType.ERROR_OBJ) {
-                return result;
-            }
+        if (result.type() === ObjectType.ERROR_OBJ) {
+            return result;
         }
     }
 

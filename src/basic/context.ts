@@ -52,6 +52,8 @@ import {
 } from './object';
 import builtins from './builtins';
 import { TokenType } from './tokens';
+import Lexer from './lexer';
+import { Parser } from './parser';
 
 export const NULL = new NullValue();
 export const DimLimit = 1048576;
@@ -73,8 +75,8 @@ export interface BasicCanvas {
 export interface ContextApi {
     print(str: string): Promise<void>;
     input(message?: string): Promise<string>;
-    load(filename: string): Promise<Statement[]>;
-    save(filename: string, statements: Statement[]): Promise<void>;
+    load(filename: string): Promise<string>;
+    save(filename: string, code: string): Promise<void>;
     createImage(width: number, height: number): Promise<BasicCanvas>;
 }
 
@@ -192,6 +194,7 @@ export class Context {
     private waitingForInput = false;
     private lastTimeout = 0;
     private runTime = 0;
+    private sourceCodeMap: WeakMap<Statement, string>;
 
     constructor(api: ContextApi) {
         this.globalStack = new Stack();
@@ -204,6 +207,7 @@ export class Context {
         this.dataStack = [];
         this.continueStatement = null;
         this.maxExecutionTime = 0;
+        this.sourceCodeMap = new WeakMap<Statement, string>();
 
         this.initializeGlobals();
     }
@@ -260,12 +264,28 @@ export class Context {
         }
     }
 
-    async runImmediateStatement(statement: Statement): Promise<ValueObject> {
+    async runImmediateStatement(line: string): Promise<ValueObject> {
         if (this.state === ContextState.RUNNING) {
             return newError(`busy`);
         }
 
+        if (line.trim() === '') {
+            return NULL;
+        }
+
+        const parser = new Parser(new Lexer(line.trim()));
+        const statement = parser.parseStatement();
+
+        if (parser.errors.length > 0 || !statement) {
+            return newError(
+                `Parse error: ${parser.errors.join('. ')}`,
+                statement,
+            );
+        }
+
         if (statement.lineNumber) {
+            this.sourceCodeMap.set(statement, line.trim());
+
             // replace this line?
             this.lines = [
                 ...this.lines.filter(
@@ -1369,7 +1389,11 @@ export class Context {
                 (this.lines[i].lineNumber ?? 0) >= lineStart &&
                 (this.lines[i].lineNumber ?? 0) <= lineEnd
             ) {
-                await this.api.print(this.lines[i].toString());
+                const source = this.sourceCodeMap.get(this.lines[i]);
+
+                if (source) {
+                    await this.api.print(source);
+                }
             }
         }
 
@@ -1386,13 +1410,15 @@ export class Context {
             );
         }
 
-        const newStatements = await this.api.load(filename.value);
+        const newCode = await this.api.load(filename.value);
 
         this.state = ContextState.IDLE;
         this.clr();
 
-        for (let i = 0; i < newStatements.length; i++) {
-            const result = await this.runImmediateStatement(newStatements[i]);
+        const lines = newCode.split('\n');
+
+        for (let i = 0; i < lines.length; i++) {
+            const result = await this.runImmediateStatement(lines[i]);
             if (isError(result)) {
                 return result;
             }
@@ -1412,7 +1438,13 @@ export class Context {
         }
 
         try {
-            await this.api.save(filename.value, this.lines);
+            await this.api.save(
+                filename.value,
+                this.lines
+                    .map((l) => this.sourceCodeMap.get(l))
+                    .filter((l) => l)
+                    .join('\n'),
+            );
             return NULL;
         } catch (e) {
             console.log(e);

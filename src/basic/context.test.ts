@@ -56,17 +56,12 @@ describe('context tests', () => {
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
 
-            const lexer = new Lexer(line);
-            const parser = new Parser(lexer);
-
-            const statement = parser.parseStatement();
-            if (statement) {
-                result = await context.runImmediateStatement(statement!);
-                if (isError(result)) {
-                    errors.push(result.message);
-                }
+            result = await context.runImmediateStatement(line);
+            if (isError(result)) {
+                errors.push(result.message);
             }
         }
+
         return { context, result, errors };
     }
 
@@ -594,15 +589,14 @@ describe('context tests', () => {
         });
 
         it('errors if there is a type mismatch assigning a int to a string', async () => {
-            const { result } = await run(`
+            const { errors } = await run(`
             DATA 1
             READ A$
             `);
 
-            testForError(
-                result,
-                'type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)',
-            );
+            console.log(errors);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual('type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)');
         });
 
         it('runs RESTORE statements', async () => {
@@ -779,13 +773,13 @@ describe('context tests', () => {
                 '10 SPACE = CHR$(32)',
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello" ; SPACE ; "world"`,
+                `20 PRINT "hello", SPACE, "world"`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `30 DEF FN TEST(Y) = (Y * Y)`,
+                `30 DEF FN TEST(Y) = Y * Y`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `40 LET B = ((FN TEST(3)) + 2)`,
+                `40 LET B = FN TEST(3) + 2`,
             );
             expect(context.api.print).toHaveBeenCalledWith(
                 `50 C = B : PRINT C`,
@@ -818,18 +812,14 @@ describe('context tests', () => {
                 '10 SPACE = CHR$(32)',
             );
             expect(context.api.print).toHaveBeenCalledWith(
-                `20 PRINT "hello" ; SPACE ; "world"`,
+                `20 PRINT "hello", SPACE, "world"`,
             );
         });
     });
 
     describe('load statements', () => {
         it('calls the load api', async () => {
-            const load = jest
-                .fn()
-                .mockResolvedValue([
-                    new Parser(new Lexer(`10 PRINT "loaded`)).parseStatement(),
-                ]);
+            const load = jest.fn().mockResolvedValue('10 PRINT "loaded"');
 
             const { context } = await run(
                 `
