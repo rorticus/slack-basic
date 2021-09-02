@@ -710,6 +710,10 @@ describe('Parser tests', () => {
                     'IF (((X = R(P, 0)) OR (X = R(P, 1))) OR (X = R(P, 2))) THEN IF S THEN 290 ELSE P = X : GOTO 90',
                 ],
                 ['if k <= 2 then 790', 'IF (K <= 2) THEN 790'],
+                [
+                    'IF 0 THEN PRINT "one" ELSE PRINT "two"',
+                    'IF 0 THEN PRINT "one" ELSE PRINT "two"',
+                ],
             ] as const;
 
             for (let i = 0; i < tests.length; i++) {

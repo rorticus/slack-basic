@@ -287,8 +287,18 @@ describe('context tests', () => {
             expect(context.api.print).toHaveBeenCalledWith('d');
         });
 
+        it('runs else conditions on falsey then conditions', async () => {
+            const { context } = await run(`
+            10 A$ = "test"
+            20 IF A = "test2" THEN PRINT "one" ELSE PRINT "two"
+            RUN
+            `);
+
+            expect(context.api.print).toHaveBeenCalledWith('two');
+        });
+
         it('runs the conditions', async () => {
-            const { context, result } = await run(`
+            const { context } = await run(`
             10 A = 0
             20 IF A = 1 THEN PRINT "a is 1"
             30 IF A <> 1 THEN PRINT "a is not 1"

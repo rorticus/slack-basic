@@ -418,7 +418,8 @@ export class Parser {
         // consume additional arguments, if available
         while (
             !this.peekTokenIs(TokenType.COLON) &&
-            !this.peekTokenIs(TokenType.EOF)
+            !this.peekTokenIs(TokenType.EOF) &&
+            !this.peekTokenIs(TokenType.ELSE)
         ) {
             if (
                 this.peekTokenIs(TokenType.COMMA) ||
