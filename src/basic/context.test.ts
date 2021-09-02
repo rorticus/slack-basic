@@ -208,14 +208,14 @@ describe('context tests', () => {
         });
 
         it('errors if line does not exist', async () => {
-            const { context, result } = await run(`
+            const { errors } = await run(`
             10 PRINT "a"
             20 GOTO 50
             RUN
             `);
 
-            testForError(
-                result,
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(
                 'cannot goto line that does not exist, 50 - (20 GOTO 50)',
             );
         });
@@ -439,12 +439,15 @@ describe('context tests', () => {
         });
 
         it('it errors if you return with no gosub', async () => {
-            const { context, result } = await run(`
+            const { errors } = await run(`
             50 RETURN            
             RUN
             `);
 
-            testForError(result, 'cannot return on empty stack - (50 RETURN)');
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(
+                'cannot return on empty stack - (50 RETURN)',
+            );
         });
     });
 
@@ -462,19 +465,25 @@ describe('context tests', () => {
         });
 
         it('clears for loops', async () => {
-            const { result } = await run(`FOR I = 0 TO 5 : CLR : NEXT`);
-            testForError(result, 'cannot iterate on unknown variable - (NEXT)');
+            const { errors } = await run(`FOR I = 0 TO 5 : CLR : NEXT`);
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(
+                'cannot iterate on unknown variable - (NEXT)',
+            );
         });
 
         it('clears gosubs', async () => {
-            const { result } = await run(`
+            const { errors } = await run(`
             10 GOSUB 20
             20 CLR
             30 RETURN
             RUN
             `);
 
-            testForError(result, 'cannot return on empty stack - (30 RETURN)');
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(
+                'cannot return on empty stack - (30 RETURN)',
+            );
         });
     });
 
@@ -556,34 +565,35 @@ describe('context tests', () => {
         });
 
         it('errors if there is no data on the data stack', async () => {
-            const { result } = await run(`
+            const { errors } = await run(`
             DATA 1
             READ A%, B
             `);
 
-            testForError(result, 'no more data to read - (READ A%, B)');
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual('no more data to read - (READ A%, B)');
         });
 
         it('errors if there is a type mismatch assigning a string to an int', async () => {
-            const { result } = await run(`
+            const { errors } = await run(`
             DATA "test"
             READ A%
             `);
 
-            testForError(
-                result,
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(
                 'type mismatch. cannot set STRING to identifier of type INT - (READ A%)',
             );
         });
 
         it('errors if there is a type mismatch assigning a string to a float', async () => {
-            const { result } = await run(`
+            const { errors } = await run(`
             DATA "test"
             READ A
             `);
 
-            testForError(
-                result,
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(
                 'type mismatch. cannot set STRING to identifier of type FLOAT - (READ A)',
             );
         });
@@ -596,7 +606,9 @@ describe('context tests', () => {
 
             console.log(errors);
             expect(errors).toHaveLength(1);
-            expect(errors[0]).toEqual('type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)');
+            expect(errors[0]).toEqual(
+                'type mismatch. cannot set INTEGER to identifier of type STRING - (READ A$)',
+            );
         });
 
         it('runs RESTORE statements', async () => {
