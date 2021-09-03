@@ -320,7 +320,7 @@ app.message(/(.*)/, async (context) => {
         });
     };
 
-    basicContext.api.print = async (code: string) => {
+    basicContext.api.list = async (code: string) => {
         await context.say('\n```' + code + '\n```');
     };
 
