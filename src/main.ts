@@ -1,15 +1,12 @@
 import { config } from 'dotenv';
 import { App, View } from '@slack/bolt';
 import { Context, NULL } from './basic/context';
-import Lexer from './basic/lexer';
-import { Parser } from './basic/parser';
-import { ErrorValue, ObjectType, ValueObject } from './basic/object';
+import { ObjectType, ValueObject } from './basic/object';
 import { BufferedPrinter } from './bufferedprinter';
 import { react } from './react';
 import { decode } from 'html-entities';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Statement } from './basic/ast';
 import * as Jimp from 'jimp';
 
 config();
@@ -123,6 +120,9 @@ const app = new App({
     token: process.env.BOT_TOKEN,
     socketMode: true,
     appToken: process.env.APP_TOKEN,
+    clientOptions: {
+        clientTimeout: 1000 * 60 * 10,
+    } as any,
 });
 
 app.view(
