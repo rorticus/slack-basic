@@ -278,10 +278,12 @@ export class Context {
         const statement = parser.parseStatement();
 
         if (parser.errors.length > 0 || !statement) {
-            return newError(
+            const error = newError(
                 `Parse error: ${parser.errors.join('. ')}`,
                 statement,
             );
+            error.line = line;
+            return error;
         }
 
         if (statement.lineNumber) {
@@ -1425,6 +1427,7 @@ export class Context {
         for (let i = 0; i < lines.length; i++) {
             const result = await this.runImmediateStatement(lines[i]);
             if (isError(result)) {
+                result.line = lines[i].trim();
                 return result;
             }
         }

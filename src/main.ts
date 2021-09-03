@@ -321,13 +321,24 @@ app.message(/(.*)/, async (context) => {
     };
 
     basicContext.api.list = async (code: string) => {
-        await context.say('\n```' + code + '\n```');
+        if (code === '') {
+            await context.say('No stored program found.');
+            return;
+        }
+
+        await context.client.files.upload({
+            token: process.env.BOT_TOKEN,
+            filetype: 'txt',
+            filename: 'slackbasic.bas',
+            file: Buffer.from(code, 'utf-8'),
+            channels: context.message.channel,
+        });
     };
 
     const result = await loadProgram(text, basicContext);
     if (result.type() === ObjectType.ERROR_OBJ) {
         await react('x', context);
-        await context.say(result.toString());
+        await context.say(':x: ' + result.toString());
     } else {
         await react('ok', context);
 

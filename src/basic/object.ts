@@ -112,6 +112,7 @@ export class ReturnValue implements ValueObject {
 
 export class ErrorValue implements ValueObject {
     message: string;
+    line?: string;
 
     constructor(message: string) {
         this.message = message;
@@ -126,7 +127,11 @@ export class ErrorValue implements ValueObject {
     }
 
     toString() {
-        return `ERROR: ${this.message}`;
+        if (this.line) {
+            return `LINE: ${this.line}\nERROR: ${this.message}`;
+        } else {
+            return `ERROR: ${this.message}`;
+        }
     }
 }
 
