@@ -1,10 +1,13 @@
-10 GRAPHICS 320, 200
-20 BOX "#ff00ff", 0, 0, 320, 200
-30 LET boxCount% = 10
-40 FOR I = 0 TO boxCount%
-50  left = INT(RND() * 320)
-60  top = INT(RND() * 200)
-70  width = INT(RND() * 25)
-80  height = INT(RND() * 25)
-90 BOX "#ffffff", left, top, width, height
-100 NEXT
+5 GRAPHICS 512, 512
+
+10 DATA "#ff0000ff" "#00ff00ff" "#0000ffff"
+20 DIM COLORS$(2) : READ COLORS$(0), COLORS$(1), COLORS$(2)
+30 DEF FN COLOR() = COLORS$(INT(RND() * 3))
+40 DEF FN NUM(MAX) = INT(RND() * MAX)
+50 FOR I% = 0 TO 2
+60   C$ = FN COLOR()
+70   X = FN NUM(512)
+80   Y = FN NUM(512)
+90   S = 25 + FN NUM(25)
+100  BOX C$, X, Y, S, S
+110 NEXT

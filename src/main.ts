@@ -281,7 +281,7 @@ app.command('/basic', async (context) => {
             await context.client.files.upload({
                 token: process.env.BOT_TOKEN,
                 filetype: 'png',
-                filename: 'slackbasic.png',
+                filename: 'boxes.png',
                 file: buffer,
                 channels: context.command.channel_name,
             });
@@ -351,7 +351,7 @@ app.message(/(.*)/, async (context) => {
             await context.client.files.upload({
                 token: process.env.BOT_TOKEN,
                 filetype: 'png',
-                filename: 'slackbasic.png',
+                filename: 'boxes.png',
                 file: buffer,
                 channels: context.message.channel,
             });

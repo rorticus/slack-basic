@@ -46,10 +46,10 @@ GRAPHICS 512, 512
 This will create a "graphics canvas" of 512 by 512 pixels. You can now use graphics statements to draw to this canvas.  Let's draw a couple of boxes.
 
 ```bas
-10 DATA #ff0000ff #00ff00ff #0000ffff
+10 DATA "#ff0000ff" "#00ff00ff" "#0000ffff"
 20 DIM COLORS$(2) : READ COLORS$(0), COLORS$(1), COLORS$(2)
 30 DEF FN COLOR() = COLORS$(INT(RND() * 3))
-40 DEF FN BETWEEN(MIN, MAX) = MIN + INT(RND() * (MAX - MIN))
+40 DEF FN NUM(MAX) = INT(RND() * MAX)
 ```
 
 Woah! What's going on here.
@@ -60,14 +60,14 @@ Woah! What's going on here.
 
 - `30` - Slack Basic supports single expression functions - more similar to a function in the mathematical sense than the programming sense. Here we are creating a function that will return a single random color from the `COLORS$` array.  Remember, `INT` converts a floating point value to an integer by rounding down, and `RND` returns a random number between 0 and 1.
 
-- `40` - Another function here, but this one is fancy and takes parameters!
+- `40` - Another function here, but this one is fancy and takes a parameter!
 
 ```bas
 50 FOR I% = 0 TO 2
 60   C$ = FN COLOR()
 70   X = FN BETWEEN(0, 512)  
 80   Y = FN BETWEEN(0, 512)
-90   S = FN BETWEEN(25, 50)
+90   S = 25 + FN NUM(25)
 100  BOX C$, X, Y, S, S
 110 NEXT
 ```
@@ -83,3 +83,5 @@ This is a mouthfull.
 - `110` - This is the other half of the loop. `NEXT` by itself will always jump up back to the most innermost loop.
 
 `RUN` this and you should get something that looks like this.
+
+![](./boxes.png)
