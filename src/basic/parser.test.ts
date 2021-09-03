@@ -714,6 +714,7 @@ describe('Parser tests', () => {
                     'IF 0 THEN PRINT "one" ELSE PRINT "two"',
                     'IF 0 THEN PRINT "one" ELSE PRINT "two"',
                 ],
+                ['IF 0 THEN 140 ELSE 160', 'IF 0 THEN 140 ELSE 160'],
             ] as const;
 
             for (let i = 0; i < tests.length; i++) {

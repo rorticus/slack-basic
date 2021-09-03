@@ -627,6 +627,7 @@ export class Parser {
                 }
 
                 statement.then = nextLine;
+                this.nextToken();
             } else {
                 this.nextToken();
 

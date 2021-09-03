@@ -289,8 +289,9 @@ describe('context tests', () => {
 
         it('runs else conditions on falsey then conditions', async () => {
             const { context } = await run(`
-            10 A$ = "test"
-            20 IF A = "test2" THEN PRINT "one" ELSE PRINT "two"
+            130 if "hello" = "testcase" then 140 else 160
+            140 print "one" : END
+            160 PRINT "two"
             RUN
             `);
 
