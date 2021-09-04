@@ -121,7 +121,7 @@ const app = new App({
     socketMode: true,
     appToken: process.env.APP_TOKEN,
     clientOptions: {
-        clientTimeout: 1000 * 60 * 10,
+        timeout: 1000 * 60 * 10,
     } as any,
 });
 
