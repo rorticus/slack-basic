@@ -325,8 +325,8 @@ app.message(/(.*)/, async (context) => {
 
         await context.client.files.upload({
             token: process.env.BOT_TOKEN,
-            filetype: 'txt',
-            filename: 'slackbasic.bas',
+            filetype: 'text',
+            filename: 'slackbasic.txt',
             file: Buffer.from(code, 'utf-8'),
             channels: context.message.channel,
         });
@@ -776,6 +776,6 @@ app.action('action-unshare', async (context) => {
 });
 
 (async () => {
-    await app.start();
+    await app.start(8000);
     console.log('Slack basic started!');
 })();
