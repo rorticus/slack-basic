@@ -118,11 +118,8 @@ if (!fs.existsSync(baseDataDirectory)) {
 
 const app = new App({
     token: process.env.BOT_TOKEN,
-    socketMode: true,
     appToken: process.env.APP_TOKEN,
-    clientOptions: {
-        timeout: 1000 * 60 * 10,
-    } as any,
+    signingSecret: process.env.SIGNING_SECRET
 });
 
 app.view(
