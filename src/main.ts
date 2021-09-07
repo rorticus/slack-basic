@@ -120,6 +120,7 @@ const app = new App({
     token: process.env.BOT_TOKEN,
     appToken: process.env.APP_TOKEN,
     signingSecret: process.env.SIGNING_SECRET,
+    socketMode: process.env.SOCKET === 'true',
 });
 
 app.view(
