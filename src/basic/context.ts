@@ -509,6 +509,7 @@ export class Context {
                     .join(''),
             );
         } catch (e) {
+            this.stop();
             return newError(e.message, statement);
         }
 
