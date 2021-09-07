@@ -23,8 +23,8 @@
 
 160 REM losing :(
 170 IF str$ = ":woman::woman::woman:" THEN GOTO 210
-180 dataIndex% = INT(RND() * 108) + 1
-190 FOR I = 1 TO dataIndex% - 1 : READ response$ : NEXT
+180 dataIndex% = INT(RND() * 108)
+190 FOR I% = 1 TO dataIndex% - 1 : READ response$ : NEXT
 200 PRINT response$ : END
 
 210 REM all the ladies
@@ -32,7 +32,7 @@
 
 230 REM DATA
 
-240 DATA "Ryan Jones gave his father “the talk”"
+240 DATA "Ryan Jones gave his father the talk"
 250 DATA "Ryan Jones' passport requires no photograph"
 260 DATA "When Ryan Jones drives a car off the lot, its price increases in value"
 280 DATA "Once a rattlesnake bit Ryan Jones, after 5 days of excruciating pain, the snake finally died"
@@ -104,7 +104,7 @@
 940 DATA "While swimming off the coast of Australia, Ryan Jones once scratched the underbelly of the Great White with his right hand"
 950 DATA "Ryan Jones taught Chuck Norris martial arts"
 960 DATA "Time waits on no one, but Ryan Jones"
-970 DATA "Once Ryan Jones ran a marathon because it was on the way
+970 DATA "Once Ryan Jones ran a marathon because it was on the way"
 980 DATA "Ryan Jones' mother has a tattoo that says Son"
 990 DATA "The star on his Christmas tree is tracked by NASA"
 1000 DATA "Presidents take his birthday off"
