@@ -119,7 +119,7 @@ if (!fs.existsSync(baseDataDirectory)) {
 const app = new App({
     token: process.env.BOT_TOKEN,
     appToken: process.env.APP_TOKEN,
-    signingSecret: process.env.SIGNING_SECRET
+    signingSecret: process.env.SIGNING_SECRET,
 });
 
 app.view(
@@ -637,6 +637,15 @@ app.action('action-delete', async (context) => {
     if (selectedFile) {
         const userPath = path.resolve(baseDataDirectory, context.body.user.id);
         const filePath = path.resolve(userPath, selectedFile);
+        const sharedPath = path.resolve(
+            baseDataDirectory,
+            context.body.team.id,
+            selectedFile,
+        );
+
+        if (fs.existsSync(sharedPath)) {
+            fs.rmSync(sharedPath);
+        }
 
         fs.rmSync(filePath);
 
