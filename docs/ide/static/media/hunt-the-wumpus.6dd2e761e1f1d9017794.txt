@@ -1,0 +1,58 @@
+100 REM POKE 36879,127 : CLS
+110 DEF FN R(X) = INT((RND(1) * X))
+120 P = 1 : MA = 5
+130 NP = ((FN R(5)) + 3) : DIM PT((NP + 1)) : FOR N = 1 TO NP : PT(N) = ((FN R(99)) + 2) : NEXT
+140 W1 = ((FN R(99)) + 2) : W2 = ((FN R(99)) + 2) : IF (W1 = W2) THEN 140
+150 TI$ = "000000"
+155 PRINT "The map is a 10x10 grid numbered 1-10, left to right, on the first row, 11-20 on the second row, etc."
+156 PRINT "You can move up, down, left, or right by entering a number one less (left) or greater (right), or 10 less (up) or greater (down)."
+157 PRINT "If you fall into a pit you'll die.  If you encounter bats they'll drop you in a random cave."
+158 PRINT "If a wumpus is nearby and you think you know which direction it is, shoot into its cave number; if you enter a cave with a wumpus you'll die."
+160 TM = VAL(MID$(TI$, 3, 2))
+170 PRINT "Cave " P "   TIME " TM " MIN."
+180 PRINT "Magic Arrows: " MA
+190 IF ((((ABS((W1 - P)) <> 1) AND (ABS((W1 - P)) <> 10)) AND (ABS((W2 - P)) <> 1)) AND (ABS((W2 - P)) <> 10)) THEN 370
+200 PRINT "   THERE IS A WUMPUS NEARBY"
+210 PRINT "Fire an arrow? (Y/N) "
+220 INPUT A$ : IF ((((A$ <> "Y") AND (A$ <> "N")) AND (A$ <> "y")) AND (A$ <> "n")) THEN 220
+230 IF ((A$ = "N") OR (A$ = "n")) THEN 470
+240 INPUT "Where to"; CN
+250 MA = (MA - 1)
+260 IF ((ABS((CN - P)) <> 1) AND (ABS((CN - P)) <> 10)) THEN PRINT "Can't shoot here!" : GOTO 470
+270 IF ((W1 <> CN) AND (W2 <> CN)) THEN PRINT "You missed it!" : GOTO 470
+280 IF (W1 = CN) THEN W1 = (-100)
+290 IF (W2 = CN) THEN W2 = (-100)
+300 PRINT "You killed a wumpus!" : FOR N = 1 TO 1000 : NEXT
+310 IF ((W1 <> (-100)) OR (W2 <> (-100))) THEN 470
+320 PRINT "You have survived with " (20 - TM) " minutes left!!"
+330 PRINT "Another game (Y/N)"
+340 INPUT A$ : IF ((((A$ <> "Y") AND (A$ <> "N")) AND (A$ <> "y")) AND (A$ <> "n")) THEN 340
+350 IF ((A$ = "N") OR (A$ = "n")) THEN PRINT : PRINT : PRINT : END
+360 RUN
+370 FOR N = 1 TO NP
+380 IF ((ABS((PT(N) - P)) <> 1) AND (ABS((PT(N) - P)) <> 10)) THEN 400
+390 PRINT "It's draughty here - pits nearby!!!"
+400 NEXT
+410 IF ((FN R(30)) > 0) THEN 470
+420 PRINT "Superbats have carried you away!!!!!" : FOR N = 1 TO 3000 : NEXT
+430 CN = ((FN R100) + 1) : IF (CN = P) THEN 430
+440 P = CN : PRINT "They dropped you in cave " P : FOR N = 1 TO 3000 : NEXT
+450 GOTO 510
+460 IF (MA = 0) THEN 620
+470 IF (MA = 0) THEN 620
+480 INPUT "Where to now"; CN
+490 IF ((((CN < 1) OR (CN > 100)) OR (ABS((CN - P)) <> 1)) AND (ABS((CN - P)) <> 10)) THEN PRINT "Can't go there!!" : GOTO 470
+500 P = CN
+510 FOR N = 1 TO NP : IF (P = PT(N)) THEN 560
+520 NEXT
+530 IF (TM = 20) THEN 600
+540 IF ((W1 = P) OR (W2 = P)) THEN 580
+550 GOTO 160
+560 PRINT "You fell down a pit!"
+570 GOTO 330
+580 PRINT "You were eaten by a wumpus!!!!!!!!!"
+590 GOTO 330
+600 PRINT "You ran out of time"
+610 GOTO 330
+620 PRINT "You have no magic arrows"
+630 GOTO 330
