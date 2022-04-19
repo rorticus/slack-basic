@@ -35,6 +35,7 @@ export enum StatementType {
     RUN = 'RUN',
     SAVE = 'SAVE',
     STOP = 'STOP',
+    EMPTY = 'EMPTY',
 }
 
 export enum IdentifierType {
@@ -43,10 +44,18 @@ export enum IdentifierType {
     STRING = 'STRING',
 }
 
+export interface LineNumberReference {
+    lineNumber: number;
+    lineNumberToken: Token;
+    statement: Statement;
+}
+
 export interface Statement extends Node {
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type: StatementType;
     next: Statement | null;
+    getLineNumberReferences(): LineNumberReference[];
 }
 
 export interface Expression extends Node {
@@ -176,11 +185,16 @@ export class StringLiteral implements Expression {
 export class RunStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.RUN;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -195,13 +209,26 @@ export class RunStatement implements Statement {
 export class GotoStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.GOTO;
     destination: number;
+    destinationToken: Token;
     next: Statement | null = null;
 
-    constructor(token: Token, destination: number) {
+    constructor(token: Token, destination: number, destinationToken: Token) {
         this.token = token;
         this.destination = destination;
+        this.destinationToken = destinationToken;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [
+            {
+                lineNumber: this.destination,
+                lineNumberToken: this.destinationToken,
+                statement: this,
+            },
+        ];
     }
 
     tokenLiteral(): string {
@@ -212,7 +239,7 @@ export class GotoStatement implements Statement {
         return combineParts(
             this.lineNumber,
             this.token.literal,
-            this.destination,
+            this.destinationToken.literal,
         );
     }
 }
@@ -234,9 +261,9 @@ export class PrefixExpression implements Expression {
     }
 
     toString(): string {
-        return `(${
+        return `${
             this.operator === 'FN' ? `${this.operator} ` : this.operator
-        }${this.right ? this.right.toString() : ''})`;
+        }${this.right ? this.right.toString() : ''}`;
     }
 }
 
@@ -264,24 +291,28 @@ export class InfixExpression implements Expression {
     }
 
     toString(): string {
-        return `(${this.left.toString()} ${this.operator} ${
+        return `${this.left.toString()} ${this.operator} ${
             this.right ? this.right.toString() : ''
-        })`;
+        }`;
     }
 }
 
 export class IfStatement implements Statement {
     token: Token;
     lineNumber = 0;
+    lineNumberToken: Token | undefined;
     type = StatementType.IF;
     next: Statement | null = null;
 
     condition: Expression | null;
     then: number | Statement | undefined;
+    thenToken: Token | undefined;
     goto: number | undefined;
+    gotoToken: Token | undefined;
 
     elseToken: Token | undefined;
     elseGoto: number | undefined;
+    elseGotoToken: Token | undefined;
     elseThen: Statement | undefined;
 
     constructor(token: Token, condition: Expression | null) {
@@ -293,6 +324,42 @@ export class IfStatement implements Statement {
         }
     }
 
+    getLineNumberReferences(): LineNumberReference[] {
+        const refs: LineNumberReference[] = [];
+
+        if (this.goto !== undefined && this.gotoToken) {
+            refs.push({
+                lineNumber: this.goto!,
+                lineNumberToken: this.gotoToken,
+                statement: this,
+            });
+        }
+
+        if (this.elseGoto !== undefined && this.elseGotoToken) {
+            refs.push({
+                lineNumber: this.elseGoto,
+                lineNumberToken: this.elseGotoToken,
+                statement: this,
+            });
+        }
+
+        if (typeof this.then === 'number' && this.thenToken) {
+            refs.push({
+                lineNumber: this.then,
+                lineNumberToken: this.thenToken,
+                statement: this,
+            });
+        } else if (this.then) {
+            refs.push(...(this.then as Statement).getLineNumberReferences());
+        }
+
+        if (this.elseThen) {
+            refs.push(...this.elseThen.getLineNumberReferences());
+        }
+
+        return refs;
+    }
+
     tokenLiteral(): string {
         return this.token.literal;
     }
@@ -302,10 +369,16 @@ export class IfStatement implements Statement {
             this.lineNumber,
             this.token.literal,
             this.condition?.toString(),
-            this.goto ? `GOTO ${this.goto}` : null,
-            this.then ? `THEN ${this.then}` : null,
-            this.elseGoto ? `${this.elseToken.literal} ${this.elseGoto}` : null,
-            this.elseThen ? `${this.elseToken.literal} ${this.elseThen}` : null,
+            this.goto ? `GOTO ${this.gotoToken?.literal}` : null,
+            this.then
+                ? `THEN ${this.thenToken ? this.thenToken.literal : this.then}`
+                : null,
+            this.elseGoto
+                ? `${this.elseToken?.literal} ${this.elseGotoToken?.literal}`
+                : null,
+            this.elseThen
+                ? `${this.elseToken?.literal} ${this.elseThen}`
+                : null,
         );
     }
 }
@@ -320,6 +393,7 @@ export class LetStatement implements Statement {
     names: LetAssignment[];
     value: Expression | null;
     lineNumber = 0;
+    lineNumberToken: Token | undefined;
     next: Statement | null = null;
 
     type = StatementType.LET;
@@ -341,6 +415,10 @@ export class LetStatement implements Statement {
             n.name.statement = this;
             n.indices.forEach((i) => (i.statement = this));
         });
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -372,12 +450,23 @@ export class CompoundStatement implements Statement {
     token: Token;
     statements: Statement[];
     lineNumber = 0;
+    lineNumberToken: Token | undefined;
     type = StatementType.COMPOUND;
     next: Statement | null = null;
 
     constructor(token: Token, statements: Statement[]) {
         this.token = token;
         this.statements = statements;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        const refs: LineNumberReference[] = [];
+
+        this.statements.forEach((statement) =>
+            refs.push(...statement.getLineNumberReferences()),
+        );
+
+        return refs;
     }
 
     tokenLiteral(): string {
@@ -397,6 +486,7 @@ export class PrintStatement implements Statement {
     args: Expression[];
     type = StatementType.PRINT;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     next: Statement | null = null;
 
     constructor(token: Token, args: Expression[]) {
@@ -404,6 +494,10 @@ export class PrintStatement implements Statement {
         this.args = args;
 
         args.forEach((a) => (a.statement = this));
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -424,6 +518,7 @@ export class InputStatement implements Statement {
     destination: Identifier[];
     type = StatementType.INPUT;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     next: Statement | null = null;
     message: Expression | null;
 
@@ -440,6 +535,10 @@ export class InputStatement implements Statement {
             this.message.statement = this;
         }
         destination.forEach((d) => (d.statement = this));
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -459,6 +558,7 @@ export class InputStatement implements Statement {
 export class ForStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.FOR;
     next: Statement | null = null;
 
@@ -494,6 +594,10 @@ export class ForStatement implements Statement {
         }
     }
 
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
+    }
+
     toString(): string {
         return combineParts(
             this.lineNumber,
@@ -516,6 +620,7 @@ export class ForStatement implements Statement {
 export class NextStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.NEXT;
     next: Statement | null = null;
 
@@ -526,6 +631,10 @@ export class NextStatement implements Statement {
         this.values = values;
 
         values.forEach((v) => (v.statement = this));
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     toString(): string {
@@ -544,14 +653,27 @@ export class NextStatement implements Statement {
 export class GosubStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.GOSUB;
     next: Statement | null = null;
 
     gosubLineNumber: number;
+    gosubLineNumberToken: Token;
 
-    constructor(token: Token, lineNumber: number) {
+    constructor(token: Token, lineNumber: number, gosubToken: Token) {
         this.token = token;
         this.gosubLineNumber = lineNumber;
+        this.gosubLineNumberToken = gosubToken;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [
+            {
+                lineNumber: this.gosubLineNumber,
+                lineNumberToken: this.gosubLineNumberToken,
+                statement: this,
+            },
+        ];
     }
 
     tokenLiteral(): string {
@@ -562,7 +684,7 @@ export class GosubStatement implements Statement {
         return combineParts(
             this.lineNumber,
             this.tokenLiteral(),
-            this.gosubLineNumber,
+            this.gosubLineNumberToken.literal,
         );
     }
 }
@@ -570,11 +692,16 @@ export class GosubStatement implements Statement {
 export class ReturnStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.RETURN;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -589,11 +716,16 @@ export class ReturnStatement implements Statement {
 export class RemStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.REM;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -628,14 +760,44 @@ export class CallExpression implements Expression {
     }
 }
 
+export class GroupedExpression implements Expression {
+    token: Token;
+    endToken: Token;
+    expression: Expression | null;
+    statement: Statement | undefined;
+
+    constructor(
+        startParenToken: Token,
+        expression: Expression | null,
+        endParenToken: Token,
+    ) {
+        this.token = startParenToken;
+        this.expression = expression;
+        this.endToken = endParenToken;
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return `(${this.expression})`;
+    }
+}
+
 export class ClrStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.CLR;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -650,6 +812,7 @@ export class ClrStatement implements Statement {
 export class DataStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.DATA;
     next: Statement | null = null;
     datas: Expression[];
@@ -659,6 +822,10 @@ export class DataStatement implements Statement {
         this.datas = datas;
 
         this.datas.forEach((d) => (d.statement = this));
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -677,6 +844,7 @@ export class DataStatement implements Statement {
 export class ReadStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.READ;
     next: Statement | null = null;
     outputs: LetAssignment[];
@@ -689,6 +857,10 @@ export class ReadStatement implements Statement {
             o.name.statement = this;
             o.indices.forEach((i) => (i.statement = this));
         });
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -717,11 +889,16 @@ export class ReadStatement implements Statement {
 export class RestoreStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.RESTORE;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -736,6 +913,7 @@ export class RestoreStatement implements Statement {
 export class DefStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.DEF;
     next: Statement | null = null;
     name: Identifier;
@@ -760,6 +938,10 @@ export class DefStatement implements Statement {
         }
 
         this.body.statement = this;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -788,6 +970,7 @@ export interface DimVariable {
 export class DimStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.DIM;
     next: Statement | null = null;
     variables: DimVariable[];
@@ -800,6 +983,10 @@ export class DimStatement implements Statement {
             v.name.statement = this;
             v.dimensions.forEach((d) => (d.statement = this));
         });
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -825,11 +1012,16 @@ export class DimStatement implements Statement {
 export class EndStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.END;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -844,11 +1036,16 @@ export class EndStatement implements Statement {
 export class ContStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.CONT;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -863,6 +1060,7 @@ export class ContStatement implements Statement {
 export class ListStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.LIST;
     next: Statement | null = null;
     startLine: Expression | null;
@@ -886,6 +1084,10 @@ export class ListStatement implements Statement {
         }
     }
 
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
+    }
+
     tokenLiteral(): string {
         return this.token.literal;
     }
@@ -898,6 +1100,7 @@ export class ListStatement implements Statement {
 export class LoadStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.LOAD;
     next: Statement | null = null;
     filename: Expression;
@@ -907,6 +1110,10 @@ export class LoadStatement implements Statement {
         this.filename = filename;
 
         this.filename.statement = this;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -925,6 +1132,7 @@ export class LoadStatement implements Statement {
 export class SaveStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.SAVE;
     next: Statement | null = null;
     filename: Expression;
@@ -934,6 +1142,10 @@ export class SaveStatement implements Statement {
         this.filename = filename;
 
         this.filename.statement = this;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -952,11 +1164,16 @@ export class SaveStatement implements Statement {
 export class NewStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.NEW;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -971,6 +1188,7 @@ export class NewStatement implements Statement {
 export class OnStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.ON;
     next: Statement | null = null;
     condition: Expression;
@@ -992,6 +1210,22 @@ export class OnStatement implements Statement {
         this.destinations.forEach((d) => (d.statement = this));
     }
 
+    getLineNumberReferences(): LineNumberReference[] {
+        const refs: LineNumberReference[] = [];
+
+        this.destinations.forEach((dest) => {
+            if (dest instanceof IntegerLiteral) {
+                refs.push({
+                    lineNumber: dest.value,
+                    lineNumberToken: dest.token,
+                    statement: this,
+                });
+            }
+        });
+
+        return refs;
+    }
+
     tokenLiteral(): string {
         return this.token.literal;
     }
@@ -1010,11 +1244,16 @@ export class OnStatement implements Statement {
 export class StopStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.STOP;
     next: Statement | null = null;
 
     constructor(token: Token) {
         this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -1029,6 +1268,7 @@ export class StopStatement implements Statement {
 export class GraphicsStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.GRAPHICS;
     next: Statement | null = null;
     width: Expression;
@@ -1038,6 +1278,10 @@ export class GraphicsStatement implements Statement {
         this.token = token;
         this.width = width;
         this.height = height;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -1056,6 +1300,7 @@ export class GraphicsStatement implements Statement {
 export class DrawStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.DRAW;
     next: Statement | null = null;
     color: Expression;
@@ -1078,6 +1323,10 @@ export class DrawStatement implements Statement {
         this.y1 = y1;
         this.x2 = x2;
         this.y2 = y2;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
     }
 
     tokenLiteral(): string {
@@ -1104,6 +1353,7 @@ export class DrawStatement implements Statement {
 export class BoxStatement implements Statement {
     token: Token;
     lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
     type = StatementType.BOX;
     next: Statement | null = null;
     color: Expression;
@@ -1128,6 +1378,10 @@ export class BoxStatement implements Statement {
         this.height = height;
     }
 
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
+    }
+
     tokenLiteral(): string {
         return this.token.literal;
     }
@@ -1144,5 +1398,29 @@ export class BoxStatement implements Statement {
                 this.height.toString(),
             ].join(', '),
         );
+    }
+}
+
+export class EmptyStatement implements Statement {
+    token: Token;
+    lineNumber: number | undefined;
+    lineNumberToken: Token | undefined;
+    type = StatementType.EMPTY;
+    next: Statement | null = null;
+
+    constructor(token: Token) {
+        this.token = token;
+    }
+
+    getLineNumberReferences(): LineNumberReference[] {
+        return [];
+    }
+
+    tokenLiteral(): string {
+        return this.token.literal;
+    }
+
+    toString(): string {
+        return combineParts(this.lineNumber);
     }
 }

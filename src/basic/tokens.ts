@@ -47,6 +47,7 @@ export enum TokenType {
     LET = 'LET',
     LIST = 'LIST',
     LOAD = 'LOAD',
+    MOD = 'MOD',
     NEXT = 'NEXT',
     NEW = 'NEW',
     NOT = 'NOT',
@@ -65,11 +66,24 @@ export enum TokenType {
     TO = 'TO',
 }
 
+export enum TokenCategory {
+    NUMBER = 'NUMBER',
+    STRING = 'STRING',
+    OPERATOR = 'OPERATOR',
+    IDENT = 'IDENT',
+    STATEMENT = 'STATEMENT',
+    COMMENT = 'COMMENT',
+    OTHER = 'OTHER',
+}
+
 export interface Token {
     type: TokenType;
+    category: TokenCategory;
     literal: string;
     line: number;
     column: number;
+    start: number;
+    end: number;
 }
 
 const keywords: { [key: string]: TokenType } = {
@@ -94,6 +108,7 @@ const keywords: { [key: string]: TokenType } = {
     LET: TokenType.LET,
     LIST: TokenType.LIST,
     LOAD: TokenType.LOAD,
+    MOD: TokenType.MOD,
     NEXT: TokenType.NEXT,
     NEW: TokenType.NEW,
     NOT: TokenType.NOT,
@@ -114,15 +129,21 @@ const keywords: { [key: string]: TokenType } = {
 
 export function newToken(
     type: TokenType,
+    category: TokenCategory,
     literal = '',
     line: number,
     column: number,
+    start: number,
+    end: number,
 ): Token {
     return {
         type,
+        category,
         literal,
         line,
         column,
+        start,
+        end,
     };
 }
 

@@ -14,6 +14,7 @@ import {
     GosubStatement,
     GotoStatement,
     GraphicsStatement,
+    GroupedExpression,
     Identifier,
     IdentifierType,
     IfStatement,
@@ -83,7 +84,7 @@ export interface ContextApi {
 
 function newError(
     message: string,
-    extra: Statement | Expression | undefined = undefined,
+    extra: Statement | Expression | undefined | null = undefined,
 ) {
     if (extra) {
         if ((extra as any).statement) {
@@ -150,7 +151,7 @@ export interface CancelablePromise {
     cancel: () => void;
 }
 
-function wrap(promises: CancelablePromise[], promise) {
+function wrap(promises: CancelablePromise[], promise: Promise<any>) {
     return new Promise((resolve, reject) => {
         promises.push({
             promise,
@@ -183,6 +184,7 @@ export class Context {
     dataStack: ValueObject[];
     image: BasicCanvas | null = null;
     maxExecutionTime: number;
+    stateChangeListeners: ((state: ContextState) => void)[] = [];
 
     onStop?: () => void;
 
@@ -253,7 +255,7 @@ export class Context {
     }
 
     reset() {
-        this.state = ContextState.IDLE;
+        this.changeState(ContextState.IDLE);
         this.clr();
 
         if (this.lines.length > 0) {
@@ -310,6 +312,8 @@ export class Context {
 
     async runStatement(statement: Statement): Promise<ValueObject> {
         switch (statement.type) {
+            case StatementType.EMPTY:
+                return NULL;
             case StatementType.PRINT:
                 return this.runPrintStatement(statement as PrintStatement);
             case StatementType.LET:
@@ -400,7 +404,7 @@ export class Context {
     }
 
     private prepareRunProgram() {
-        if (this.lines.length == 0) {
+        if (this.lines.length === 0) {
             return newError(`cannot run program, no program!`);
         }
 
@@ -418,7 +422,7 @@ export class Context {
     async runUntilDoneOrStopped(root: Statement | null): Promise<ValueObject> {
         let statement: Statement | null = root;
 
-        this.state = ContextState.RUNNING;
+        this.changeState(ContextState.RUNNING);
         let lastResult: ValueObject = NULL;
 
         return new Promise(async (resolve) => {
@@ -437,7 +441,7 @@ export class Context {
 
                 if (this.runTime > this.maxExecutionTime) {
                     resolve(newError('max run time exceeded'));
-                    this.state = ContextState.IDLE;
+                    this.changeState(ContextState.IDLE);
                 } else {
                     timeout = setTimeout(timer, 250);
                 }
@@ -447,12 +451,18 @@ export class Context {
                 timer();
             }
 
+            let ops = 0;
             try {
                 while (statement && this.state === ContextState.RUNNING) {
                     this.nextStatement = statement.next ?? null;
 
-                    await new Promise(setImmediate);
                     lastResult = await this.runStatement(statement);
+                    ops++;
+
+                    if (ops > 1000) {
+                        ops = 0;
+                        await new Promise(setImmediate);
+                    }
 
                     if (lastResult.type() === ObjectType.ERROR_OBJ) {
                         resolve(lastResult);
@@ -461,10 +471,10 @@ export class Context {
                     statement = this.nextStatement;
                 }
             } catch (e) {
-                resolve(newError(e.message));
+                resolve(newError((e as Error).message));
             } finally {
                 timeout && clearTimeout(timeout);
-                this.state = ContextState.IDLE;
+                this.changeState(ContextState.IDLE);
             }
 
             resolve(lastResult);
@@ -510,7 +520,7 @@ export class Context {
             );
         } catch (e) {
             this.stop();
-            return newError(e.message, statement);
+            return newError((e as Error).message, statement);
         }
 
         return NULL;
@@ -584,6 +594,12 @@ export class Context {
             return this.evalIdentifier(expression);
         } else if (expression instanceof CallExpression) {
             return this.evalCallExpression(expression, isInCondition);
+        } else if (expression instanceof GroupedExpression) {
+            if (expression.expression) {
+                return this.evalExpression(expression.expression);
+            } else {
+                return NULL;
+            }
         }
 
         return newError(`unknown expression`, expression);
@@ -710,6 +726,8 @@ export class Context {
                 } else {
                     return new FloatValue(leftValue | rightValue);
                 }
+            case 'MOD':
+                return new FloatValue(leftValue % rightValue);
         }
 
         return newError(`invalid operator ${operator}`);
@@ -805,7 +823,7 @@ export class Context {
 
             this.globalStack = fnStack;
             const result = this.evalExpression(target.body, false);
-            this.globalStack = fnStack.outer;
+            this.globalStack = fnStack.outer!;
 
             return result;
         }
@@ -933,7 +951,7 @@ export class Context {
                 }
             }
         } catch (e) {
-            return newError(`error with input: ${e.message}`, expr);
+            return newError(`error with input: ${(e as Error).message}`, expr);
         } finally {
             this.waitingForInput = false;
             this.runTime = 0;
@@ -956,7 +974,7 @@ export class Context {
 
         if (this.continueStatement) {
             // we were running but got stopped, resume!
-            this.state = ContextState.RUNNING;
+            this.changeState(ContextState.RUNNING);
         }
 
         this.nextStatement = this.lines[lineIndex];
@@ -1348,7 +1366,7 @@ export class Context {
     runEndStatement(statement: EndStatement) {
         this.continueStatement = statement.next;
 
-        this.state = ContextState.IDLE;
+        this.changeState(ContextState.IDLE);
         return NULL;
     }
 
@@ -1420,7 +1438,7 @@ export class Context {
 
         const newCode = await this.api.load(filename.value);
 
-        this.state = ContextState.IDLE;
+        this.changeState(ContextState.IDLE);
         this.clr();
 
         const lines = newCode.split('\n');
@@ -1457,7 +1475,10 @@ export class Context {
             return NULL;
         } catch (e) {
             console.log(e);
-            return newError(typeof e === 'string' ? e : e.message, statement);
+            return newError(
+                typeof e === 'string' ? e : (e as Error).message,
+                statement,
+            );
         }
     }
 
@@ -1507,7 +1528,7 @@ export class Context {
     stop() {
         this.onStop?.();
         this.cancelAllPromises();
-        this.state = ContextState.IDLE;
+        this.changeState(ContextState.IDLE);
     }
 
     async runGraphicsStatement(statement: GraphicsStatement) {
@@ -1595,7 +1616,7 @@ export class Context {
 
             for (
                 let x = Math.floor(x1.value);
-                x != Math.floor(x2.value);
+                x !== Math.floor(x2.value);
                 x += step
             ) {
                 const y = y1.value + (dy * (x - x1.value)) / dx;
@@ -1690,15 +1711,17 @@ export class Context {
                     identifier.value,
                     new ArrayValue(
                         identifier.type,
-                        indexArgs.map((i: IntValue | FloatValue) => i.value),
+                        indexArgs.map(
+                            (i) => (i as IntValue | FloatValue).value,
+                        ),
                     ),
                 );
                 arr = this.globalStack.get(identifier.value);
             }
 
-            if (arr.type() !== ObjectType.ARRAY_OBJ) {
+            if (arr?.type() !== ObjectType.ARRAY_OBJ) {
                 return newError(
-                    `cannot use array access on a ${arr.type()} (${identifier.toString()})`,
+                    `cannot use array access on a ${arr?.type()} (${identifier.toString()})`,
                     statement,
                 );
             }
@@ -1724,5 +1747,22 @@ export class Context {
         this.globalStack.set(identifier.value, value);
 
         return value;
+    }
+
+    addStateChangeListener(callback: (state: ContextState) => void) {
+        this.stateChangeListeners.push(callback);
+    }
+
+    removeStateChangeListener(callback: (state: ContextState) => void) {
+        this.stateChangeListeners = this.stateChangeListeners.filter(
+            (l) => l !== callback,
+        );
+    }
+
+    private changeState(state: ContextState) {
+        if (state !== this.state) {
+            this.state = state;
+            this.stateChangeListeners.forEach((callback) => callback(state));
+        }
     }
 }

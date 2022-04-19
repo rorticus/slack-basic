@@ -1,6 +1,4 @@
 import { BasicCanvas, Context, ContextApi } from './context';
-import Lexer from './lexer';
-import { Parser } from './parser';
 import { IdentifierType, LetStatement, StatementType } from './ast';
 import {
     ArrayValue,

@@ -14,7 +14,7 @@ import {
 function getSingleNumericArgument(
     values: ValueObject[],
 ): IntValue | FloatValue | ErrorValue {
-    if (values.length == 0) {
+    if (values.length === 0) {
         return new ErrorValue(`too few arguments`);
     }
 
@@ -41,7 +41,7 @@ function getSingleNumericArgument(
 function getSingleStringArgument(
     values: ValueObject[],
 ): StringValue | ErrorValue {
-    if (values.length == 0) {
+    if (values.length === 0) {
         return new ErrorValue(`too few arguments`);
     }
 

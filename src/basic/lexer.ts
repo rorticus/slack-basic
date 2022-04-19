@@ -1,4 +1,10 @@
-import { lookupIdent, newToken, Token, TokenType } from './tokens';
+import {
+    lookupIdent,
+    newToken,
+    Token,
+    TokenCategory,
+    TokenType,
+} from './tokens';
 
 export function isLetter(c: string) {
     const letters = 'abcdefghijklmnopqrstuvwxyz_';
@@ -126,88 +132,134 @@ export class Lexer {
             case '=':
                 tok = newToken(
                     TokenType.ASSIGN,
+                    TokenCategory.OPERATOR,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case ':':
                 tok = newToken(
                     TokenType.COLON,
+                    TokenCategory.OPERATOR,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case ',':
                 tok = newToken(
                     TokenType.COMMA,
+                    TokenCategory.OTHER,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case '(':
                 tok = newToken(
                     TokenType.LPAREN,
+                    TokenCategory.OTHER,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case ')':
                 tok = newToken(
                     TokenType.RPAREN,
+                    TokenCategory.OTHER,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case '+':
-                tok = newToken(TokenType.PLUS, this.ch, this.line, this.column);
+                tok = newToken(
+                    TokenType.PLUS,
+                    TokenCategory.OPERATOR,
+                    this.ch,
+                    this.line,
+                    this.column,
+                    this.position,
+                    this.position,
+                );
                 break;
             case '-':
                 tok = newToken(
                     TokenType.MINUS,
+                    TokenCategory.OPERATOR,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case '*':
                 tok = newToken(
                     TokenType.ASTERISK,
+                    TokenCategory.OPERATOR,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case '/':
                 tok = newToken(
                     TokenType.SLASH,
+                    TokenCategory.OPERATOR,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case '<':
                 if (this.peekChar() === '=') {
-                    tok = newToken(TokenType.LTE, '<=', this.line, this.column);
+                    tok = newToken(
+                        TokenType.LTE,
+                        TokenCategory.OPERATOR,
+                        '<=',
+                        this.line,
+                        this.column,
+                        this.position - 1,
+                        this.position,
+                    );
                     this.readChar();
                 } else if (this.peekChar() === '>') {
                     tok = newToken(
                         TokenType.NOT_EQ,
+                        TokenCategory.OPERATOR,
                         '<>',
                         this.line,
                         this.column,
+                        this.position - 1,
+                        this.position,
                     );
                     this.readChar();
                 } else {
                     tok = newToken(
                         TokenType.LT,
+                        TokenCategory.OPERATOR,
                         this.ch,
                         this.line,
                         this.column,
+                        this.position,
+                        this.position,
                     );
                 }
                 break;
@@ -215,86 +267,143 @@ export class Lexer {
                 if (this.peekChar() === '=') {
                     tok = newToken(
                         TokenType.GTE,
+                        TokenCategory.OPERATOR,
                         this.ch,
                         this.line,
                         this.column,
+                        this.position - 1,
+                        this.position,
                     );
                     this.readChar();
                 } else {
                     tok = newToken(
                         TokenType.GT,
+                        TokenCategory.OPERATOR,
                         this.ch,
                         this.line,
                         this.column,
+                        this.position,
+                        this.position,
                     );
                 }
                 break;
             case '':
-                tok = newToken(TokenType.EOF, this.ch, this.line, this.column);
-                break;
-            case '"':
                 tok = newToken(
-                    TokenType.STRING,
-                    this.readString(),
+                    TokenType.EOF,
+                    TokenCategory.OTHER,
+                    this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
+            case '"':
+                {
+                    const line = this.line;
+                    const column = this.column;
+                    const startPosition = this.position;
+
+                    tok = newToken(
+                        TokenType.STRING,
+                        TokenCategory.STRING,
+                        this.readString(),
+                        line,
+                        column,
+                        startPosition,
+                        this.position,
+                    );
+                }
+                break;
             case '^':
-                tok = newToken(TokenType.EXP, this.ch, this.line, this.column);
+                tok = newToken(
+                    TokenType.EXP,
+                    TokenCategory.OPERATOR,
+                    this.ch,
+                    this.line,
+                    this.column,
+                    this.position,
+                    this.position,
+                );
                 break;
             case '?':
                 tok = newToken(
                     TokenType.PRINT,
+                    TokenCategory.STATEMENT,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             case ';':
                 tok = newToken(
                     TokenType.SEMICOLON,
+                    TokenCategory.OTHER,
                     this.ch,
                     this.line,
                     this.column,
+                    this.position,
+                    this.position,
                 );
                 break;
             default:
                 if (isLetter(this.ch)) {
                     const line = this.line;
                     const column = this.column;
+                    const pos = this.position;
 
                     const literal = this.readIdentifier();
-                    tok = newToken(lookupIdent(literal), literal, line, column);
+                    const type = lookupIdent(literal);
+                    tok = newToken(
+                        type,
+                        type === TokenType.IDENT
+                            ? TokenCategory.IDENT
+                            : TokenCategory.STATEMENT,
+                        literal,
+                        line,
+                        column,
+                        pos,
+                        this.position,
+                    );
                     if (tok.type === TokenType.REM) {
-                        const startPos = this.readPosition;
                         let rest = '';
                         while (this.ch !== '\n' && this.ch !== '') {
                             rest += this.ch;
                             this.readChar();
                         }
                         tok.literal = 'REM' + rest;
+                        tok.category = TokenCategory.COMMENT;
+                        tok.end = this.position;
                     }
                     return tok;
                 } else if (isDigit(this.ch) || this.ch === '.') {
                     const line = this.line;
                     const column = this.column;
+                    const pos = this.position;
 
                     const num = this.readNumber();
 
                     tok = newToken(
                         num.indexOf('.') >= 0 ? TokenType.FLOAT : TokenType.INT,
+                        TokenCategory.NUMBER,
                         num,
                         line,
                         column,
+                        pos,
+                        this.position,
                     );
                     return tok;
                 } else {
                     tok = newToken(
                         TokenType.ILLEGAL,
+                        TokenCategory.OTHER,
                         this.ch,
                         this.line,
                         this.column,
+                        this.position,
+                        this.position,
                     );
                 }
         }

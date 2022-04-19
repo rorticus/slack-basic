@@ -11,6 +11,7 @@ import {
     DimStatement,
     DimVariable,
     DrawStatement,
+    EmptyStatement,
     EndStatement,
     Expression,
     FloatLiteral,
@@ -18,6 +19,7 @@ import {
     GosubStatement,
     GotoStatement,
     GraphicsStatement,
+    GroupedExpression,
     Identifier,
     IfStatement,
     InfixExpression,
@@ -74,6 +76,7 @@ const precedences: Record<string, Precedence> = {
     [TokenType.OR]: Precedence.LOGICAL,
     [TokenType.NOT]: Precedence.LOGICAL,
     [TokenType.LPAREN]: Precedence.CALL,
+    [TokenType.MOD]: Precedence.PRODUCT,
 };
 
 export class Parser {
@@ -119,6 +122,7 @@ export class Parser {
             TokenType.PLUS,
             this.parseInfixExpression.bind(this),
         );
+        this.registerInfix(TokenType.MOD, this.parseInfixExpression.bind(this));
         this.registerInfix(
             TokenType.MINUS,
             this.parseInfixExpression.bind(this),
@@ -222,9 +226,11 @@ export class Parser {
 
     parseStatement(): Statement | null {
         let lineNumber: number | undefined = undefined;
+        let lineNumberToken: Token | undefined = undefined;
 
         // statements can start with numbers
         if (this.curToken.type === TokenType.INT) {
+            lineNumberToken = this.curToken;
             lineNumber = parseInt(this.curToken.literal, 10);
             // consume the number
             this.nextToken();
@@ -318,6 +324,9 @@ export class Parser {
                 case TokenType.BOX:
                     statements.push(this.parseBoxStatement());
                     break;
+                case TokenType.EOF:
+                    statements.push(new EmptyStatement(this.curToken));
+                    break;
                 default:
                     // statements with no labels default to LET statements
                     statements.push(this.parseLetStatement());
@@ -327,7 +336,14 @@ export class Parser {
 
             if (this.curTokenIs(TokenType.COLON)) {
                 this.nextToken();
+            } else if (this.curTokenIs(TokenType.EOF)) {
+                break;
             } else {
+                this.pushError(
+                    'unexpected token ' +
+                        this.curToken.type +
+                        '. expected end of line or compound statement',
+                );
                 break;
             }
         }
@@ -342,6 +358,7 @@ export class Parser {
 
         if (result) {
             result.lineNumber = lineNumber;
+            result.lineNumberToken = lineNumberToken;
         }
 
         return result;
@@ -558,15 +575,17 @@ export class Parser {
     }
 
     parseGroupedExpression(): Expression | null {
+        const startParenToken = this.curToken;
         this.nextToken();
 
         const exp = this.parseExpression(Precedence.LOWEST);
 
+        const endParenToken = this.curToken;
         if (!this.expectPeek(TokenType.RPAREN)) {
             return null;
         }
 
-        return exp;
+        return new GroupedExpression(startParenToken, exp, endParenToken);
     }
 
     parseGotoStatement(): Statement | null {
@@ -582,7 +601,7 @@ export class Parser {
             return null;
         }
 
-        return new GotoStatement(token, dest);
+        return new GotoStatement(token, dest, this.curToken);
     }
 
     parseIfStatement(): Statement | null {
@@ -610,6 +629,7 @@ export class Parser {
             }
 
             statement.goto = nextLine;
+            statement.gotoToken = this.curToken;
 
             this.nextToken();
         } else if (this.peekTokenIs(TokenType.THEN)) {
@@ -627,10 +647,13 @@ export class Parser {
                 }
 
                 statement.then = nextLine;
+                statement.thenToken = this.curToken;
+
                 this.nextToken();
             } else {
                 this.nextToken();
 
+                const curToken = this.curToken;
                 const then = this.parseStatement();
                 if (then) {
                     statement.then = then;
@@ -657,6 +680,7 @@ export class Parser {
                     return null;
                 }
                 statement.elseGoto = lineNumber;
+                statement.elseGotoToken = this.curToken;
             } else {
                 this.nextToken();
 
@@ -748,7 +772,11 @@ export class Parser {
             return null;
         }
 
-        return new GosubStatement(token, (target as IntegerLiteral).value);
+        return new GosubStatement(
+            token,
+            (target as IntegerLiteral).value,
+            this.curToken,
+        );
     }
 
     parseCallExpression(fn: Expression | null): CallExpression {
